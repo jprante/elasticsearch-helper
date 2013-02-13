@@ -469,6 +469,9 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     protected void enableRefreshInterval() {
+        if (index() == null) {
+            return;
+        }
         try {
             ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
             settings.put("refresh_interval", "1000");
@@ -481,6 +484,9 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     protected void disableRefreshInterval() {
+        if (index() == null) {
+            return;
+        }
         try {
             ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
             settings.put("refresh_interval", -1);
