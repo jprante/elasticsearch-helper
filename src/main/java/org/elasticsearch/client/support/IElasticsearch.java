@@ -16,15 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.search.support;
+package org.elasticsearch.client.support;
 
+import org.elasticsearch.action.search.support.ElasticsearchRequest;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
- * ElasticsearchHelper helper API
+ * Elasticsearch helper API
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
@@ -38,6 +39,21 @@ public interface IElasticsearch {
     IElasticsearch settings(Settings settings);
 
     /**
+     * Set index
+     *
+     * @param index
+     * @return this ElasticsearchHelper Indexer Interface
+     */
+    IElasticsearch index(String index);
+
+    /**
+     * Get index
+     *
+     * @return the index
+     */
+    String index();
+
+    /**
      * Create a new client
      */
     IElasticsearch newClient();
@@ -49,14 +65,20 @@ public interface IElasticsearch {
 
     /**
      * Wait for healthy cluster
+     *
      * @throws IOException
      */
     IElasticsearch waitForHealthyCluster() throws IOException;
 
     /**
-     * Create new request
+     * Create new search request
      */
-    ElasticsearchRequest newRequest();
+    ElasticsearchRequest newSearchRequest();
+
+    /**
+     * Create new get request
+     */
+    ElasticsearchRequest newGetRequest();
 
     /**
      * Shutdown, free all resources

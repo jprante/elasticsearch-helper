@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.bulk.support;
+package org.elasticsearch.client.support;
 
 import org.elasticsearch.common.settings.Settings;
 
@@ -62,21 +62,6 @@ public interface IElasticsearchIndexer {
     IElasticsearchIndexer waitForHealthyCluster() throws IOException;
 
     /**
-     * Set index
-     *
-     * @param index
-     * @return this ElasticsearchHelper Indexer Interface
-     */
-    IElasticsearchIndexer index(String index);
-
-    /**
-     * Get index
-     *
-     * @return the index
-     */
-    String index();
-
-    /**
      * Set type
      *
      * @param type the type
@@ -103,7 +88,7 @@ public interface IElasticsearchIndexer {
      * Set maximum number of bulk actions
      *
      * @param bulkActions
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer maxBulkActions(int bulkActions);
 
@@ -111,7 +96,7 @@ public interface IElasticsearchIndexer {
      * Set maximum concurent bulk requests
      *
      * @param maxConcurentBulkRequests
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
@@ -122,7 +107,7 @@ public interface IElasticsearchIndexer {
      * @param type
      * @param id
      * @param source
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer create(String index, String type, String id, String source);
 
@@ -133,7 +118,7 @@ public interface IElasticsearchIndexer {
      * @param type
      * @param id
      * @param source
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer index(String index, String type, String id, String source);
 
@@ -143,31 +128,42 @@ public interface IElasticsearchIndexer {
      * @param index
      * @param type
      * @param id
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer delete(String index, String type, String id);
 
     /**
      * Ensure that all bulk
      *
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer flush();
 
     /**
      * Start bulk mode. Disables refresh.
-     * @return this ElasticsearchHelper Indexer Interface
+     *
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer startBulkMode();
 
     /**
      * Stops bulk mode. Enables refresh.
-     * @return this ElasticsearchHelper Indexer Interface
+     *
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer stopBulkMode();
 
     /**
+     * Add replica level.
+     *
+     * @param level
+     * @return number of shards after updating replica level
+     */
+    int replicaLevel(int level) throws IOException;
+
+    /**
      * Get the indexed volume so far.
+     *
      * @return the volume in bytes
      */
     long getVolumeInBytes();
@@ -175,19 +171,19 @@ public interface IElasticsearchIndexer {
     /**
      * Create a new index
      *
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer newIndex();
 
     /**
      * Delete index
      *
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this Elasticsearch Indexer Interface
      */
     IElasticsearchIndexer deleteIndex();
 
     /**
-     * Shutdown this ElasticsearchHelper Indexer
+     * Shutdown this Elasticsearch Indexer
      */
     void shutdown();
 

@@ -39,9 +39,7 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.VersionType;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -127,18 +125,10 @@ public class ConcurrentBulkRequest extends BulkRequest {
     }
 
     /**
-     * The list of requests in this bulk request.
-     */
-    public List<ActionRequest> requests() {
-        // hacky - but method is unused
-        return Arrays.asList(this.requests.toArray(new ActionRequest[0]));
-    }
-
-    /**
      * The number of actions in the bulk request.
      */
     public int numberOfActions() {
-        // for ConcurrentLinkedList, this call is not O(n) and may not be the size of the current list
+        // for ConcurrentLinkedList, this call is not O(n), and may not be the size of the current list
         return requests.size();
     }
 
@@ -392,7 +382,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
     public void readFrom(StreamInput in) throws IOException {
         // begin of copy from TransportRequest
         if (in.readBoolean()) {
-            Map<String,Object> headers = in.readMap();
+            Map<String, Object> headers = in.readMap();
             for (String key : headers.keySet()) {
                 putHeader(key, headers.get(key));
             }
@@ -418,7 +408,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        // copied from TransportRequest
+        // hack - copied from TransportRequest
         if (getHeaders() == null) {
             out.writeBoolean(false);
         } else {

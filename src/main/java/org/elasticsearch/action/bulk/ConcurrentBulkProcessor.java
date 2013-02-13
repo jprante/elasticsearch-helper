@@ -64,7 +64,7 @@ public class ConcurrentBulkProcessor {
     }
 
     /**
-     * Closes the processor. If flushing by time is enabled, then its shutdown.
+     * Closes the processor. If flushing by time is enabled, then it is shut down.
      * Any remaining bulk actions are flushed.
      */
     public void close() {

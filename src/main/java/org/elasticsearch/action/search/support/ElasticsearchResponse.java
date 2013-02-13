@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * Helper class for ElasticsearchHelper responses
+ * Helper class for Elasticsearch responses
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */

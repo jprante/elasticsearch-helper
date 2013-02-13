@@ -24,7 +24,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.TransportRequestOptions;
 
 /**
- * A concurrent bulk action
+ * Concurrent bulk action
  */
 public class ConcurrentBulkAction extends Action<ConcurrentBulkRequest, BulkResponse, ConcurrentBulkRequestBuilder> {
 

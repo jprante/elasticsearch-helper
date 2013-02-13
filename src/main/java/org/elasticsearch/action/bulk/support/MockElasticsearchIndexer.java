@@ -19,6 +19,7 @@
 package org.elasticsearch.action.bulk.support;
 
 import org.elasticsearch.action.search.support.MockElasticsearch;
+import org.elasticsearch.client.support.IElasticsearchIndexer;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
@@ -31,7 +32,6 @@ import java.net.URI;
  */
 public class MockElasticsearchIndexer extends MockElasticsearch implements IElasticsearchIndexer {
 
-    private String index;
     private String type;
 
     @Override
@@ -72,16 +72,9 @@ public class MockElasticsearchIndexer extends MockElasticsearch implements IElas
         return this;
     }
 
-
     @Override
-    public MockElasticsearchIndexer index(String index) {
-        this.index = index;
-        return this;
-    }
-
-    @Override
-    public String index() {
-        return index;
+    public int replicaLevel(int level) throws IOException {
+        return -1;
     }
 
     @Override

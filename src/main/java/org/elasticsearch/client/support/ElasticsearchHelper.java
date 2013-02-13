@@ -20,6 +20,10 @@ package org.elasticsearch.client.support;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
+import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.search.support.ElasticsearchRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -28,7 +32,6 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.action.search.support.IElasticsearch;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,17 +55,21 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- * ElasticsearchHelper client helper class
+ * Elasticsearch client helper class
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class ElasticsearchHelper implements IElasticsearch {
+public abstract class ElasticsearchHelper implements IElasticsearch {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(ElasticsearchHelper.class.getName());
+    // the transport addresses
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
     // singleton
     protected static TransportClient client;
+    // the settings
     private Settings settings;
+    // the default index
+    private String index;
 
     public ElasticsearchHelper() {
     }
@@ -71,6 +78,17 @@ public class ElasticsearchHelper implements IElasticsearch {
     public ElasticsearchHelper settings(Settings settings) {
         this.settings = settings;
         return this;
+    }
+
+    @Override
+    public ElasticsearchHelper index(String index) {
+        this.index = index;
+        return this;
+    }
+
+    @Override
+    public String index() {
+        return index;
     }
 
     @Override
@@ -103,42 +121,12 @@ public class ElasticsearchHelper implements IElasticsearch {
     }
 
     /**
-     * Create settings for searching an ElasticsearchHelper
+     * Create settings
      *
      * @param uri
      * @return the settings
      */
-    protected Settings initialSettings(URI uri) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("client.transport.sniff", true)
-                .put("transport.netty.connections_per_node.low", 0)
-                .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", 10)
-                .put("threadpool.index.type", "fixed")
-                .put("threadpool.index.size", "1")
-                .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", "1")
-                .put("threadpool.get.type", "fixed")
-                .put("threadpool.get.size", "10")
-                .put("threadpool.search.type", "fixed")
-                .put("threadpool.search.size", "10")
-                .put("threadpool.percolate.type", "fixed")
-                .put("threadpool.percolate.size", "1")
-                .put("threadpool.management.type", "fixed")
-                .put("threadpool.management.size", "1")
-                .put("threadpool.flush.type", "fixed")
-                .put("threadpool.flush.size", "1")
-                .put("threadpool.merge.type", "fixed")
-                .put("threadpool.merge.size", "1")
-                .put("threadpool.refresh.type", "fixed")
-                .put("threadpool.refresh.size", "1")
-                .put("threadpool.cache.type", "fixed")
-                .put("threadpool.cache.size", "1")
-                .put("threadpool.snapshot.type", "fixed")
-                .put("threadpool.snapshot.size", "1")
-                .build();
-    }
+    protected abstract Settings initialSettings(URI uri);
 
     @Override
     public synchronized void shutdown() {
@@ -152,7 +140,7 @@ public class ElasticsearchHelper implements IElasticsearch {
     }
 
     @Override
-    public ElasticsearchRequest newRequest() {
+    public ElasticsearchRequest newSearchRequest() {
         return new ElasticsearchRequest().newRequest(client.prepareSearch().setPreference("_primary_first"));
     }
 
@@ -284,10 +272,14 @@ public class ElasticsearchHelper implements IElasticsearch {
 
     @Override
     public ElasticsearchHelper waitForHealthyCluster() throws IOException {
+        return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
+    }
+
+    public ElasticsearchHelper waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =
-                    client.admin().cluster().prepareHealth().setWaitForYellowStatus().setTimeout("30s").execute().actionGet(30000);
+                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
             if (healthResponse.isTimedOut()) {
                 throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
             }
@@ -296,6 +288,42 @@ public class ElasticsearchHelper implements IElasticsearch {
         }
         return this;
     }
+
+    public int waitForRecovery() {
+        if (index() == null) {
+            return -1;
+        }
+        IndicesStatusResponse response = client.admin().indices()
+                .status(new IndicesStatusRequest(index())
+                .recovery(true))
+                .actionGet();
+        return response.totalShards();
+    }
+
+    protected ElasticsearchHelper enableRefreshInterval() {
+        update("refresh_interval", 1000);
+        return this;
+    }
+
+    protected ElasticsearchHelper disableRefreshInterval() {
+        update("refresh_interval", -1);
+        return this;
+    }
+
+    protected void update(String key, Object value) {
+        if (value == null) {
+            return;
+        }
+        if (index() == null) {
+            return;
+        }
+        ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
+        settings.put(key, value.toString());
+        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index());
+        updateSettingsRequest.settings(settings);
+        client.admin().indices().updateSettings(updateSettingsRequest).actionGet();
+    }
+
 
     private Map<String, String> parseQueryString(URI uri, String encoding)
             throws UnsupportedEncodingException {

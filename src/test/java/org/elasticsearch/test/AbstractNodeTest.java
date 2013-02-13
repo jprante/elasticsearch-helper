@@ -28,17 +28,19 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
+import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
 import java.util.Map;
+import java.util.Random;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
 import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
-public abstract class AbstractNodeTest {
+public abstract class AbstractNodeTest extends Assert {
 
     private final ESLogger logger = ESLoggerFactory.getLogger(AbstractNodeTest.class.getName());
 
@@ -158,4 +160,17 @@ public abstract class AbstractNodeTest {
         }
         nodes.clear();
     }
+
+    private static Random random = new Random();
+    private static char[] numbersAndLetters = ("0123456789abcdefghijklmnopqrstuvwxyz").toCharArray();
+
+    protected String randomString(int len) {
+        final char[] buf = new char[len];
+        final int n = numbersAndLetters.length - 1;
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = numbersAndLetters[random.nextInt(n)];
+        }
+        return new String(buf);
+    }
+
 }

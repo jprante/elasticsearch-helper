@@ -18,11 +18,12 @@
  */
 package org.elasticsearch.action.search.support;
 
+import org.elasticsearch.client.support.ElasticsearchHelper;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.client.support.ElasticsearchHelper;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -36,14 +37,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
- * A mockup for Elasticsearch helper
+ * Elasticsearch mockup
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
 public class MockElasticsearch extends ElasticsearchHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(MockElasticsearch.class.getName());
+    private final ESLogger logger = ESLoggerFactory.getLogger(MockElasticsearch.class.getName());
     protected Settings settings;
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
 
@@ -52,6 +52,25 @@ public class MockElasticsearch extends ElasticsearchHelper {
 
     public MockElasticsearch settings(Settings settings) {
         this.settings = settings;
+        return this;
+    }
+
+    /**
+     * No special initial settings except cluster name
+     *
+     * @param uri
+     * @return initial settings
+     */
+    @Override
+    protected Settings initialSettings(URI uri) {
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .build();
+    }
+
+    @Override
+    public MockElasticsearch index(String index) {
+        super.index(index);
         return this;
     }
 
@@ -71,6 +90,12 @@ public class MockElasticsearch extends ElasticsearchHelper {
         return new ElasticsearchRequest();
     }
 
+    /**
+     * Configure addresses, but do not connect.
+     *
+     * @param uri
+     * @throws IOException
+     */
     protected void connect(URI uri) throws IOException {
         String hostname = uri.getHost();
         int port = uri.getPort();

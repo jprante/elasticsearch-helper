@@ -27,7 +27,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 
 /**
- * Helper class for ElasticsearchHelper search/get requests
+ * Helper class for Elasticsearch search/get requests
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */

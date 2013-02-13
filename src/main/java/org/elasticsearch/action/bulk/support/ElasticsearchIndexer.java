@@ -18,25 +18,25 @@
  */
 package org.elasticsearch.action.bulk.support;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.bulk.ConcurrentBulkProcessor;
 import org.elasticsearch.action.bulk.ConcurrentBulkRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.support.ElasticsearchHelper;
+import org.elasticsearch.client.support.IElasticsearchIndexer;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.indices.IndexMissingException;
-import org.elasticsearch.client.support.ElasticsearchHelper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * ElasticsearchHelper indexing helper class
+ * Elasticsearch indexing helper class
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
@@ -76,10 +76,6 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      */
     private ConcurrentBulkProcessor bulk;
     /**
-     * The default index
-     */
-    private String index;
-    /**
      * The default type
      */
     private String type;
@@ -96,31 +92,53 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      */
     private String mapping;
 
+    /**
+     * Enable or disable this indxer
+     *
+     * @param enabled true for enable, false for disable
+     * @return this indexer
+     */
     public ElasticsearchIndexer enable(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Is this indexer enabled?
+     *
+     * @return true if enabled, false if disabled
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Set the settings for new clients
+     *
+     * @param settings the settings
+     * @return this indexer
+     */
     @Override
     public ElasticsearchIndexer settings(Settings settings) {
         super.settings(settings);
         return this;
     }
 
+    /**
+     * Create a new client for this indexer
+     *
+     * @return this indexer
+     */
     @Override
     public ElasticsearchIndexer newClient() {
         return newClient(findURI());
     }
 
     /**
-     * Create new transport client with concurrent bulk processor.
-     *
-     * The URI describes host and port of the node the client shoudl connect to,
-     * with the parameter es.cluster.name for the cluster name.
+     * Create new client with concurrent bulk processor.
+     * <p/>
+     * The URI describes host and port of the node the client should connect to,
+     * with the parameter <tt>es.cluster.name</tt> for the cluster name.
      *
      * @param uri the cluster URI
      * @return this indexer
@@ -160,55 +178,52 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     /**
-     * Initial settings tailored for index/bulk client use. No transport
+     * Initial settings tailored for index/bulk client use. Transport
      * sniffing, only thread pool is for bulk/indexing, other thread pools are
-     * minimal, ten Netty connections in parallel.
+     * minimal, 4 * cpucore Netty connections in parallel.
      *
      * @param uri the cluster name URI
      * @return the initial settings
      */
     @Override
     protected Settings initialSettings(URI uri) {
+        int n = Runtime.getRuntime().availableProcessors();
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
-                .put("client.transport.sniff", false)
+                .put("client.transport.sniff", true)
+                .put("transport.netty.worker_count", n * 4)
                 .put("transport.netty.connections_per_node.low", 0)
                 .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", 10)
+                .put("transport.netty.connections_per_node.high", n * 4)
                 .put("threadpool.index.type", "fixed")
-                .put("threadpool.index.size", "10")
+                .put("threadpool.index.size", n * 4)
                 .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", "10")
+                .put("threadpool.bulk.size", n * 4)
                 .put("threadpool.get.type", "fixed")
-                .put("threadpool.get.size", "1")
+                .put("threadpool.get.size", 1)
                 .put("threadpool.search.type", "fixed")
-                .put("threadpool.search.size", "1")
+                .put("threadpool.search.size", 1)
                 .put("threadpool.percolate.type", "fixed")
-                .put("threadpool.percolate.size", "1")
+                .put("threadpool.percolate.size", 1)
                 .put("threadpool.management.type", "fixed")
-                .put("threadpool.management.size", "1")
+                .put("threadpool.management.size", 1)
                 .put("threadpool.flush.type", "fixed")
-                .put("threadpool.flush.size", "1")
+                .put("threadpool.flush.size", 1)
                 .put("threadpool.merge.type", "fixed")
-                .put("threadpool.merge.size", "1")
+                .put("threadpool.merge.size", 1)
                 .put("threadpool.refresh.type", "fixed")
-                .put("threadpool.refresh.size", "1")
+                .put("threadpool.refresh.size", 1)
                 .put("threadpool.cache.type", "fixed")
-                .put("threadpool.cache.size", "1")
+                .put("threadpool.cache.size", 1)
                 .put("threadpool.snapshot.type", "fixed")
-                .put("threadpool.snapshot.size", "1")
+                .put("threadpool.snapshot.size", 1)
                 .build();
     }
 
     @Override
     public ElasticsearchIndexer index(String index) {
-        this.index = index;
+        super.index(index);
         return this;
-    }
-
-    @Override
-    public String index() {
-        return index;
     }
 
     @Override
@@ -261,11 +276,11 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         if (client == null) {
             return this;
         }
-        if (index == null) {
+        if (index() == null) {
             logger.warn("no index to create");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(index);
+        CreateIndexRequest request = new CreateIndexRequest(index());
         if (settingsBuilder != null) {
             String s = settingsBuilder.build().toString();
             request.settings(s);
@@ -298,13 +313,13 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         if (client == null) {
             return this;
         }
-        if (index == null) {
+        if (index() == null) {
             logger.warn("no index to delete");
             return this;
         }
         try {
             if (enabled) {
-                client.admin().indices().delete(new DeleteIndexRequest(index));
+                client.admin().indices().delete(new DeleteIndexRequest(index()));
             }
         } catch (Exception e) {
             if (!ignoreException) {
@@ -319,7 +334,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             return this;
         }
         client.admin().indices().putMapping(new PutMappingRequest()
-                .indices(new String[]{index})
+                .indices(new String[]{index()})
                 .type(type)
                 .source(mapping))
                 .actionGet();
@@ -340,7 +355,9 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         }
         try {
             if (enabled) {
-                client.admin().indices().deleteMapping(new DeleteMappingRequest().indices(new String[]{index}).type(type));
+                client.admin().indices().deleteMapping(new DeleteMappingRequest()
+                        .indices(new String[]{index()})
+                        .type(type));
             }
         } catch (Exception e) {
             if (!ignoreException) {
@@ -428,6 +445,22 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
+    public ElasticsearchIndexer waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+        super.waitForHealthyCluster(status, timeout);
+        return this;
+    }
+
+    @Override
+    public int replicaLevel(int level) throws IOException {
+        if (index() == null) {
+            return -1;
+        }
+        super.waitForHealthyCluster(ClusterHealthStatus.YELLOW, "1m");
+        super.update("number_of_replicas", level);
+        return super.waitForRecovery();
+    }
+
+    @Override
     public ElasticsearchIndexer flush() {
         if (!enabled) {
             return this;
@@ -468,33 +501,4 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return volumeCounter.get();
     }
 
-    protected void enableRefreshInterval() {
-        if (index() == null) {
-            return;
-        }
-        try {
-            ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
-            settings.put("refresh_interval", "1000");
-            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index());
-            updateSettingsRequest.settings(settings);
-            client.admin().indices().updateSettings(updateSettingsRequest).actionGet();
-        } catch (IndexMissingException e) {
-            logger.warn("index missing, refresh not enabled");
-        }
-    }
-
-    protected void disableRefreshInterval() {
-        if (index() == null) {
-            return;
-        }
-        try {
-            ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
-            settings.put("refresh_interval", -1);
-            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index());
-            updateSettingsRequest.settings(settings);
-            client.admin().indices().updateSettings(updateSettingsRequest).actionGet();
-        } catch (IndexMissingException e) {
-            logger.warn("index missing, refresh not disabled");
-        }
-    }
 }
