@@ -33,16 +33,22 @@ public class ReplicaLevelTests extends AbstractNodeTest {
     @Test
     public void testReplicaLevel() throws IOException {
 
+        int numberOfShards = 1;
+        int replicaLevel = 10;
         final ElasticsearchIndexer es = new ElasticsearchIndexer()
-                .index("test")
-                .newClient();
+                .newClient()
+                .index("replicatest")
+                .type("replicatest")
+                .numberOfShards(numberOfShards)
+                .numberOfReplicas(0)
+                .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
-            int shards = es.replicaLevel(3);
-            assertEquals(20, shards);
+            int shards = es.updateReplicaLevel(replicaLevel);
+            assertEquals(shards, numberOfShards * (replicaLevel+1));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {

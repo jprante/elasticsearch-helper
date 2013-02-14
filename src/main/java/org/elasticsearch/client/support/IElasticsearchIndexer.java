@@ -159,7 +159,7 @@ public interface IElasticsearchIndexer {
      * @param level
      * @return number of shards after updating replica level
      */
-    int replicaLevel(int level) throws IOException;
+    int updateReplicaLevel(int level) throws IOException;
 
     /**
      * Get the indexed volume so far.

@@ -82,7 +82,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     /**
      * Date detection enabled or not?
      */
-    private boolean dateDetection;
+    private boolean dateDetection = false;
     /**
      * Optional settings
      */
@@ -263,6 +263,14 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
+    public ElasticsearchIndexer setting(String key, Integer value) {
+        if (settingsBuilder == null) {
+            settingsBuilder = ImmutableSettings.settingsBuilder();
+        }
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
     public ElasticsearchIndexer mapping(String mapping) {
         this.mapping = mapping;
         return this;
@@ -277,24 +285,29 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             return this;
         }
         if (index() == null) {
-            logger.warn("no index to create");
+            logger.warn("no index name given to create");
+            return this;
+        }
+        if (type() == null) {
+            logger.warn("no type name given to create");
             return this;
         }
         CreateIndexRequest request = new CreateIndexRequest(index());
         if (settingsBuilder != null) {
-            String s = settingsBuilder.build().toString();
-            request.settings(s);
-            settingsBuilder = null;
+            request.settings(settingsBuilder);
         }
-        if (mapping != null) {
-            request.mapping(type, mapping);
-        } else {
-            Map m = Maps.newHashMap();
-            m.put("date_detection", dateDetection);
-            request.mapping(type, m);
+        if (mapping == null) {
+            mapping = "{\"_default_\":{\"date_detection\":"+dateDetection+"}}";
         }
+        request.mapping(type(), mapping);
         try {
             if (enabled) {
+                logger.debug("index = {} type = {} settings = {} mapping = {}",
+                        index(),
+                        type(),
+                        settingsBuilder.build().getAsMap(),
+                        mapping
+                        );
                 client.admin().indices().create(request).actionGet();
             }
         } catch (Exception e) {
@@ -314,7 +327,6 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             return this;
         }
         if (index() == null) {
-            logger.warn("no index to delete");
             return this;
         }
         try {
@@ -331,6 +343,9 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
 
     public ElasticsearchIndexer newType(String mapping) {
         if (client == null) {
+            return this;
+        }
+        if (index() == null) {
             return this;
         }
         client.admin().indices().putMapping(new PutMappingRequest()
@@ -351,6 +366,9 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
 
     public ElasticsearchIndexer deleteType(boolean enabled, boolean ignoreException) {
         if (client == null) {
+            return this;
+        }
+        if (index() == null) {
             return this;
         }
         try {
@@ -383,7 +401,10 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         if (client == null) {
             return this;
         }
-        client.admin().indices().refresh(new RefreshRequest());
+        if (index() == null) {
+            return this;
+        }
+        client.admin().indices().refresh(new RefreshRequest().indices(index()));
         return this;
     }
 
@@ -450,8 +471,24 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
+    public ElasticsearchIndexer numberOfShards(int value) {
+        if (index() == null) {
+            return this;
+        }
+        setting("index.number_of_shards", value);
+        return this;
+    }
+
+    public ElasticsearchIndexer numberOfReplicas(int value) {
+        if (index() == null) {
+            return this;
+        }
+        setting("index.number_of_replicas", value);
+        return this;
+    }
+
     @Override
-    public int replicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(int level) throws IOException {
         if (index() == null) {
             return -1;
         }
@@ -476,14 +513,6 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             return;
         }
         try {
-            logger.info("flushing...");
-            bulk.flush();
-            logger.info("waiting for outstanding bulk requests for maximum of 30 seconds...");
-            int n = 30;
-            while (outstandingBulkRequests.get() > 0 && n > 0) {
-                Thread.sleep(1000L);
-                n--;
-            }
             logger.info("closing bulk...");
             bulk.close();
             logger.info("enable refresh interval...");

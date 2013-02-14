@@ -73,7 +73,7 @@ public class MockElasticsearchIndexer extends MockElasticsearch implements IElas
     }
 
     @Override
-    public int replicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(int level) throws IOException {
         return -1;
     }
 

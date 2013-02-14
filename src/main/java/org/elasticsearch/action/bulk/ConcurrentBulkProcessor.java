@@ -65,14 +65,15 @@ public class ConcurrentBulkProcessor {
 
     /**
      * Closes the processor. If flushing by time is enabled, then it is shut down.
-     * Any remaining bulk actions are flushed.
+     * Any remaining bulk actions are flushed, and for the bulk responses is being waited.
      */
-    public void close() {
+    public synchronized void close() throws InterruptedException {
         if (closed) {
             return;
         }
         closed = true;
         flush();
+        waitForAllResponses();
     }
 
     /**
@@ -175,6 +176,14 @@ public class ConcurrentBulkProcessor {
                     }
                 }
             });
+        }
+    }
+
+    public void waitForAllResponses() throws InterruptedException {
+        int n = 60;
+        while (semaphore.availablePermits() < maxConcurrentBulkRequests && n > 0) {
+            Thread.sleep(1000L);
+            n--;
         }
     }
 

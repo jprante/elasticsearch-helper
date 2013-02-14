@@ -60,7 +60,9 @@ public abstract class AbstractNodeTest extends Assert {
     @BeforeMethod
     public void createIndices() throws Exception {
         startNode("1").client();
-        client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
+        client("1").admin().indices()
+                .create(new CreateIndexRequest(INDEX))
+                .actionGet();
     }
 
     @AfterMethod
