@@ -42,8 +42,6 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public abstract class AbstractNodeTest extends Assert {
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(AbstractNodeTest.class.getName());
-
     public final String INDEX = "test";
 
     protected final String CLUSTER = "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
@@ -73,7 +71,7 @@ public abstract class AbstractNodeTest extends Assert {
                     .delete(new DeleteIndexRequest().indices(INDEX))
                     .actionGet();
         } catch (IndexMissingException e) {
-            logger.error(e.getMessage());
+            // ignore
         }
         closeNode("1");
         closeAllNodes();

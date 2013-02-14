@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.bulk.support;
+package org.elasticsearch.client.support;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -25,56 +25,52 @@ import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingReques
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.bulk.ConcurrentBulkProcessor;
-import org.elasticsearch.action.bulk.ConcurrentBulkRequest;
+import org.elasticsearch.action.bulk.IngestProcessor;
+import org.elasticsearch.action.bulk.IngestRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.support.ElasticsearchHelper;
-import org.elasticsearch.client.support.IElasticsearchIndexer;
-import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Elasticsearch indexing helper class
+ * TransportClientIngest support
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasticsearchIndexer {
+public class TransportClientIngestSupport extends TransportClientSearchSupport implements TransportClientIngest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(ElasticsearchIndexer.class.getName());
+    private final static ESLogger logger = Loggers.getLogger(TransportClientIngestSupport.class);
     /**
-     * The default size of a bulk request
+     * The default size of a ingestProcessor request
      */
     private int maxBulkActions = 100;
     /**
-     * The default number of maximum concurrent bulk requests
+     * The default number of maximum concurrent ingestProcessor requests
      */
     private int maxConcurrentBulkRequests = 30;
     /**
-     * The outstanding bulk requests
+     * The outstanding ingestProcessor requests
      */
     private final AtomicLong outstandingBulkRequests = new AtomicLong();
     /**
-     * Count the bulk volume
+     * Count the ingestProcessor volume
      */
     private final AtomicLong volumeCounter = new AtomicLong();
     /**
-     * Is this indexer enabled or not?
+     * Is this ingesting enabled or not?
      */
     private boolean enabled = true;
     /**
-     * The bulk processor
+     * The IngestProcessor
      */
-    private ConcurrentBulkProcessor bulk;
+    private IngestProcessor ingestProcessor;
     /**
      * The default type
      */
@@ -98,7 +94,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      * @param enabled true for enable, false for disable
      * @return this indexer
      */
-    public ElasticsearchIndexer enable(boolean enabled) {
+    public TransportClientIngestSupport enable(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -119,7 +115,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      * @return this indexer
      */
     @Override
-    public ElasticsearchIndexer settings(Settings settings) {
+    public TransportClientIngestSupport settings(Settings settings) {
         super.settings(settings);
         return this;
     }
@@ -130,12 +126,12 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      * @return this indexer
      */
     @Override
-    public ElasticsearchIndexer newClient() {
+    public TransportClientIngestSupport newClient() {
         return newClient(findURI());
     }
 
     /**
-     * Create new client with concurrent bulk processor.
+     * Create new client with concurrent ingestProcessor processor.
      * <p/>
      * The URI describes host and port of the node the client should connect to,
      * with the parameter <tt>es.cluster.name</tt> for the cluster name.
@@ -144,14 +140,14 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
      * @return this indexer
      */
     @Override
-    public ElasticsearchIndexer newClient(URI uri) {
+    public TransportClientIngestSupport newClient(URI uri) {
         super.newClient(uri);
-        ConcurrentBulkProcessor.Listener listener = new ConcurrentBulkProcessor.Listener() {
+        IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, ConcurrentBulkRequest request) {
-                long l = outstandingBulkRequests.incrementAndGet();
+            public void beforeBulk(long executionId, IngestRequest request) {
+                long l = outstandingBulkRequests.getAndIncrement();
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
-                logger.info("new bulk [{}] of [{} items], {} bytes, {} outstanding bulk requests",
+                logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                         executionId, request.numberOfActions(), v, l);
             }
 
@@ -165,21 +161,22 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             @Override
             public void afterBulk(long executionId, Throwable failure) {
                 long l = outstandingBulkRequests.decrementAndGet();
-                logger.error("bulk [" + executionId + "] error", failure);
+                logger.error("bulk [{}] error", executionId, failure);
                 enabled = false;
             }
         };
-        this.bulk = ConcurrentBulkProcessor.builder(client, listener)
-                .maxBulkActions(maxBulkActions)
-                .maxConcurrentBulkRequests(maxConcurrentBulkRequests)
+        this.ingestProcessor = IngestProcessor.builder(client)
+                .listener(listener)
+                .actions(maxBulkActions)
+                .concurrency(maxConcurrentBulkRequests)
                 .build();
         this.enabled = true;
         return this;
     }
 
     /**
-     * Initial settings tailored for index/bulk client use. Transport
-     * sniffing, only thread pool is for bulk/indexing, other thread pools are
+     * Initial settings tailored for index/ingestProcessor client use. Transport
+     * sniffing, only thread pool is for ingestProcessor/indexing, other thread pools are
      * minimal, 4 * cpucore Netty connections in parallel.
      *
      * @param uri the cluster name URI
@@ -197,8 +194,8 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
                 .put("transport.netty.connections_per_node.high", n * 4)
                 .put("threadpool.index.type", "fixed")
                 .put("threadpool.index.size", n * 4)
-                .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", n * 4)
+                .put("threadpool.ingestProcessor.type", "fixed")
+                .put("threadpool.ingestProcessor.size", n * 4)
                 .put("threadpool.get.type", "fixed")
                 .put("threadpool.get.size", 1)
                 .put("threadpool.search.type", "fixed")
@@ -221,13 +218,13 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
-    public ElasticsearchIndexer index(String index) {
+    public TransportClientIngestSupport index(String index) {
         super.index(index);
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer type(String type) {
+    public TransportClientIngestSupport type(String type) {
         this.type = type;
         return this;
     }
@@ -238,24 +235,24 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
-    public ElasticsearchIndexer dateDetection(boolean dateDetection) {
+    public TransportClientIngestSupport dateDetection(boolean dateDetection) {
         this.dateDetection = dateDetection;
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer maxBulkActions(int maxBulkActions) {
+    public TransportClientIngestSupport maxBulkActions(int maxBulkActions) {
         this.maxBulkActions = maxBulkActions;
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
+    public TransportClientIngestSupport maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
-    public ElasticsearchIndexer setting(String key, String value) {
+    public TransportClientIngestSupport setting(String key, String value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -263,7 +260,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer setting(String key, Integer value) {
+    public TransportClientIngestSupport setting(String key, Integer value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -271,16 +268,16 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer mapping(String mapping) {
+    public TransportClientIngestSupport mapping(String mapping) {
         this.mapping = mapping;
         return this;
     }
 
-    public ElasticsearchIndexer newIndex() {
+    public TransportClientIngestSupport newIndex() {
         return newIndex(true);
     }
 
-    public synchronized ElasticsearchIndexer newIndex(boolean ignoreException) {
+    public synchronized TransportClientIngestSupport newIndex(boolean ignoreException) {
         if (client == null) {
             return this;
         }
@@ -297,7 +294,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             request.settings(settingsBuilder);
         }
         if (mapping == null) {
-            mapping = "{\"_default_\":{\"date_detection\":"+dateDetection+"}}";
+            mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
         }
         request.mapping(type(), mapping);
         try {
@@ -307,7 +304,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
                         type(),
                         settingsBuilder.build().getAsMap(),
                         mapping
-                        );
+                );
                 client.admin().indices().create(request).actionGet();
             }
         } catch (Exception e) {
@@ -318,11 +315,11 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer deleteIndex() {
+    public TransportClientIngestSupport deleteIndex() {
         return deleteIndex(true);
     }
 
-    public ElasticsearchIndexer deleteIndex(boolean ignoreException) {
+    public TransportClientIngestSupport deleteIndex(boolean ignoreException) {
         if (client == null) {
             return this;
         }
@@ -341,7 +338,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer newType(String mapping) {
+    public TransportClientIngestSupport newType(String mapping) {
         if (client == null) {
             return this;
         }
@@ -356,15 +353,15 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer deleteType() {
+    public TransportClientIngestSupport deleteType() {
         return deleteType(true, true);
     }
 
-    public ElasticsearchIndexer deleteType(boolean enabled) {
+    public TransportClientIngestSupport deleteType(boolean enabled) {
         return deleteType(enabled, true);
     }
 
-    public ElasticsearchIndexer deleteType(boolean enabled, boolean ignoreException) {
+    public TransportClientIngestSupport deleteType(boolean enabled, boolean ignoreException) {
         if (client == null) {
             return this;
         }
@@ -386,18 +383,18 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
-    public ElasticsearchIndexer startBulkMode() {
+    public TransportClientIngestSupport startBulkMode() {
         disableRefreshInterval();
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer stopBulkMode() {
+    public TransportClientIngestSupport stopBulkMode() {
         enableRefreshInterval();
         return this;
     }
 
-    public ElasticsearchIndexer refresh() {
+    public TransportClientIngestSupport refresh() {
         if (client == null) {
             return this;
         }
@@ -409,69 +406,72 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
-    public ElasticsearchIndexer create(String index, String type, String id, String source) {
+    public TransportClientIngestSupport create(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
         if (logger.isTraceEnabled()) {
-            logger.trace("create: coordinate = {}/{}/{} source = {}", index, type, id, source);
+            logger.trace("create: {}/{}/{} source = {}", index, type, id, source);
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
         try {
-            bulk.add(indexRequest);
+            ingestProcessor.add(indexRequest);
         } catch (Exception e) {
-            logger.error("bulk add of create failed: " + e.getMessage(), e);
+            logger.error("ingestProcessor add of create failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer index(String index, String type, String id, String source) {
+    public TransportClientIngestSupport index(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
         if (logger.isTraceEnabled()) {
-            logger.trace("index: coordinate = {}/{}/{} source = {}", index, type, id, source);
+            logger.trace("index: {}/{}/{} source = {}", index, type, id, source);
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
-            bulk.add(indexRequest);
+            ingestProcessor.add(indexRequest);
         } catch (Exception e) {
-            logger.error("bulk add of index failed: " + e.getMessage(), e);
+            logger.error("ingestProcessor add of index failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer delete(String index, String type, String id) {
+    public TransportClientIngestSupport delete(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
+        if (logger.isTraceEnabled()) {
+            logger.trace("delete: {}/{}/{} ", index, type, id);
+        }
         DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
-            bulk.add(deleteRequest);
+            ingestProcessor.add(deleteRequest);
         } catch (Exception e) {
-            logger.error("bulk add of delete failed: " + e.getMessage(), e);
+            logger.error("ingestProcessor add of delete failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer waitForHealthyCluster() throws IOException {
+    public TransportClientIngestSupport waitForHealthyCluster() throws IOException {
         super.waitForHealthyCluster();
         return this;
     }
 
     @Override
-    public ElasticsearchIndexer waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public TransportClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         super.waitForHealthyCluster(status, timeout);
         return this;
     }
 
-    public ElasticsearchIndexer numberOfShards(int value) {
+    public TransportClientIngestSupport numberOfShards(int value) {
         if (index() == null) {
             return this;
         }
@@ -479,7 +479,7 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
         return this;
     }
 
-    public ElasticsearchIndexer numberOfReplicas(int value) {
+    public TransportClientIngestSupport numberOfReplicas(int value) {
         if (index() == null) {
             return this;
         }
@@ -498,11 +498,11 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
     }
 
     @Override
-    public ElasticsearchIndexer flush() {
+    public TransportClientIngestSupport flush() {
         if (!enabled) {
             return this;
         }
-        bulk.flush();
+        ingestProcessor.flush();
         return this;
     }
 
@@ -513,11 +513,11 @@ public class ElasticsearchIndexer extends ElasticsearchHelper implements IElasti
             return;
         }
         try {
-            logger.info("closing bulk...");
-            bulk.close();
+            logger.info("closing...");
+            ingestProcessor.close();
             logger.info("enable refresh interval...");
             enableRefreshInterval();
-            logger.info("bulk closed, shutting down...");
+            logger.info("closed, shutting down...");
             super.shutdown();
             logger.info("shutting down completed");
         } catch (Exception e) {

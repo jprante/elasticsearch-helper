@@ -28,7 +28,7 @@ import org.elasticsearch.action.search.support.ElasticsearchRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -55,13 +55,16 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 /**
- * Elasticsearch client helper class
+ * TransportClient support class
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public abstract class ElasticsearchHelper implements IElasticsearch {
+public abstract class TransportClientSearchSupport implements TransportClientSearch {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(ElasticsearchHelper.class.getName());
+    private final static ESLogger logger = Loggers.getLogger(TransportClientSearchSupport.class);
+
+    private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
+    private final static URI DEFAULT_URI = URI.create("es://localhost:9300");
     // the transport addresses
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
     // singleton
@@ -71,17 +74,17 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
     // the default index
     private String index;
 
-    public ElasticsearchHelper() {
+    public TransportClientSearchSupport() {
     }
 
     @Override
-    public ElasticsearchHelper settings(Settings settings) {
+    public TransportClientSearchSupport settings(Settings settings) {
         this.settings = settings;
         return this;
     }
 
     @Override
-    public ElasticsearchHelper index(String index) {
+    public TransportClientSearchSupport index(String index) {
         this.index = index;
         return this;
     }
@@ -92,12 +95,12 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
     }
 
     @Override
-    public ElasticsearchHelper newClient() {
+    public TransportClientSearchSupport newClient() {
         return newClient(findURI());
     }
 
     @Override
-    public synchronized ElasticsearchHelper newClient(URI uri) {
+    public synchronized TransportClientSearchSupport newClient(URI uri) {
         if (client != null) {
             client.close();
             client = null;
@@ -141,15 +144,14 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
 
     @Override
     public ElasticsearchRequest newSearchRequest() {
-        return new ElasticsearchRequest().newRequest(client.prepareSearch().setPreference("_primary_first"));
+        return new ElasticsearchRequest()
+                .newRequest(client.prepareSearch().setPreference("_primary_first"));
     }
 
     public ElasticsearchRequest newGetRequest() {
-        return new ElasticsearchRequest().newRequest(client.prepareGet());
+        return new ElasticsearchRequest()
+                .newRequest(client.prepareGet());
     }
-
-    private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
-    private final static URI DEFAULT_URI = URI.create("es://localhost:9300");
 
     protected static URI findURI() {
         URI uri = DEFAULT_URI;
@@ -157,7 +159,7 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
         try {
             hostname = InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
-            URL url = ElasticsearchHelper.class.getResource("/org/xbib/elasticsearch/cluster.properties");
+            URL url = TransportClientSearchSupport.class.getResource("/org/xbib/elasticsearch/cluster.properties");
             if (url != null) {
                 InputStream in = url.openStream();
                 Properties p = new Properties();
@@ -271,11 +273,11 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
     }
 
     @Override
-    public ElasticsearchHelper waitForHealthyCluster() throws IOException {
+    public TransportClientSearchSupport waitForHealthyCluster() throws IOException {
         return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
     }
 
-    public ElasticsearchHelper waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public TransportClientSearchSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =
@@ -295,17 +297,17 @@ public abstract class ElasticsearchHelper implements IElasticsearch {
         }
         IndicesStatusResponse response = client.admin().indices()
                 .status(new IndicesStatusRequest(index())
-                .recovery(true))
+                        .recovery(true))
                 .actionGet();
         return response.totalShards();
     }
 
-    protected ElasticsearchHelper enableRefreshInterval() {
+    protected TransportClientSearchSupport enableRefreshInterval() {
         update("refresh_interval", 1000);
         return this;
     }
 
-    protected ElasticsearchHelper disableRefreshInterval() {
+    protected TransportClientSearchSupport disableRefreshInterval() {
         update("refresh_interval", -1);
         return this;
     }

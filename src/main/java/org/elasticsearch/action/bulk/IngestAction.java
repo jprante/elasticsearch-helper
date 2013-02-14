@@ -24,14 +24,14 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.TransportRequestOptions;
 
 /**
- * Concurrent bulk action
+ * Ingest action
  */
-public class ConcurrentBulkAction extends Action<ConcurrentBulkRequest, BulkResponse, ConcurrentBulkRequestBuilder> {
+public class IngestAction extends Action<IngestRequest, BulkResponse, IngestRequestBuilder> {
 
-    public static final ConcurrentBulkAction INSTANCE = new ConcurrentBulkAction();
-    public static final String NAME = "concurrent_bulk";
+    public static final IngestAction INSTANCE = new IngestAction();
+    public static final String NAME = "ingest";
 
-    private ConcurrentBulkAction() {
+    private IngestAction() {
         super(NAME);
     }
 
@@ -41,14 +41,14 @@ public class ConcurrentBulkAction extends Action<ConcurrentBulkRequest, BulkResp
     }
 
     @Override
-    public ConcurrentBulkRequestBuilder newRequestBuilder(Client client) {
-        return new ConcurrentBulkRequestBuilder(client);
+    public IngestRequestBuilder newRequestBuilder(Client client) {
+        return new IngestRequestBuilder(client);
     }
 
     @Override
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
-                .withType(TransportRequestOptions.Type.fromString(settings.get("action.bulk.concurrent.transport.type", TransportRequestOptions.Type.LOW.toString())))
-                .withCompress(settings.getAsBoolean("action.bulk.concurrent.compress", true));
+                .withType(TransportRequestOptions.Type.fromString(settings.get("action.ingest.transport.type", TransportRequestOptions.Type.LOW.toString())))
+                .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }
 }

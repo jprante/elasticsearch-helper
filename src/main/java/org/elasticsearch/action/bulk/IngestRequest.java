@@ -46,17 +46,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public class ConcurrentBulkRequest extends BulkRequest {
+public class IngestRequest extends BulkRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
     protected final Queue<ActionRequest> requests = Queues.newConcurrentLinkedQueue();
-    private boolean listenerThreaded = false;
+    private final AtomicLong sizeInBytes = new AtomicLong();
     private ReplicationType replicationType = ReplicationType.DEFAULT;
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
     private boolean refresh = false;
-    private final AtomicLong sizeInBytes = new AtomicLong();
 
-    public ConcurrentBulkRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
+    IngestRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
         this.requests.addAll(requests);
         this.sizeInBytes.set(sizeInBytes);
         return this;
@@ -65,14 +64,14 @@ public class ConcurrentBulkRequest extends BulkRequest {
     /**
      * Adds a list of requests to be executed. Either index or delete requests.
      */
-    public ConcurrentBulkRequest add(ActionRequest... requests) {
+    public IngestRequest add(ActionRequest... requests) {
         for (ActionRequest request : requests) {
             add(request);
         }
         return this;
     }
 
-    public ConcurrentBulkRequest add(ActionRequest request) {
+    public IngestRequest add(ActionRequest request) {
         if (request instanceof IndexRequest) {
             add((IndexRequest) request);
         } else if (request instanceof DeleteRequest) {
@@ -86,7 +85,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
     /**
      * Adds a list of requests to be executed. Either index or delete requests.
      */
-    public ConcurrentBulkRequest add(Iterable<ActionRequest> requests) {
+    public IngestRequest add(Iterable<ActionRequest> requests) {
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {
                 add((IndexRequest) request);
@@ -104,12 +103,12 @@ public class ConcurrentBulkRequest extends BulkRequest {
      * the same behavior of {@link org.elasticsearch.action.index.IndexRequest} (for example, if no id is
      * provided, one will be generated, or usage of the create flag).
      */
-    public ConcurrentBulkRequest add(IndexRequest request) {
+    public IngestRequest add(IndexRequest request) {
         request.beforeLocalFork();
         return internalAdd(request);
     }
 
-    ConcurrentBulkRequest internalAdd(IndexRequest request) {
+    IngestRequest internalAdd(IndexRequest request) {
         requests.add(request);
         sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
         return this;
@@ -118,7 +117,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public ConcurrentBulkRequest add(DeleteRequest request) {
+    public IngestRequest add(DeleteRequest request) {
         requests.add(request);
         sizeInBytes.addAndGet(REQUEST_OVERHEAD);
         return this;
@@ -142,21 +141,21 @@ public class ConcurrentBulkRequest extends BulkRequest {
     /**
      * Adds a framed data in binary format
      */
-    public ConcurrentBulkRequest add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
+    public IngestRequest add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
         return add(data, from, length, contentUnsafe, null, null);
     }
 
     /**
      * Adds a framed data in binary format
      */
-    public ConcurrentBulkRequest add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public IngestRequest add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         return add(new BytesArray(data, from, length), contentUnsafe, defaultIndex, defaultType);
     }
 
     /**
      * Adds a framed data in binary format
      */
-    public ConcurrentBulkRequest add(BytesReference data, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public IngestRequest add(BytesReference data, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         XContent xContent = XContentFactory.xContent(data);
         int from = 0;
         int length = data.length();
@@ -275,7 +274,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
      * Sets the consistency level of write. Defaults to
      * {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}
      */
-    public ConcurrentBulkRequest consistencyLevel(WriteConsistencyLevel consistencyLevel) {
+    public IngestRequest consistencyLevel(WriteConsistencyLevel consistencyLevel) {
         this.consistencyLevel = consistencyLevel;
         return this;
     }
@@ -289,7 +288,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
      * operations to be searchable. Note, heavy indexing should not set this to
      * <tt>true</tt>. Defaults to <tt>false</tt>.
      */
-    public ConcurrentBulkRequest refresh(boolean refresh) {
+    public IngestRequest refresh(boolean refresh) {
         this.refresh = refresh;
         return this;
     }
@@ -301,7 +300,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
     /**
      * Set the replication type for this operation.
      */
-    public ConcurrentBulkRequest replicationType(ReplicationType replicationType) {
+    public IngestRequest replicationType(ReplicationType replicationType) {
         this.replicationType = replicationType;
         return this;
     }
@@ -316,7 +315,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
      *
      * @return another bulk request
      */
-    public synchronized ConcurrentBulkRequest takeAll() {
+    public synchronized IngestRequest takeAll() {
         return take(requests.size());
     }
 
@@ -329,7 +328,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
      * @param numRequests
      * @return a partial bulk request
      */
-    public synchronized ConcurrentBulkRequest take(int numRequests) {
+    public synchronized IngestRequest take(int numRequests) {
         Collection<ActionRequest> partRequest = Lists.newArrayListWithCapacity(numRequests);
         long size = 0L;
         for (int i = 0; i < numRequests; i++) {
@@ -347,7 +346,7 @@ public class ConcurrentBulkRequest extends BulkRequest {
                 partRequest.add(request);
             }
         }
-        return new ConcurrentBulkRequest().requests(partRequest, size);
+        return new IngestRequest().requests(partRequest, size);
     }
 
     private int findNextMarker(byte marker, int from, BytesReference data, int length) {

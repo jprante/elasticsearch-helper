@@ -32,7 +32,7 @@
         <repository>
             <id>bintray-jprante-elasticsearch-plugins-elasticsearch-transport-support</id>
             <name>jprante-elasticsearch-plugins-elasticsearch-transport-support</name>
-            <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-transport-support/release</url>
+            <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-transport-support</url>
         </repository>
     </distributionManagement>
 

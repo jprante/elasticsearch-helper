@@ -36,17 +36,17 @@ import org.elasticsearch.common.Nullable;
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<ConcurrentBulkRequest, BulkResponse, ConcurrentBulkRequestBuilder> {
+public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, BulkResponse, IngestRequestBuilder> {
 
-    public ConcurrentBulkRequestBuilder(Client client) {
-        super((InternalClient) client, new ConcurrentBulkRequest());
+    public IngestRequestBuilder(Client client) {
+        super((InternalClient) client, new IngestRequest());
     }
 
     /**
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public ConcurrentBulkRequestBuilder add(IndexRequest request) {
+    public IngestRequestBuilder add(IndexRequest request) {
         super.request.add(request);
         return this;
     }
@@ -55,7 +55,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public ConcurrentBulkRequestBuilder add(IndexRequestBuilder request) {
+    public IngestRequestBuilder add(IndexRequestBuilder request) {
         super.request.add(request.request());
         return this;
     }
@@ -63,7 +63,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public ConcurrentBulkRequestBuilder add(DeleteRequest request) {
+    public IngestRequestBuilder add(DeleteRequest request) {
         super.request.add(request);
         return this;
     }
@@ -71,7 +71,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public ConcurrentBulkRequestBuilder add(DeleteRequestBuilder request) {
+    public IngestRequestBuilder add(DeleteRequestBuilder request) {
         super.request.add(request.request());
         return this;
     }
@@ -79,7 +79,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Adds a framed data in binary format
      */
-    public ConcurrentBulkRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
+    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
         request.add(data, from, length, contentUnsafe, null, null);
         return this;
     }
@@ -87,7 +87,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Adds a framed data in binary format
      */
-    public ConcurrentBulkRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         request.add(data, from, length, contentUnsafe, defaultIndex, defaultType);
         return this;
     }
@@ -95,7 +95,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Set the replication type for this operation.
      */
-    public ConcurrentBulkRequestBuilder setReplicationType(ReplicationType replicationType) {
+    public IngestRequestBuilder setReplicationType(ReplicationType replicationType) {
         request.replicationType(replicationType);
         return this;
     }
@@ -103,7 +103,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
     /**
      * Sets the consistency level. Defaults to {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}.
      */
-    public ConcurrentBulkRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
+    public IngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
         return this;
     }
@@ -113,7 +113,7 @@ public class ConcurrentBulkRequestBuilder extends ActionRequestBuilder<Concurren
      * be searchable. Note, heavy indexing should not set this to <tt>true</tt>. Defaults
      * to <tt>false</tt>.
      */
-    public ConcurrentBulkRequestBuilder setRefresh(boolean refresh) {
+    public IngestRequestBuilder setRefresh(boolean refresh) {
         request.refresh(refresh);
         return this;
     }

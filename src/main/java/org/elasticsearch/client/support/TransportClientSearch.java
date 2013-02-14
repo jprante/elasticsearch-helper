@@ -29,22 +29,22 @@ import java.net.URI;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public interface IElasticsearch {
+public interface TransportClientSearch {
 
     /**
      * Set settings
      *
      * @param settings
      */
-    IElasticsearch settings(Settings settings);
+    TransportClientSearch settings(Settings settings);
 
     /**
      * Set index
      *
      * @param index
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientHelper
      */
-    IElasticsearch index(String index);
+    TransportClientSearch index(String index);
 
     /**
      * Get index
@@ -56,19 +56,19 @@ public interface IElasticsearch {
     /**
      * Create a new client
      */
-    IElasticsearch newClient();
+    TransportClientSearch newClient();
 
     /**
      * Create a new client
      */
-    IElasticsearch newClient(URI uri);
+    TransportClientSearch newClient(URI uri);
 
     /**
      * Wait for healthy cluster
      *
      * @throws IOException
      */
-    IElasticsearch waitForHealthyCluster() throws IOException;
+    TransportClientSearch waitForHealthyCluster() throws IOException;
 
     /**
      * Create new search request

@@ -24,50 +24,50 @@ import java.io.IOException;
 import java.net.URI;
 
 /**
- * Elasticsearch Indexer Interface
+ * TransportClientIngest is an interface for providing convenient ingest methods.
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public interface IElasticsearchIndexer {
+public interface TransportClientIngest {
 
     /**
      * Set settings
      *
      * @param settings the settings
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer settings(Settings settings);
+    TransportClientIngest settings(Settings settings);
 
     /**
      * Create a new client
      *
-     * @return ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer newClient();
+    TransportClientIngest newClient();
 
     /**
      * Create a new client
      *
      * @param uri the URI to connect to
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer newClient(URI uri);
+    TransportClientIngest newClient(URI uri);
 
     /**
      * Wait for healthy cluster
      *
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      * @throws java.io.IOException
      */
-    IElasticsearchIndexer waitForHealthyCluster() throws IOException;
+    TransportClientIngest waitForHealthyCluster() throws IOException;
 
     /**
      * Set type
      *
      * @param type the type
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer type(String type);
+    TransportClientIngest type(String type);
 
     /**
      * Returns the type
@@ -80,25 +80,25 @@ public interface IElasticsearchIndexer {
      * Enable or disable automatic date detection
      *
      * @param dateDetection
-     * @return this ElasticsearchHelper Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer dateDetection(boolean dateDetection);
+    TransportClientIngest dateDetection(boolean dateDetection);
 
     /**
      * Set maximum number of bulk actions
      *
      * @param bulkActions
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer maxBulkActions(int bulkActions);
+    TransportClientIngest maxBulkActions(int bulkActions);
 
     /**
      * Set maximum concurent bulk requests
      *
      * @param maxConcurentBulkRequests
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer maxConcurrentBulkRequests(int maxConcurentBulkRequests);
+    TransportClientIngest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
     /**
      * Create document
@@ -107,9 +107,9 @@ public interface IElasticsearchIndexer {
      * @param type
      * @param id
      * @param source
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer create(String index, String type, String id, String source);
+    TransportClientIngest create(String index, String type, String id, String source);
 
     /**
      * Index document
@@ -118,9 +118,9 @@ public interface IElasticsearchIndexer {
      * @param type
      * @param id
      * @param source
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer index(String index, String type, String id, String source);
+    TransportClientIngest index(String index, String type, String id, String source);
 
     /**
      * Delete document
@@ -128,30 +128,30 @@ public interface IElasticsearchIndexer {
      * @param index
      * @param type
      * @param id
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer delete(String index, String type, String id);
+    TransportClientIngest delete(String index, String type, String id);
 
     /**
      * Ensure that all bulk
      *
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer flush();
+    TransportClientIngest flush();
 
     /**
      * Start bulk mode. Disables refresh.
      *
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer startBulkMode();
+    TransportClientIngest startBulkMode();
 
     /**
      * Stops bulk mode. Enables refresh.
      *
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer stopBulkMode();
+    TransportClientIngest stopBulkMode();
 
     /**
      * Add replica level.
@@ -162,7 +162,7 @@ public interface IElasticsearchIndexer {
     int updateReplicaLevel(int level) throws IOException;
 
     /**
-     * Get the indexed volume so far.
+     * Get the ingested data volume so far.
      *
      * @return the volume in bytes
      */
@@ -171,16 +171,16 @@ public interface IElasticsearchIndexer {
     /**
      * Create a new index
      *
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer newIndex();
+    TransportClientIngest newIndex();
 
     /**
      * Delete index
      *
-     * @return this Elasticsearch Indexer Interface
+     * @return this TransportClientIndexer
      */
-    IElasticsearchIndexer deleteIndex();
+    TransportClientIngest deleteIndex();
 
     /**
      * Shutdown this Elasticsearch Indexer

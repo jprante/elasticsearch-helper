@@ -16,59 +16,57 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.bulk.support;
+package org.elasticsearch.client.support;
 
-import org.elasticsearch.action.search.support.MockElasticsearch;
-import org.elasticsearch.client.support.IElasticsearchIndexer;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
- * Elasticsearch Indexer Mockup
+ * TransportClientIngest Mockup. Do not perform actions on a real cluster.
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class MockElasticsearchIndexer extends MockElasticsearch implements IElasticsearchIndexer {
+public class MockTransportClientIngest extends MockTransportClientSearch implements TransportClientIngest {
 
     private String type;
 
     @Override
-    public MockElasticsearchIndexer settings(Settings settings) {
+    public MockTransportClientIngest settings(Settings settings) {
         this.settings = settings;
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer newClient() {
+    public MockTransportClientIngest newClient() {
         super.newClient();
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer newClient(URI uri) {
+    public MockTransportClientIngest newClient(URI uri) {
         super.newClient(uri);
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer dateDetection(boolean dateDetection) {
+    public MockTransportClientIngest dateDetection(boolean dateDetection) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer maxBulkActions(int maxBulkActions) {
+    public MockTransportClientIngest maxBulkActions(int maxBulkActions) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockTransportClientIngest maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer waitForHealthyCluster() throws IOException {
+    public MockTransportClientIngest waitForHealthyCluster() throws IOException {
         return this;
     }
 
@@ -78,7 +76,7 @@ public class MockElasticsearchIndexer extends MockElasticsearch implements IElas
     }
 
     @Override
-    public MockElasticsearchIndexer type(String type) {
+    public MockTransportClientIngest type(String type) {
         this.type = type;
         return this;
     }
@@ -89,32 +87,32 @@ public class MockElasticsearchIndexer extends MockElasticsearch implements IElas
     }
 
     @Override
-    public MockElasticsearchIndexer create(String index, String type, String id, String source) {
+    public MockTransportClientIngest create(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer index(String index, String type, String id, String source) {
+    public MockTransportClientIngest index(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer delete(String index, String type, String id) {
+    public MockTransportClientIngest delete(String index, String type, String id) {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer flush() {
+    public MockTransportClientIngest flush() {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer startBulkMode() {
+    public MockTransportClientIngest startBulkMode() {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer stopBulkMode() {
+    public MockTransportClientIngest stopBulkMode() {
         return this;
     }
 
@@ -124,12 +122,12 @@ public class MockElasticsearchIndexer extends MockElasticsearch implements IElas
     }
 
     @Override
-    public MockElasticsearchIndexer deleteIndex() {
+    public MockTransportClientIngest deleteIndex() {
         return this;
     }
 
     @Override
-    public MockElasticsearchIndexer newIndex() {
+    public MockTransportClientIngest newIndex() {
         return this;
     }
 }

@@ -21,9 +21,13 @@ package org.elasticsearch.action.bulk;
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 
@@ -38,29 +42,88 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p/>
  * In order to create a new bulk processor, use the {@link Builder}.
  */
-public class ConcurrentBulkProcessor {
+public class IngestProcessor {
 
     private final Client client;
-    private final Listener listener;
-    private final int maxConcurrentBulkRequests;
-    private final int maxBulkActions;
-    private final int maxBulkSize;
+    private final int concurrency;
+    private final int actions;
+    private final int maxVolume;
     private final Semaphore semaphore;
     private final AtomicLong executionIdGen = new AtomicLong();
-    private final ConcurrentBulkRequest bulkRequest = new ConcurrentBulkRequest();
+    private final IngestRequest ingestRequest = new IngestRequest();
+    private Listener listener;
     private volatile boolean closed = false;
 
-    ConcurrentBulkProcessor(Client client, Listener listener, int maxConcurrentBulkRequests, int maxBulkActions, ByteSizeValue maxBulkSize) {
-        this.client = client;
-        this.listener = listener;
-        this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
-        this.maxBulkActions = maxBulkActions;
-        this.maxBulkSize = maxBulkSize.bytesAsInt();
-        this.semaphore = new Semaphore(maxConcurrentBulkRequests);
+    public static Builder builder(Client client) {
+        return new Builder(client);
     }
 
-    public static Builder builder(Client client, Listener listener) {
-        return new Builder(client, listener);
+
+    IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
+        this.client = client;
+        this.concurrency = concurrency;
+        this.actions = actions;
+        this.maxVolume = maxVolume.bytesAsInt();
+        this.semaphore = new Semaphore(concurrency);
+    }
+
+    public IngestProcessor listener(Listener listener) {
+        this.listener = listener;
+        return this;
+    }
+
+    public IngestProcessor listenerThreaded(boolean threaded) {
+        ingestRequest.listenerThreaded(threaded);
+        return this;
+    }
+
+    public IngestProcessor replicationType(ReplicationType type) {
+        ingestRequest.replicationType(type);
+        return this;
+    }
+
+    public IngestProcessor consistencyLevel(WriteConsistencyLevel level) {
+        ingestRequest.consistencyLevel(level);
+        return this;
+    }
+
+    public IngestProcessor refresh(boolean refresh) {
+        ingestRequest.refresh(refresh);
+        return this;
+    }
+
+    public boolean refresh() {
+        return ingestRequest.refresh();
+    }
+
+    /**
+     * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list
+     * of actions to execute. Follows the same behavior of
+     * {@link org.elasticsearch.action.index.IndexRequest} (for example, if no
+     * id is provided, one will be generated, or usage of the create flag).
+     */
+    public IngestProcessor add(IndexRequest request) {
+        ingestRequest.add((ActionRequest) request);
+        flushIfNeeded();
+        return this;
+    }
+
+    /**
+     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list
+     * of actions to execute.
+     */
+    public IngestProcessor add(DeleteRequest request) {
+        ingestRequest.add((ActionRequest) request);
+        flushIfNeeded();
+        return this;
+    }
+
+    public IngestProcessor add(BytesReference data, boolean contentUnsafe,
+                               @Nullable String defaultIndex, @Nullable String defaultType,
+                               Listener listener) throws Exception {
+        ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
+        flushIfNeeded(listener);
+        return this;
     }
 
     /**
@@ -77,52 +140,34 @@ public class ConcurrentBulkProcessor {
     }
 
     /**
-     * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list
-     * of actions to execute. Follows the same behavior of
-     * {@link org.elasticsearch.action.index.IndexRequest} (for example, if no
-     * id is provided, one will be generated, or usage of the create flag).
-     */
-    public ConcurrentBulkProcessor add(IndexRequest request) {
-        bulkRequest.add((ActionRequest) request);
-        flushIfNeeded();
-        return this;
-    }
-
-    /**
-     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list
-     * of actions to execute.
-     */
-    public ConcurrentBulkProcessor add(DeleteRequest request) {
-        bulkRequest.add((ActionRequest) request);
-        flushIfNeeded();
-        return this;
-    }
-
-    /**
      * Flush this bulk processor, write all requests
      */
     public void flush() {
-        synchronized (bulkRequest) {
-            if (bulkRequest.numberOfActions() > 0) {
-                flush(bulkRequest.takeAll());
+        synchronized (ingestRequest) {
+            if (ingestRequest.numberOfActions() > 0) {
+                process(ingestRequest.takeAll(), listener);
             }
         }
+    }
+
+    private void flushIfNeeded() {
+        flushIfNeeded(listener);
     }
 
     /**
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to push
      */
-    private void flushIfNeeded() {
+    private void flushIfNeeded(Listener listener) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("bulk process already closed");
+            throw new ElasticSearchIllegalStateException("ingest processor already closed");
         }
-        synchronized (bulkRequest) {
-            if (maxBulkSize > 0 && bulkRequest.estimatedSizeInBytes() >= maxBulkSize) {
-                flush(bulkRequest.takeAll());
+        synchronized (ingestRequest) {
+            if (maxVolume > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume) {
+                process(ingestRequest.takeAll(), listener);
             } else {
-                if (maxBulkActions > 0 && bulkRequest.numberOfActions() >= maxBulkActions) {
-                    flush(bulkRequest.take(maxBulkActions));
+                if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
+                    process(ingestRequest.take(actions), listener);
                 }
             }
         }
@@ -130,18 +175,23 @@ public class ConcurrentBulkProcessor {
 
     /**
      * A thread can flush a partial ConcurrentBulkRequest here.
-     * Check for maximum concurrency and wait for outstanding requests by the help
+     * Check for concurrency limit and wait for outstanding requests by the help
      * of a semaphore.
      *
-     * @param request
+     * @param request the ingest request
      */
-    private void flush(final ConcurrentBulkRequest request) {
+    private void process(final IngestRequest request, final Listener listener) {
         if (request.numberOfActions() == 0) {
             return;
         }
+        // only works with a listener
+        if (listener == null) {
+            return;
+        }
+
         final long executionId = executionIdGen.incrementAndGet();
 
-        if (maxConcurrentBulkRequests <= 0) {
+        if (concurrency <= 0) {
             // execute in a blocking fashion...
             try {
                 listener.beforeBulk(executionId, request);
@@ -150,13 +200,13 @@ public class ConcurrentBulkProcessor {
                 listener.afterBulk(executionId, e);
             }
         } else {
+            listener.beforeBulk(executionId, request);
             try {
                 semaphore.acquire();
             } catch (InterruptedException e) {
                 listener.afterBulk(executionId, e);
                 return;
             }
-            listener.beforeBulk(executionId, request);
             client.bulk(request, new ActionListener<BulkResponse>() {
                 @Override
                 public void onResponse(BulkResponse response) {
@@ -179,12 +229,20 @@ public class ConcurrentBulkProcessor {
         }
     }
 
-    public void waitForAllResponses() throws InterruptedException {
+    /**
+     * Wait for all outstanding bulk requests.
+     * At maximum, the waiting time is 60 seconds.
+     *
+     * @return true if there are no outstanding bulk requests, false otherwise
+     * @throws InterruptedException
+     */
+    public synchronized boolean waitForAllResponses() throws InterruptedException {
         int n = 60;
-        while (semaphore.availablePermits() < maxConcurrentBulkRequests && n > 0) {
+        while (semaphore.availablePermits() < concurrency && n > 0) {
             Thread.sleep(1000L);
             n--;
         }
+        return semaphore.availablePermits() == concurrency;
     }
 
     /**
@@ -195,7 +253,7 @@ public class ConcurrentBulkProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, ConcurrentBulkRequest request);
+        void beforeBulk(long executionId, IngestRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
@@ -214,19 +272,26 @@ public class ConcurrentBulkProcessor {
     public static class Builder {
 
         private final Client client;
-        private final Listener listener;
-        private int maxConcurrentBulkRequests = 10;
-        private int maxBulkActions = 100;
-        private ByteSizeValue maxBulkSize = new ByteSizeValue(5, ByteSizeUnit.MB);
+        private Listener listener;
+        private int concurrency = 30;
+        private int actions = 100;
+        private ByteSizeValue volume = new ByteSizeValue(5, ByteSizeUnit.MB);
 
         /**
-         * Creates a builder of bulk processor with the client to use and the
-         * listener that will be used to be notified on the completion of bulk
-         * requests.
+         * Creates a builder of bulk processor with the client to use
          */
-        public Builder(Client client, Listener listener) {
+        public Builder(Client client) {
             this.client = client;
+        }
+
+        /**
+         *  Set the listener that will be used to be notified on the completion of bulk requests.
+         * @param listener
+         * @return the builder
+         */
+        public Builder listener(Listener listener) {
             this.listener = listener;
+            return this;
         }
 
         /**
@@ -236,8 +301,8 @@ public class ConcurrentBulkProcessor {
          * executed while accumulating new bulk requests. Defaults to
          * <tt>1</tt>.
          */
-        public Builder maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
-            this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
+        public Builder concurrency(int concurrency) {
+            this.concurrency = concurrency;
             return this;
         }
 
@@ -246,26 +311,27 @@ public class ConcurrentBulkProcessor {
          * currently added. Defaults to <tt>1000</tt>. Can be set to <tt>-1</tt>
          * to disable it.
          */
-        public Builder maxBulkActions(int maxBulkActions) {
-            this.maxBulkActions = maxBulkActions;
+        public Builder actions(int actions) {
+            this.actions = actions;
             return this;
         }
 
         /**
-         * Sets when to flush a new bulk request based on the size of actions
+         * When to flush a new bulk request based on the byte volume of actions
          * currently added. Defaults to <tt>5mb</tt>. Can be set to <tt>-1</tt>
          * to disable it.
          */
-        public Builder maxBulkSize(ByteSizeValue maxBulkSize) {
-            this.maxBulkSize = maxBulkSize;
+        public Builder maxVolume(ByteSizeValue volume) {
+            this.volume = volume;
             return this;
         }
 
         /**
          * Builds a new bulk processor.
          */
-        public ConcurrentBulkProcessor build() {
-            return new ConcurrentBulkProcessor(client, listener, maxConcurrentBulkRequests, maxBulkActions, maxBulkSize);
+        public IngestProcessor build() {
+            return new IngestProcessor(client, concurrency, actions, volume)
+                    .listener(listener);
         }
     }
 }

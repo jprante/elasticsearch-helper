@@ -18,27 +18,28 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.action.bulk.support.ElasticsearchIndexer;
+import org.elasticsearch.client.support.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class BulkIndexerTests extends AbstractNodeTest {
+public class IngestTests extends AbstractNodeTest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkIndexerTests.class.getName());
+    private final static ESLogger logger = Loggers.getLogger(IngestTests.class);
 
     @Test
     public void testDeleteIndex() {
 
-        final ElasticsearchIndexer es = new ElasticsearchIndexer()
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .settings(defaultSettings)
-                .newClient()
+                .newClient(URI.create("es://localhost:9300"))
                 .index("test")
                 .type("test");
 
@@ -54,17 +55,17 @@ public class BulkIndexerTests extends AbstractNodeTest {
     }
 
     @Test
-    public void testSimpleBulk() {
+    public void testSimpleIngest() {
 
-        final ElasticsearchIndexer es = new ElasticsearchIndexer()
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .settings(defaultSettings)
-                .newClient()
+                .newClient(URI.create("es://localhost:9300"))
                 .index("test")
                 .type("test");
         try {
             es.deleteIndex();
-            es.index(); // create index
-            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc bulk
+            es.newIndex();
+            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -74,16 +75,15 @@ public class BulkIndexerTests extends AbstractNodeTest {
     }
 
     @Test
-    public void testRandomBulk() {
+    public void testRandomIngest() {
 
-        final ElasticsearchIndexer es = new ElasticsearchIndexer()
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .settings(defaultSettings)
                 .newClient();
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
@@ -92,14 +92,15 @@ public class BulkIndexerTests extends AbstractNodeTest {
     }
 
     @Test
-    public void testThreadedBulk() throws Exception {
-        final ElasticsearchIndexer es = new ElasticsearchIndexer()
+    public void testThreadedIngest() throws Exception {
+
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .newClient();
         try {
             int min = 0;
             int max = 4;
             ThreadPoolExecutor pool = EsExecutors.newScalingExecutorService(min, max, 100, TimeUnit.DAYS,
-                    EsExecutors.daemonThreadFactory("bulktest"));
+                    EsExecutors.daemonThreadFactory("ingest"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {

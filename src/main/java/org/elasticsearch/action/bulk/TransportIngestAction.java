@@ -60,7 +60,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p/>
  * This action registers a ConcurrentTransportHandler to the transport service
  */
-public class ConcurrentTransportBulkAction extends TransportAction<ConcurrentBulkRequest, BulkResponse> {
+public class TransportIngestAction extends TransportAction<IngestRequest, BulkResponse> {
 
     private final AutoCreateIndex autoCreateIndex;
 
@@ -73,8 +73,8 @@ public class ConcurrentTransportBulkAction extends TransportAction<ConcurrentBul
     private final TransportCreateIndexAction createIndexAction;
 
     @Inject
-    public ConcurrentTransportBulkAction(Settings settings, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                         TransportShardBulkAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
+    public TransportIngestAction(Settings settings, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
+                                 TransportShardBulkAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
         super(settings, threadPool);
         this.clusterService = clusterService;
         this.shardBulkAction = shardBulkAction;
@@ -83,11 +83,11 @@ public class ConcurrentTransportBulkAction extends TransportAction<ConcurrentBul
         this.autoCreateIndex = new AutoCreateIndex(settings);
         this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
 
-        transportService.registerHandler(ConcurrentBulkAction.NAME, new ConcurrentTransportHandler());
+        transportService.registerHandler(IngestAction.NAME, new ConcurrentTransportHandler());
     }
 
     @Override
-    protected void doExecute(final ConcurrentBulkRequest bulkRequest, final ActionListener<BulkResponse> listener) {
+    protected void doExecute(final IngestRequest bulkRequest, final ActionListener<BulkResponse> listener) {
         final long startTime = System.currentTimeMillis();
         Set<String> indices = Sets.newHashSet();
         for (ActionRequest request : bulkRequest.requests) {
@@ -141,7 +141,7 @@ public class ConcurrentTransportBulkAction extends TransportAction<ConcurrentBul
         }
     }
 
-    private void executeBulk(final ConcurrentBulkRequest bulkRequest, final long startTime, final ActionListener<BulkResponse> listener) {
+    private void executeBulk(final IngestRequest bulkRequest, final long startTime, final ActionListener<BulkResponse> listener) {
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
@@ -260,15 +260,15 @@ public class ConcurrentTransportBulkAction extends TransportAction<ConcurrentBul
         }
     }
 
-    class ConcurrentTransportHandler extends BaseTransportRequestHandler<ConcurrentBulkRequest> {
+    class ConcurrentTransportHandler extends BaseTransportRequestHandler<IngestRequest> {
 
         @Override
-        public ConcurrentBulkRequest newInstance() {
-            return new ConcurrentBulkRequest();
+        public IngestRequest newInstance() {
+            return new IngestRequest();
         }
 
         @Override
-        public void messageReceived(final ConcurrentBulkRequest request, final TransportChannel channel) throws Exception {
+        public void messageReceived(final IngestRequest request, final TransportChannel channel) throws Exception {
             // no need to use threaded listener, since we just send a response
             request.listenerThreaded(false);
             execute(request, new ActionListener<BulkResponse>() {

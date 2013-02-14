@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.search.support;
+package org.elasticsearch.client.support;
 
-import org.elasticsearch.client.support.ElasticsearchHelper;
+import org.elasticsearch.action.search.support.ElasticsearchRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -37,20 +37,20 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Elasticsearch mockup
+ * TransportClientSearch mockup. Do not perform actions on a real cluster.
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class MockElasticsearch extends ElasticsearchHelper {
+public class MockTransportClientSearch extends TransportClientSearchSupport {
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(MockElasticsearch.class.getName());
+    private final ESLogger logger = ESLoggerFactory.getLogger(MockTransportClientSearch.class.getName());
     protected Settings settings;
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
 
-    public MockElasticsearch() {
+    public MockTransportClientSearch() {
     }
 
-    public MockElasticsearch settings(Settings settings) {
+    public MockTransportClientSearch settings(Settings settings) {
         this.settings = settings;
         return this;
     }
@@ -69,16 +69,16 @@ public class MockElasticsearch extends ElasticsearchHelper {
     }
 
     @Override
-    public MockElasticsearch index(String index) {
+    public MockTransportClientSearch index(String index) {
         super.index(index);
         return this;
     }
 
-    public MockElasticsearch newClient() {
+    public MockTransportClientSearch newClient() {
         return newClient(findURI());
     }
 
-    public MockElasticsearch newClient(URI uri) {
+    public MockTransportClientSearch newClient(URI uri) {
         settings = initialSettings(uri);
         return this;
     }
@@ -149,7 +149,7 @@ public class MockElasticsearch extends ElasticsearchHelper {
         logger.info("configured addresses to connect = {}", addresses);
     }
 
-    public MockElasticsearch waitForHealthyCluster() throws IOException {
+    public MockTransportClientSearch waitForHealthyCluster() throws IOException {
         return this;
     }
 

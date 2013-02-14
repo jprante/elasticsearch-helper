@@ -18,30 +18,32 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.action.bulk.support.ElasticsearchIndexer;
+import org.elasticsearch.client.support.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.Loggers;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 
 public class ReplicaLevelTests extends AbstractNodeTest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTests.class.getName());
+    private final static ESLogger logger = Loggers.getLogger(ReplicaLevelTests.class);
 
     @Test
     public void testReplicaLevel() throws IOException {
 
         int numberOfShards = 1;
         int replicaLevel = 10;
-        final ElasticsearchIndexer es = new ElasticsearchIndexer()
+
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .newClient()
                 .index("replicatest")
                 .type("replicatest")
                 .numberOfShards(numberOfShards)
                 .numberOfReplicas(0)
                 .newIndex();
+
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
