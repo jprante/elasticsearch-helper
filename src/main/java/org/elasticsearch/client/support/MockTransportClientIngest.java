@@ -76,6 +76,12 @@ public class MockTransportClientIngest extends MockTransportClientSearch impleme
     }
 
     @Override
+    public MockTransportClientIngest index(String index) {
+        super.index(index);
+        return this;
+    }
+
+    @Override
     public MockTransportClientIngest type(String type) {
         this.type = type;
         return this;

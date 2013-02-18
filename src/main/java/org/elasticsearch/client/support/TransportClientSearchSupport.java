@@ -74,6 +74,8 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
     // the default index
     private String index;
 
+    private boolean connected;
+
     public TransportClientSearchSupport() {
     }
 
@@ -106,12 +108,14 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
             client = null;
         }
         if (client == null) {
+            connected = false;
             if (settings == null) {
                 settings = initialSettings(uri);
             }
             client = new TransportClient(settings);
             try {
                 connect(uri);
+                connected = !client.connectedNodes().isEmpty();
             } catch (UnknownHostException e) {
                 logger.error(e.getMessage(), e);
             } catch (SocketException e) {
@@ -129,7 +133,44 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
      * @param uri
      * @return the settings
      */
-    protected abstract Settings initialSettings(URI uri);
+//    protected abstract Settings initialSettings(URI uri);
+    protected Settings initialSettings(URI uri) {
+        int n = Runtime.getRuntime().availableProcessors();
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .put("client.transport.sniff", true)
+                .put("transport.netty.worker_count", n * 4)
+                .put("transport.netty.connections_per_node.low", 0)
+                .put("transport.netty.connections_per_node.med", 0)
+                .put("transport.netty.connections_per_node.high", n * 4)
+                .put("threadpool.index.type", "fixed")
+                .put("threadpool.index.size", 1)
+                .put("threadpool.bulk.type", "fixed")
+                .put("threadpool.bulk.size", 1)
+                .put("threadpool.get.type", "fixed")
+                .put("threadpool.get.size", n * 4)
+                .put("threadpool.search.type", "fixed")
+                .put("threadpool.search.size", n * 4)
+                .put("threadpool.percolate.type", "fixed")
+                .put("threadpool.percolate.size", 1)
+                .put("threadpool.management.type", "fixed")
+                .put("threadpool.management.size", 1)
+                .put("threadpool.flush.type", "fixed")
+                .put("threadpool.flush.size", 1)
+                .put("threadpool.merge.type", "fixed")
+                .put("threadpool.merge.size", 1)
+                .put("threadpool.refresh.type", "fixed")
+                .put("threadpool.refresh.size", 1)
+                .put("threadpool.cache.type", "fixed")
+                .put("threadpool.cache.size", 1)
+                .put("threadpool.snapshot.type", "fixed")
+                .put("threadpool.snapshot.size", 1)
+                .build();
+    }
+    @Override
+    public boolean isConnected() {
+        return connected;
+    }
 
     @Override
     public synchronized void shutdown() {

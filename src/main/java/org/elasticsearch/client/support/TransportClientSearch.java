@@ -63,6 +63,8 @@ public interface TransportClientSearch {
      */
     TransportClientSearch newClient(URI uri);
 
+    boolean isConnected();
+
     /**
      * Wait for healthy cluster
      *

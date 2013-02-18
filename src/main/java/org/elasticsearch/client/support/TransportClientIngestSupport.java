@@ -194,8 +194,8 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
                 .put("transport.netty.connections_per_node.high", n * 4)
                 .put("threadpool.index.type", "fixed")
                 .put("threadpool.index.size", n * 4)
-                .put("threadpool.ingestProcessor.type", "fixed")
-                .put("threadpool.ingestProcessor.size", n * 4)
+                .put("threadpool.bulk.type", "fixed")
+                .put("threadpool.bulk.size", n * 4)
                 .put("threadpool.get.type", "fixed")
                 .put("threadpool.get.size", 1)
                 .put("threadpool.search.type", "fixed")
@@ -221,6 +221,11 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     public TransportClientIngestSupport index(String index) {
         super.index(index);
         return this;
+    }
+
+    @Override
+    public String index() {
+        return super.index();
     }
 
     @Override

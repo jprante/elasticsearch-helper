@@ -58,7 +58,6 @@ public class IngestProcessor {
         return new Builder(client);
     }
 
-
     IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
         this.client = client;
         this.concurrency = concurrency;
@@ -201,12 +200,15 @@ public class IngestProcessor {
             }
         } else {
             listener.beforeBulk(executionId, request);
+
+            // concurrency control
             try {
                 semaphore.acquire();
             } catch (InterruptedException e) {
                 listener.afterBulk(executionId, e);
                 return;
             }
+
             client.bulk(request, new ActionListener<BulkResponse>() {
                 @Override
                 public void onResponse(BulkResponse response) {

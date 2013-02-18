@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.client.support;
 
+import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
@@ -54,12 +55,33 @@ public interface TransportClientIngest {
     TransportClientIngest newClient(URI uri);
 
     /**
+     * Get connection status
+     * @return true is connected
+     */
+   boolean isConnected();
+
+    /**
      * Wait for healthy cluster
      *
      * @return this TransportClientIndexer
      * @throws java.io.IOException
      */
     TransportClientIngest waitForHealthyCluster() throws IOException;
+
+    /**
+     * Set index
+     *
+     * @param index the index
+     * @return this TransportClientIndexer
+     */
+    TransportClientIngest index(String index);
+
+    /**
+     * Returns the index
+     *
+     * @return the index
+     */
+    String index();
 
     /**
      * Set type
