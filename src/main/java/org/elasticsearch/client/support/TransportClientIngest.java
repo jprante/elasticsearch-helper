@@ -29,7 +29,7 @@ import java.net.URI;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public interface TransportClientIngest {
+public interface TransportClientIngest extends ClientIngest {
 
     /**
      * Set settings
@@ -77,26 +77,12 @@ public interface TransportClientIngest {
     TransportClientIngest index(String index);
 
     /**
-     * Returns the index
-     *
-     * @return the index
-     */
-    String index();
-
-    /**
      * Set type
      *
      * @param type the type
      * @return this TransportClientIndexer
      */
     TransportClientIngest type(String type);
-
-    /**
-     * Returns the type
-     *
-     * @return the type
-     */
-    String type();
 
     /**
      * Enable or disable automatic date detection

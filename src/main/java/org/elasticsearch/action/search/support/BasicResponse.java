@@ -32,17 +32,17 @@ import java.io.OutputStream;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class ElasticsearchResponse {
+public class BasicResponse {
 
     private SearchResponse searchResponse;
     private GetResponse getResponse;
 
-    public ElasticsearchResponse searchResponse(SearchResponse response) {
+    public BasicResponse searchResponse(SearchResponse response) {
         this.searchResponse = response;
         return this;
     }
 
-    public ElasticsearchResponse getResponse(GetResponse response) {
+    public BasicResponse getResponse(GetResponse response) {
         this.getResponse = response;
         return this;
     }
@@ -59,7 +59,7 @@ public class ElasticsearchResponse {
         return getResponse.exists();
     }
 
-    public ElasticsearchResponse toJson(OutputStream out) throws IOException {
+    public BasicResponse toJson(OutputStream out) throws IOException {
         if (out == null) {
             return this;
         }

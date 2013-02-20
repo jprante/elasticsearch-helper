@@ -24,7 +24,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
-import org.elasticsearch.action.search.support.ElasticsearchRequest;
+import org.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.logging.ESLogger;
@@ -133,7 +133,6 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
      * @param uri
      * @return the settings
      */
-//    protected abstract Settings initialSettings(URI uri);
     protected Settings initialSettings(URI uri) {
         int n = Runtime.getRuntime().availableProcessors();
         return ImmutableSettings.settingsBuilder()
@@ -184,14 +183,15 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
     }
 
     @Override
-    public ElasticsearchRequest newSearchRequest() {
-        return new ElasticsearchRequest()
-                .newRequest(client.prepareSearch().setPreference("_primary_first"));
+    public BasicRequest newSearchRequest() {
+        return new BasicRequest()
+                .newSearchRequest(client.prepareSearch().setPreference("_primary_first"));
     }
 
-    public ElasticsearchRequest newGetRequest() {
-        return new ElasticsearchRequest()
-                .newRequest(client.prepareGet());
+    @Override
+    public BasicRequest newGetRequest() {
+        return new BasicRequest()
+                .newGetRequest(client.prepareGet());
     }
 
     protected static URI findURI() {

@@ -422,7 +422,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
-            logger.error("ingestProcessor add of create failed: " + e.getMessage(), e);
+            logger.error("bulk add of create failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;
@@ -440,7 +440,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
-            logger.error("ingestProcessor add of index failed: " + e.getMessage(), e);
+            logger.error("bulk add of index failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;
@@ -458,7 +458,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         try {
             ingestProcessor.add(deleteRequest);
         } catch (Exception e) {
-            logger.error("ingestProcessor add of delete failed: " + e.getMessage(), e);
+            logger.error("bulk add of delete failed: " + e.getMessage(), e);
             enabled = false;
         }
         return this;

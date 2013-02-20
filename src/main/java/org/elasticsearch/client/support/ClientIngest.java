@@ -18,73 +18,64 @@
  */
 package org.elasticsearch.client.support;
 
-import org.elasticsearch.action.search.support.BasicRequest;
-import org.elasticsearch.common.settings.Settings;
-
-import java.io.IOException;
-import java.net.URI;
-
 /**
- * Elasticsearch helper API
+ * ClientIngest interface. Minimal API for node client ingesting.
+ * Useful for river implementations.
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public interface TransportClientSearch {
+public interface ClientIngest {
 
     /**
-     * Set settings
-     *
-     * @param settings
-     */
-    TransportClientSearch settings(Settings settings);
-
-    /**
-     * Set index
-     *
-     * @param index
-     * @return this TransportClientHelper
-     */
-    TransportClientSearch index(String index);
-
-    /**
-     * Get index
+     * Returns the default index
      *
      * @return the index
      */
     String index();
 
     /**
-     * Create a new client
-     */
-    TransportClientSearch newClient();
-
-    /**
-     * Create a new client
-     */
-    TransportClientSearch newClient(URI uri);
-
-    boolean isConnected();
-
-    /**
-     * Wait for healthy cluster
+     * Returns the default type
      *
-     * @throws IOException
+     * @return the type
      */
-    TransportClientSearch waitForHealthyCluster() throws IOException;
+    String type();
 
     /**
-     * Create new search request
+     * Create document
+     *
+     * @param index
+     * @param type
+     * @param id
+     * @param source
+     * @return this ClientIngest
      */
-    BasicRequest newSearchRequest();
+    ClientIngest create(String index, String type, String id, String source);
 
     /**
-     * Create new get request
+     * Index document
+     *
+     * @param index
+     * @param type
+     * @param id
+     * @param source
+     * @return this ClientIngest
      */
-    BasicRequest newGetRequest();
+    ClientIngest index(String index, String type, String id, String source);
 
     /**
-     * Shutdown, free all resources
+     * Delete document
+     *
+     * @param index
+     * @param type
+     * @param id
+     * @return this ClientIngest
      */
-    void shutdown();
+    ClientIngest delete(String index, String type, String id);
 
+    /**
+     * Ensure that all documents arrive.
+     *
+     * @return this ClientIngest
+     */
+    ClientIngest flush();
 }

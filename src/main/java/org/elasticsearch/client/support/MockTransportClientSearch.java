@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.client.support;
 
-import org.elasticsearch.action.search.support.ElasticsearchRequest;
+import org.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -86,8 +86,8 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
     public synchronized void shutdown() {
     }
 
-    public ElasticsearchRequest newRequest() {
-        return new ElasticsearchRequest();
+    public BasicRequest newRequest() {
+        return new BasicRequest();
     }
 
     /**

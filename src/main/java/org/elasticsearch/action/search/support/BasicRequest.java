@@ -31,34 +31,42 @@ import java.io.IOException;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class ElasticsearchRequest {
+public class BasicRequest {
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(ElasticsearchRequest.class.getName());
+    private final ESLogger logger = ESLoggerFactory.getLogger(BasicRequest.class.getName());
     private SearchRequestBuilder searchRequestBuilder;
-    private GetRequestBuilder getRequest;
+    private GetRequestBuilder getRequestBuilder;
     private String[] index;
     private String[] type;
     private String id;
     private String query;
 
-    public ElasticsearchRequest newRequest(SearchRequestBuilder searchRequestBuilder) {
+    public BasicRequest newSearchRequest(SearchRequestBuilder searchRequestBuilder) {
         this.searchRequestBuilder = searchRequestBuilder;
         return this;
     }
 
-    public ElasticsearchRequest newRequest(GetRequestBuilder getRequest) {
-        this.getRequest = getRequest;
+    public SearchRequestBuilder searchRequestBuilder() {
+        return searchRequestBuilder;
+    }
+
+    public BasicRequest newGetRequest(GetRequestBuilder getRequestBuilder) {
+        this.getRequestBuilder = getRequestBuilder;
         return this;
     }
 
-    public ElasticsearchRequest index(String index) {
+    public GetRequestBuilder getRequestBuilder() {
+        return getRequestBuilder;
+    }
+
+    public BasicRequest index(String index) {
         if (index != null && !"*".equals(index)) {
             this.index = new String[]{index};
         }
         return this;
     }
 
-    public ElasticsearchRequest index(String... index) {
+    public BasicRequest index(String... index) {
         this.index = index;
         return this;
     }
@@ -67,14 +75,14 @@ public class ElasticsearchRequest {
         return index[0];
     }
 
-    public ElasticsearchRequest type(String type) {
+    public BasicRequest type(String type) {
         if (type != null && !"*".equals(type)) {
             this.type = new String[]{type};
         }
         return this;
     }
 
-    public ElasticsearchRequest type(String... type) {
+    public BasicRequest type(String... type) {
         this.type = type;
         return this;
     }
@@ -83,7 +91,7 @@ public class ElasticsearchRequest {
         return type[0];
     }
 
-    public ElasticsearchRequest id(String id) {
+    public BasicRequest id(String id) {
         this.id = id;
         return this;
     }
@@ -92,39 +100,39 @@ public class ElasticsearchRequest {
         return id;
     }
 
-    public ElasticsearchRequest from(int from) {
+    public BasicRequest from(int from) {
         searchRequestBuilder.setFrom(from);
         return this;
     }
 
-    public ElasticsearchRequest size(int size) {
+    public BasicRequest size(int size) {
         searchRequestBuilder.setSize(size);
         return this;
     }
 
-    public ElasticsearchRequest filter(String filter) {
+    public BasicRequest filter(String filter) {
         searchRequestBuilder.setFilter(filter);
         return this;
     }
 
-    public ElasticsearchRequest facets(String facets) {
+    public BasicRequest facets(String facets) {
         searchRequestBuilder.setFacets(facets.getBytes());
         return this;
     }
 
-    public ElasticsearchRequest timeout(TimeValue timeout) {
+    public BasicRequest timeout(TimeValue timeout) {
         searchRequestBuilder.setTimeout(timeout);
         return this;
     }
 
-    public ElasticsearchRequest query(String query) {
+    public BasicRequest query(String query) {
         this.query = query == null || query.trim().length() == 0 ? "{\"query\":{\"match_all\":{}}}" : query;
         return this;
     }
 
-    public ElasticsearchResponse execute()
+    public BasicResponse execute()
             throws IOException {
-        ElasticsearchResponse response = new ElasticsearchResponse();
+        BasicResponse response = new BasicResponse();
         if (searchRequestBuilder == null) {
             return response;
         }
@@ -146,13 +154,13 @@ public class ElasticsearchRequest {
         return response;
     }
 
-    public ElasticsearchResponse executeGet() throws IOException {
-        ElasticsearchResponse response = new ElasticsearchResponse();
+    public BasicResponse executeGet() throws IOException {
+        BasicResponse response = new BasicResponse();
         long t0 = System.currentTimeMillis();
-        response.getResponse(getRequest.execute().actionGet());
+        response.getResponse(getRequestBuilder.execute().actionGet());
         long t1 = System.currentTimeMillis();
         logger.info(" get complete: {}/{}/{} [{}ms] {}",
-                index, type, getRequest.request().id(), (t1 - t0), response.exists());
+                index, type, getRequestBuilder.request().id(), (t1 - t0), response.exists());
         return response;
     }
 
