@@ -30,9 +30,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class IngestTests extends AbstractNodeTest {
+public class TransportClientIngestTests extends AbstractNodeTest {
 
-    private final static ESLogger logger = Loggers.getLogger(IngestTests.class);
+    private final static ESLogger logger = Loggers.getLogger(TransportClientIngestTests.class);
 
     @Test
     public void testDeleteIndex() {
@@ -92,7 +92,7 @@ public class IngestTests extends AbstractNodeTest {
     }
 
     @Test
-    public void testThreadedIngest() throws Exception {
+    public void testThreadedRandomIngest() throws Exception {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
                 .newClient();

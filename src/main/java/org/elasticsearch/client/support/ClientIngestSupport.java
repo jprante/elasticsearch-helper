@@ -18,27 +18,39 @@
  */
 package org.elasticsearch.client.support;
 
+import org.elasticsearch.ElasticSearchTimeoutException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.bulk.IngestProcessor;
-import org.elasticsearch.action.bulk.IngestRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.unit.TimeValue;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * ClientIngest support. Implements minimal API for node client ingesting.
  * Useful for river implementations.
  *
+ * For reasons not completely clear, the IngestProcessor, although initiated as
+ * plugin on the node of the client, does not work. Bulk requests are sent,
+ * but are not answered by BulkResponses. No timeout, it just hangs.
+ * So we fall back to BulkProcessor for now.
+ *
  * @author Jörg Prante <joergprante@gmail.com>
  */
 public class ClientIngestSupport implements ClientIngest {
 
     private final static ESLogger logger = Loggers.getLogger(ClientIngestSupport.class);
+
+    private Client client;
 
     private String index;
 
@@ -60,18 +72,25 @@ public class ClientIngestSupport implements ClientIngest {
      * Count the ingestProcessor volume
      */
     private final AtomicLong volumeCounter = new AtomicLong();
+    /**
+     * Enabled of not
+     */
     private boolean enabled = true;
-    private final IngestProcessor ingestProcessor;
+    /**
+     * The bulk processor
+     */
+    private final BulkProcessor bulkProcessor;
 
     public ClientIngestSupport(Client client, String index, String type,
                                int maxBulkActions, int maxConcurrentBulkRequests) {
+        this.client = client;
         this.index = index;
-        this.type =type;
+        this.type = type;
         this.maxBulkActions = maxBulkActions;
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
-        IngestProcessor.Listener listener = new IngestProcessor.Listener() {
+        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, IngestRequest request) {
+            public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingBulkRequests.getAndIncrement();
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
                 logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
@@ -79,25 +98,31 @@ public class ClientIngestSupport implements ClientIngest {
             }
 
             @Override
-            public void afterBulk(long executionId, BulkResponse response) {
+            public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 long l = outstandingBulkRequests.decrementAndGet();
                 logger.info("bulk [{}] success [{} items] [{}ms]",
                         executionId, response.items().length, response.took().millis());
             }
 
             @Override
-            public void afterBulk(long executionId, Throwable failure) {
+            public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
                 long l = outstandingBulkRequests.decrementAndGet();
                 logger.error("bulk [{}] error", executionId, failure);
                 enabled = false;
             }
         };
-        this.ingestProcessor = IngestProcessor.builder(client)
-                .listener(listener)
-                .actions(maxBulkActions)
-                .concurrency(maxConcurrentBulkRequests)
+        this.bulkProcessor = BulkProcessor.builder(client, listener)
+                .setBulkActions(maxBulkActions-1) // off-by-one
+                .setConcurrentRequests(maxConcurrentBulkRequests)
+                .setFlushInterval(TimeValue.timeValueSeconds(5))
                 .build();
-        this.enabled = true;
+        try {
+            waitForHealthyCluster();
+            this.enabled = true;
+        } catch (IOException e) {
+            logger.warn(e.getMessage(), e);
+            this.enabled = false;
+        }
     }
 
     public String index() {
@@ -113,9 +138,15 @@ public class ClientIngestSupport implements ClientIngest {
         if (!enabled) {
             return this;
         }
+        if (index == null) {
+            index = index();
+        }
+        if (type == null) {
+            type = type();
+        }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
         try {
-            ingestProcessor.add(indexRequest);
+            bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of create failed: " + e.getMessage(), e);
             enabled = false;
@@ -128,9 +159,15 @@ public class ClientIngestSupport implements ClientIngest {
         if (!enabled) {
             return this;
         }
+        if (index == null) {
+            index = index();
+        }
+        if (type == null) {
+            type = type();
+        }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
-            ingestProcessor.add(indexRequest);
+            bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of index failed: " + e.getMessage(), e);
             enabled = false;
@@ -143,9 +180,15 @@ public class ClientIngestSupport implements ClientIngest {
         if (!enabled) {
             return this;
         }
+        if (index == null) {
+            index = index();
+        }
+        if (type == null) {
+            type = type();
+        }
         DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
-            ingestProcessor.add(deleteRequest);
+            bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
             enabled = false;
@@ -158,7 +201,25 @@ public class ClientIngestSupport implements ClientIngest {
         if (!enabled) {
             return this;
         }
-        ingestProcessor.flush();
+        // no nothing
+        return this;
+    }
+
+    public ClientIngestSupport waitForHealthyCluster() throws IOException {
+        return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
+    }
+
+    public ClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+        try {
+            logger.info("waiting for cluster health...");
+            ClusterHealthResponse healthResponse =
+                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
+            if (healthResponse.isTimedOut()) {
+                throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
+            }
+        } catch (ElasticSearchTimeoutException e) {
+            throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
+        }
         return this;
     }
 }

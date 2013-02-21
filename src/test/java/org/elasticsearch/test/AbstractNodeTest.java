@@ -21,8 +21,6 @@ package org.elasticsearch.test;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -94,7 +92,8 @@ public abstract class AbstractNodeTest extends Assert {
     }
 
     public Node startNode(String id, Settings settings) {
-        return buildNode(id, settings).start();
+        return buildNode(id, settings)
+                .start();
     }
 
     public Node buildNode(String id) {
