@@ -284,6 +284,9 @@ public abstract class TransportClientSupport {
     }
 
     protected void update(String key, Object value) {
+        if (client == null) {
+            return;
+        }
         if (value == null) {
             return;
         }

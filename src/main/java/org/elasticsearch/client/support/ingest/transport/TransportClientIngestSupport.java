@@ -519,11 +519,13 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
             return;
         }
         try {
-            logger.info("closing...");
-            ingestProcessor.close();
-            logger.info("enable refresh interval...");
+            if (ingestProcessor != null) {
+                logger.info("closing ingest processor...");
+                ingestProcessor.close();
+            }
+            logger.info("enabling refresh interval...");
             enableRefreshInterval();
-            logger.info("closed, shutting down...");
+            logger.info("shutting down...");
             super.shutdown();
             logger.info("shutting down completed");
         } catch (Exception e) {
