@@ -31,6 +31,22 @@ import java.net.URI;
 public interface TransportClientIngest extends ClientIngest {
 
     /**
+     * Set the default index
+     *
+     * @param index the index
+     * @return this TransportClientIndexer
+     */
+    TransportClientIngest setIndex(String index);
+
+    /**
+     * Set the default type
+     *
+     * @param type the type
+     * @return this TransportClientIndexer
+     */
+    TransportClientIngest setType(String type);
+
+    /**
      * Create a new transport client
      *
      * @return this TransportClientIndexer
@@ -58,22 +74,6 @@ public interface TransportClientIngest extends ClientIngest {
      * @throws java.io.IOException
      */
     TransportClientIngest waitForHealthyCluster() throws IOException;
-
-    /**
-     * Set the default index
-     *
-     * @param index the index
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest index(String index);
-
-    /**
-     * Set the default type
-     *
-     * @param type the type
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest type(String type);
 
     /**
      * Enable or disable automatic date detection

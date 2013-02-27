@@ -22,17 +22,17 @@ import org.elasticsearch.client.support.ingest.NodeClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.testng.annotations.Test;
 
 public class ClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(ClientIngestTests.class);
 
-    //@Test
     public void testClientIngest() throws Exception {
         NodeClientIngestSupport es = new NodeClientIngestSupport(client("1"),  INDEX, "test", 10, 10);
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.indexDocument(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
         } catch (NoNodeAvailableException e) {

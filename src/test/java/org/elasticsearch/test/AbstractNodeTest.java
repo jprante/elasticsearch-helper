@@ -18,18 +18,25 @@
  */
 package org.elasticsearch.test;
 
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
+import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.Map;
 import java.util.Random;
 
@@ -40,9 +47,15 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public abstract class AbstractNodeTest extends Assert {
 
-    public final String INDEX = "test";
+    private final static ESLogger logger = Loggers.getLogger(AbstractNodeTest.class);
+
+    public final String INDEX = "test-" + NetworkUtils.getLocalAddress().getHostName().toLowerCase();
 
     protected final String CLUSTER = "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+
+    protected int PORT;
+
+    protected URI ADDRESS;
 
     protected Settings defaultSettings = ImmutableSettings
             .settingsBuilder()
@@ -51,11 +64,22 @@ public abstract class AbstractNodeTest extends Assert {
 
     private Map<String, Node> nodes = newHashMap();
     private Map<String, Client> clients = newHashMap();
-
+    private Map<String, InetSocketTransportAddress> addresses = newHashMap();
 
     @BeforeMethod
     public void createIndices() throws Exception {
-        startNode("1").client();
+        startNode("1");
+
+        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
+        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
+        InetSocketTransportAddress address = (InetSocketTransportAddress)response.iterator().next()
+                        .getTransport().getAddress().publishAddress();
+        PORT = address.address().getPort();
+
+        ADDRESS = URI.create("es://localhost:"+PORT+"?es.cluster.name=" + CLUSTER);
+
+        addresses.put("1", address);
+
         client("1").admin().indices()
                 .create(new CreateIndexRequest(INDEX))
                 .actionGet();
@@ -121,12 +145,12 @@ public abstract class AbstractNodeTest extends Assert {
             // decrease the routing schedule so new nodes will be added quickly
             finalSettings = settingsBuilder().put(finalSettings).put("cluster.routing.schedule", "50ms").build();
         }
+        Node node = nodeBuilder().settings(finalSettings).build();
 
-        Node node = nodeBuilder()
-                .settings(finalSettings)
-                .build();
+        Client client = node.client();
+
         nodes.put(id, node);
-        clients.put(id, node.client());
+        clients.put(id, client);
         return node;
     }
 
@@ -147,6 +171,10 @@ public abstract class AbstractNodeTest extends Assert {
 
     public Client client(String id) {
         return clients.get(id);
+    }
+
+    public InetSocketTransportAddress address(String id) {
+        return addresses.get(id);
     }
 
     public void closeAllNodes() {

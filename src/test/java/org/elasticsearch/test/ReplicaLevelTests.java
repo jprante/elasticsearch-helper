@@ -22,30 +22,32 @@ import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSu
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.testng.annotations.Test;
 
 import java.io.IOException;
+import java.net.URI;
 
 public class ReplicaLevelTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(ReplicaLevelTests.class);
 
-    //@Test
+    @Test
     public void testReplicaLevel() throws IOException {
 
         int numberOfShards = 1;
         int replicaLevel = 10;
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient()
-                .index("replicatest")
-                .type("replicatest")
+                .newClient(ADDRESS)
+                .setIndex("replicatest")
+                .setType("replicatest")
                 .numberOfShards(numberOfShards)
                 .numberOfReplicas(0)
                 .newIndex();
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.indexDocument("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
             int shards = es.updateReplicaLevel(replicaLevel);

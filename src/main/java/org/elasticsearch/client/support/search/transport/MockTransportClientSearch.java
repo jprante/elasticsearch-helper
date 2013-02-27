@@ -19,7 +19,6 @@
 package org.elasticsearch.client.support.search.transport;
 
 import org.elasticsearch.action.search.support.BasicRequest;
-import org.elasticsearch.client.support.search.transport.TransportClientSearchSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -45,15 +44,8 @@ import java.util.Set;
 public class MockTransportClientSearch extends TransportClientSearchSupport {
 
     private final ESLogger logger = ESLoggerFactory.getLogger(MockTransportClientSearch.class.getName());
+
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
-
-    public MockTransportClientSearch() {
-    }
-
-    public MockTransportClientSearch settings(Settings settings) {
-        this.settings = settings;
-        return this;
-    }
 
     /**
      * No special initial settings except cluster name
@@ -69,8 +61,8 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
     }
 
     @Override
-    public MockTransportClientSearch index(String index) {
-        super.index(index);
+    public MockTransportClientSearch setIndex(String index) {
+        super.setIndex(index);
         return this;
     }
 

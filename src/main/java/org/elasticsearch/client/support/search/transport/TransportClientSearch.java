@@ -36,14 +36,14 @@ public interface TransportClientSearch {
      * @param index
      * @return this TransportClientHelper
      */
-    TransportClientSearch index(String index);
+    TransportClientSearch setIndex(String index);
 
     /**
      * Get index
      *
      * @return the index
      */
-    String index();
+    String getIndex();
 
     /**
      * Create a new client
@@ -56,13 +56,6 @@ public interface TransportClientSearch {
     TransportClientSearch newClient(URI uri);
 
     boolean isConnected();
-
-    /**
-     * Wait for healthy cluster
-     *
-     * @throws IOException
-     */
-    TransportClientSearch waitForHealthyCluster() throws IOException;
 
     /**
      * Create new search request

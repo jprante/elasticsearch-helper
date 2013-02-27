@@ -34,14 +34,13 @@ public class TransportClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientIngestTests.class);
 
-
     @Test
     public void testTransportClient() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
-                .index("test")
-                .type("test");
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
         es.shutdown();
     }
 
@@ -49,14 +48,14 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testDeleteIndex() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
-                .index("test")
-                .type("test");
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
         logger.info("transport client up");
         try {
-            es.deleteIndex();
-            es.index(); // // create
-            es.deleteIndex();
+            es.deleteIndex()
+              .newIndex()
+              .deleteIndex();
         } catch (NoNodeAvailableException e) {
             logger.error("no node available");
         } finally {
@@ -69,13 +68,13 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testSingleDocIngest() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
-                .index("test")
-                .type("test");
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
         try {
             es.deleteIndex();
             es.newIndex();
-            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
+            es.indexDocument("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -88,11 +87,11 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testRandomIngest() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER));
+                .newClient(ADDRESS);
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -105,7 +104,7 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testThreadedRandomIngest() throws Exception {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER));
+                .newClient(ADDRESS);
         try {
             int min = 0;
             int max = 4;
@@ -116,7 +115,7 @@ public class TransportClientIngestTests extends AbstractNodeTest {
                 pool.execute(new Runnable() {
                     public void run() {
                             for (int i = 0; i < 12345; i++) {
-                                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                             }
                             logger.info("done");
                             latch.countDown();

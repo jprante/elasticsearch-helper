@@ -31,14 +31,14 @@ public interface ClientIngest {
      *
      * @return the index
      */
-    String index();
+    String getIndex();
 
     /**
      * Returns the default type
      *
      * @return the type
      */
-    String type();
+    String getType();
 
     /**
      * Create document
@@ -49,7 +49,7 @@ public interface ClientIngest {
      * @param source
      * @return this ClientIngest
      */
-    ClientIngest create(String index, String type, String id, String source);
+    ClientIngest createDocument(String index, String type, String id, String source);
 
     /**
      * Index document
@@ -60,7 +60,7 @@ public interface ClientIngest {
      * @param source
      * @return this ClientIngest
      */
-    ClientIngest index(String index, String type, String id, String source);
+    ClientIngest indexDocument(String index, String type, String id, String source);
 
     /**
      * Delete document
@@ -70,7 +70,7 @@ public interface ClientIngest {
      * @param id
      * @return this ClientIngest
      */
-    ClientIngest delete(String index, String type, String id);
+    ClientIngest deleteDocument(String index, String type, String id);
 
     /**
      * Ensure that all documents arrive.

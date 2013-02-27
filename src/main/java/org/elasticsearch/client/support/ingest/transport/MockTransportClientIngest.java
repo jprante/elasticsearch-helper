@@ -18,9 +18,6 @@
  */
 package org.elasticsearch.client.support.ingest.transport;
 
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.client.support.search.transport.MockTransportClientSearch;
-
 import java.io.IOException;
 import java.net.URI;
 
@@ -30,15 +27,8 @@ import java.net.URI;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class MockTransportClientIngest extends MockTransportClientSearch implements TransportClientIngest {
+public class MockTransportClientIngest extends TransportClientIngestSupport implements TransportClientIngest {
 
-    private String type;
-
-    @Override
-    public MockTransportClientIngest settings(Settings settings) {
-        this.settings = settings;
-        return this;
-    }
 
     @Override
     public MockTransportClientIngest newClient() {
@@ -78,34 +68,29 @@ public class MockTransportClientIngest extends MockTransportClientSearch impleme
     }
 
     @Override
-    public MockTransportClientIngest index(String index) {
-        super.index(index);
+    public MockTransportClientIngest setIndex(String index) {
+        super.setIndex(index);
         return this;
     }
 
     @Override
-    public MockTransportClientIngest type(String type) {
-        this.type = type;
+    public MockTransportClientIngest setType(String type) {
+        super.setType(type);
         return this;
     }
 
     @Override
-    public String type() {
-        return type;
-    }
-
-    @Override
-    public MockTransportClientIngest create(String index, String type, String id, String source) {
+    public MockTransportClientIngest createDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest index(String index, String type, String id, String source) {
+    public MockTransportClientIngest indexDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest delete(String index, String type, String id) {
+    public MockTransportClientIngest deleteDocument(String index, String type, String id) {
         return this;
     }
 

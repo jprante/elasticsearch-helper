@@ -125,26 +125,21 @@ public class NodeClientIngestSupport implements ClientIngest {
         }
     }
 
-    public String index() {
+    public String getIndex() {
         return index;
     }
 
-    public String type() {
+    public String getType() {
         return type;
     }
 
     @Override
-    public NodeClientIngestSupport create(String index, String type, String id, String source) {
+    public NodeClientIngestSupport createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
-        if (index == null) {
-            index = index();
-        }
-        if (type == null) {
-            type = type();
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
+        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id).create(true).source(source);
         try {
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
@@ -155,17 +150,12 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport index(String index, String type, String id, String source) {
+    public NodeClientIngestSupport indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
-        if (index == null) {
-            index = index();
-        }
-        if (type == null) {
-            type = type();
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
+        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id).create(false).source(source);
         try {
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
@@ -176,17 +166,12 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport delete(String index, String type, String id) {
+    public NodeClientIngestSupport deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
-        if (index == null) {
-            index = index();
-        }
-        if (type == null) {
-            type = type();
-        }
-        DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
+        DeleteRequest deleteRequest = Requests.deleteRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id);
         try {
             bulkProcessor.add(deleteRequest);
         } catch (Exception e) {

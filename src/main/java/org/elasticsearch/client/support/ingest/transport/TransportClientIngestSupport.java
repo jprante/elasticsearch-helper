@@ -31,7 +31,7 @@ import org.elasticsearch.action.ingest.IngestProcessor;
 import org.elasticsearch.action.ingest.IngestRequest;
 import org.elasticsearch.action.ingest.IngestResponse;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.support.search.transport.TransportClientSearchSupport;
+import org.elasticsearch.client.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class TransportClientIngestSupport extends TransportClientSearchSupport implements TransportClientIngest {
+public class TransportClientIngestSupport extends TransportClientSupport implements TransportClientIngest {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientIngestSupport.class);
     /**
@@ -73,6 +73,10 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
      * The IngestProcessor
      */
     private IngestProcessor ingestProcessor;
+    /**
+     * The default index
+     */
+    private String index;
     /**
      * The default type
      */
@@ -117,7 +121,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
      */
     @Override
     public TransportClientIngestSupport newClient() {
-        return newClient(findURI());
+        return this.newClient(findURI());
     }
 
     /**
@@ -182,7 +186,9 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         int n = Runtime.getRuntime().availableProcessors();
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
-                .put("client.transport.sniff", true)
+                .put("network.server", false)
+                .put("node.client", true)
+                .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
                 .put("transport.netty.worker_count", n * 4)
                 .put("transport.netty.connections_per_node.low", 0)
                 .put("transport.netty.connections_per_node.med", 0)
@@ -213,24 +219,24 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     @Override
-    public TransportClientIngestSupport index(String index) {
-        super.index(index);
+    public TransportClientIngestSupport setIndex(String index) {
+        this.index = index;
         return this;
     }
 
     @Override
-    public String index() {
-        return super.index();
+    public String getIndex() {
+        return index;
     }
 
     @Override
-    public TransportClientIngestSupport type(String type) {
+    public TransportClientIngestSupport setType(String type) {
         this.type = type;
         return this;
     }
 
     @Override
-    public String type() {
+    public String getType() {
         return type;
     }
 
@@ -281,27 +287,27 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         if (client == null) {
             return this;
         }
-        if (index() == null) {
+        if (getIndex() == null) {
             logger.warn("no index name given to create");
             return this;
         }
-        if (type() == null) {
+        if (getType() == null) {
             logger.warn("no type name given to create");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(index());
+        CreateIndexRequest request = new CreateIndexRequest(getIndex());
         if (settingsBuilder != null) {
             request.settings(settingsBuilder);
         }
         if (mapping == null) {
             mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
         }
-        request.mapping(type(), mapping);
+        request.mapping(getType(), mapping);
         try {
             if (enabled) {
                 logger.debug("index = {} type = {} settings = {} mapping = {}",
-                        index(),
-                        type(),
+                        getIndex(),
+                        getType(),
                         settingsBuilder.build().getAsMap(),
                         mapping
                 );
@@ -323,12 +329,12 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         if (client == null) {
             return this;
         }
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
         try {
             if (enabled) {
-                client.admin().indices().delete(new DeleteIndexRequest(index()));
+                client.admin().indices().delete(new DeleteIndexRequest(getIndex()));
             }
         } catch (Exception e) {
             if (!ignoreException) {
@@ -342,11 +348,11 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         if (client == null) {
             return this;
         }
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
         client.admin().indices().putMapping(new PutMappingRequest()
-                .indices(new String[]{index()})
+                .indices(new String[]{getIndex()})
                 .type(type)
                 .source(mapping))
                 .actionGet();
@@ -365,13 +371,13 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         if (client == null) {
             return this;
         }
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
         try {
             if (enabled) {
                 client.admin().indices().deleteMapping(new DeleteMappingRequest()
-                        .indices(new String[]{index()})
+                        .indices(new String[]{getIndex()})
                         .type(type));
             }
         } catch (Exception e) {
@@ -398,15 +404,15 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         if (client == null) {
             return this;
         }
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
-        client.admin().indices().refresh(new RefreshRequest().indices(index()));
+        client.admin().indices().refresh(new RefreshRequest().indices(getIndex()));
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport create(String index, String type, String id, String source) {
+    public TransportClientIngestSupport createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -424,7 +430,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     @Override
-    public TransportClientIngestSupport index(String index, String type, String id, String source) {
+    public TransportClientIngestSupport indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -442,7 +448,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     @Override
-    public TransportClientIngestSupport delete(String index, String type, String id) {
+    public TransportClientIngestSupport deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -472,7 +478,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     public TransportClientIngestSupport numberOfShards(int value) {
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
         setting("index.number_of_shards", value);
@@ -480,7 +486,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     public TransportClientIngestSupport numberOfReplicas(int value) {
-        if (index() == null) {
+        if (getIndex() == null) {
             return this;
         }
         setting("index.number_of_replicas", value);
@@ -489,7 +495,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
 
     @Override
     public int updateReplicaLevel(int level) throws IOException {
-        if (index() == null) {
+        if (getIndex() == null) {
             return -1;
         }
         super.waitForHealthyCluster(ClusterHealthStatus.YELLOW, "1m");
