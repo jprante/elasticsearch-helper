@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.client.support.TransportClientIngestSupport;
+import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -34,32 +34,42 @@ public class TransportClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientIngestTests.class);
 
+
+    @Test
+    public void testTransportClient() {
+
+        final TransportClientIngestSupport es = new TransportClientIngestSupport()
+                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
+                .index("test")
+                .type("test");
+        es.shutdown();
+    }
+
     @Test
     public void testDeleteIndex() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .settings(defaultSettings)
-                .newClient(URI.create("es://localhost:9300"))
+                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
                 .index("test")
                 .type("test");
-
+        logger.info("transport client up");
         try {
             es.deleteIndex();
-            es.index();
+            es.index(); // // create
             es.deleteIndex();
         } catch (NoNodeAvailableException e) {
-            // if no node, just skip
+            logger.error("no node available");
         } finally {
             es.shutdown();
+            logger.info("transport client down");
         }
     }
 
     @Test
-    public void testSimpleIngest() {
+    public void testSingleDocIngest() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .settings(defaultSettings)
-                .newClient(URI.create("es://localhost:9300"))
+                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER))
                 .index("test")
                 .type("test");
         try {
@@ -78,8 +88,8 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testRandomIngest() {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .settings(defaultSettings)
-                .newClient();
+                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER));
+
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -95,7 +105,7 @@ public class TransportClientIngestTests extends AbstractNodeTest {
     public void testThreadedRandomIngest() throws Exception {
 
         final TransportClientIngestSupport es = new TransportClientIngestSupport()
-                .newClient();
+                .newClient(URI.create("es://hostname:9300?es.cluster.name=" + CLUSTER));
         try {
             int min = 0;
             int max = 4;

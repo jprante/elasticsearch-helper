@@ -16,27 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.search.transport;
 
 import org.elasticsearch.action.search.support.BasicRequest;
-import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
- * Elasticsearch helper API
+ * Transport client search helper API
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
 public interface TransportClientSearch {
-
-    /**
-     * Set settings
-     *
-     * @param settings
-     */
-    TransportClientSearch settings(Settings settings);
 
     /**
      * Set index

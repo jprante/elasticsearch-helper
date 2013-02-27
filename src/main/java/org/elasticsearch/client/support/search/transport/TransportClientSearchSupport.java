@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.search.transport;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -63,27 +63,20 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientSearchSupport.class);
 
+    // the default cluster name
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
-    private final static URI DEFAULT_URI = URI.create("es://localhost:9300");
+    // the default connection specification
+    private final static URI DEFAULT_URI = URI.create("es://hostname:9300");
     // the transport addresses
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
     // singleton
-    protected static TransportClient client;
+    protected TransportClient client;
     // the settings
-    private Settings settings;
+    protected Settings settings;
     // the default index
     private String index;
-
+    // if the client has connectd nodes or not
     private boolean connected;
-
-    public TransportClientSearchSupport() {
-    }
-
-    @Override
-    public TransportClientSearchSupport settings(Settings settings) {
-        this.settings = settings;
-        return this;
-    }
 
     @Override
     public TransportClientSearchSupport index(String index) {
@@ -108,11 +101,12 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
             client = null;
         }
         if (client == null) {
-            connected = false;
-            if (settings == null) {
-                settings = initialSettings(uri);
+            this.connected = false;
+            this.settings = initialSettings(uri);
+            if (logger.isDebugEnabled()) {
+                logger.debug("settings={}", settings.getAsMap());
             }
-            client = new TransportClient(settings);
+            this.client = new TransportClient(settings);
             try {
                 connect(uri);
                 connected = !client.connectedNodes().isEmpty();
@@ -166,6 +160,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
                 .put("threadpool.snapshot.size", 1)
                 .build();
     }
+
     @Override
     public boolean isConnected() {
         return connected;
@@ -209,7 +204,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
                 // the properties contains default URIs per hostname
                 if (p.containsKey(hostname)) {
                     uri = URI.create(p.getProperty(hostname));
-                    logger.debug("URI found in cluster.properties for hostname {} = {}", hostname, uri);
+                    logger.debug("URI found in cluster.properties for hostname {}: {}", hostname, uri);
                     return uri;
                 }
             }
@@ -218,7 +213,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }
-        logger.debug("URI for hostname {} = {}", hostname, uri);
+        logger.debug("URI for hostname {}: {}", hostname, uri);
         return uri;
     }
 
@@ -229,7 +224,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
             Map<String, String> map = parseQueryString(uri, "UTF-8");
             clustername = map.get("es.cluster.name");
             if (clustername != null) {
-                logger.info("cluster name found in URI {}", uri);
+                logger.info("cluster name found in URI {}: {}", uri, clustername);
                 return clustername;
             }
         } catch (UnsupportedEncodingException ex) {
@@ -238,10 +233,10 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
         logger.info("cluster name not found in URI {}, parameter es.cluster.name", uri);
         clustername = System.getProperty("es.cluster.name");
         if (clustername != null) {
-            logger.info("cluster name found in es.cluster.name system property = {}", clustername);
+            logger.info("cluster name found in es.cluster.name system property: {}", clustername);
             return clustername;
         }
-        logger.info("cluster name not found, falling back to default " + DEFAULT_CLUSTER_NAME);
+        logger.info("cluster name not found, falling back to default: {}", DEFAULT_CLUSTER_NAME);
         clustername = DEFAULT_CLUSTER_NAME;
         return clustername;
     }
@@ -256,7 +251,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
         if ("hostname".equals(hostname)) {
             InetSocketTransportAddress address = new InetSocketTransportAddress(InetAddress.getLocalHost().getHostName(), port);
             if (!addresses.contains(address)) {
-                logger.info("adding hostname address for transport client = {}", address);
+                logger.info("adding hostname address for transport client: {}", address);
                 client.addTransportAddress(address);
                 logger.info("hostname address added");
                 addresses.add(address);
@@ -270,7 +265,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
                     if (addr instanceof Inet4Address) {
                         InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);
                         if (!addresses.contains(address)) {
-                            logger.info("adding interface address for transport client = {}", address);
+                            logger.info("adding interface address for transport client: {}", address);
                             client.addTransportAddress(address);
                             addresses.add(address);
                             newaddresses = true;
@@ -286,7 +281,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
                     if (addr instanceof Inet6Address) {
                         InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);
                         if (!addresses.contains(address)) {
-                            logger.info("adding interface address for transport client = {}", address);
+                            logger.info("adding interface address for transport client: {}", address);
                             client.addTransportAddress(address);
                             addresses.add(address);
                             newaddresses = true;
@@ -297,13 +292,13 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
         } else {
             InetSocketTransportAddress address = new InetSocketTransportAddress(hostname, port);
             if (!addresses.contains(address)) {
-                logger.info("adding custom address for transport client = {}", address);
+                logger.info("adding custom address for transport client: {}", address);
                 client.addTransportAddress(address);
                 addresses.add(address);
                 newaddresses = true;
             }
         }
-        logger.info("configured addresses to connect = {}", addresses);
+        logger.info("configured addresses to connect: {}", addresses);
         if (newaddresses) {
             List<DiscoveryNode> nodes = client.connectedNodes().asList();
             logger.info("connected nodes = {}", nodes);
@@ -324,10 +319,10 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
             ClusterHealthResponse healthResponse =
                     client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
             if (healthResponse.isTimedOut()) {
-                throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
+                throw new IOException("cluster not healthy, cowardly refusing to continue with operations: " + status.name());
             }
         } catch (ElasticSearchTimeoutException e) {
-            throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
         }
         return this;
     }
@@ -337,9 +332,7 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
             return -1;
         }
         IndicesStatusResponse response = client.admin().indices()
-                .status(new IndicesStatusRequest(index())
-                        .recovery(true))
-                .actionGet();
+                .status(new IndicesStatusRequest(index()).recovery(true)).actionGet();
         return response.totalShards();
     }
 
@@ -360,13 +353,12 @@ public abstract class TransportClientSearchSupport implements TransportClientSea
         if (index() == null) {
             return;
         }
-        ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder();
-        settings.put(key, value.toString());
-        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index());
-        updateSettingsRequest.settings(settings);
+        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        settingsBuilder.put(key, value.toString());
+        UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index())
+            .settings(settingsBuilder);
         client.admin().indices().updateSettings(updateSettingsRequest).actionGet();
     }
-
 
     private Map<String, String> parseQueryString(URI uri, String encoding)
             throws UnsupportedEncodingException {

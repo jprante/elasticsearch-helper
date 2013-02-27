@@ -19,13 +19,20 @@
 package org.elasticsearch.plugin;
 
 import org.elasticsearch.action.ActionModule;
-import org.elasticsearch.action.bulk.IngestAction;
-import org.elasticsearch.action.bulk.TransportIngestAction;
+import org.elasticsearch.action.bulk.BulkIngestAction;
+import org.elasticsearch.action.bulk.TransportBulkIngestAction;
+import org.elasticsearch.action.ingest.IngestAction;
+import org.elasticsearch.action.ingest.TransportIngestAction;
 import org.elasticsearch.plugins.AbstractPlugin;
 import org.elasticsearch.rest.RestModule;
-import org.elasticsearch.rest.action.bulk.RestIngestAction;
-import org.elasticsearch.rest.action.bulk.RestIngestResponseAction;
+import org.elasticsearch.rest.action.bulk.RestBulkIngestAction;
+import org.elasticsearch.rest.action.bulk.RestBulkIngestResponseAction;
+import org.elasticsearch.rest.action.ingest.RestIngestAction;
+import org.elasticsearch.rest.action.ingest.RestIngestResponseAction;
 
+/**
+ *
+ */
 public class IngestPlugin extends AbstractPlugin {
 
     @Override
@@ -35,14 +42,17 @@ public class IngestPlugin extends AbstractPlugin {
 
     @Override
     public String description() {
-        return "Ingest action";
+        return "Ingest action plugin";
     }
 
     public void onModule(ActionModule module) {
+        module.registerAction(BulkIngestAction.INSTANCE, TransportBulkIngestAction.class);
         module.registerAction(IngestAction.INSTANCE, TransportIngestAction.class);
     }
 
     public void onModule(RestModule module) {
+        module.addRestAction(RestBulkIngestAction.class);
+        module.addRestAction(RestBulkIngestResponseAction.class);
         module.addRestAction(RestIngestAction.class);
         module.addRestAction(RestIngestResponseAction.class);
     }

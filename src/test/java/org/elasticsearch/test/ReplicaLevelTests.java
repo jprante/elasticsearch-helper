@@ -18,11 +18,10 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.client.support.TransportClientIngestSupport;
+import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 
@@ -30,7 +29,7 @@ public class ReplicaLevelTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(ReplicaLevelTests.class);
 
-    @Test
+    //@Test
     public void testReplicaLevel() throws IOException {
 
         int numberOfShards = 1;

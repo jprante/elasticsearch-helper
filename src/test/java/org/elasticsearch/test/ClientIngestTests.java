@@ -18,19 +18,18 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.client.support.ClientIngestSupport;
+import org.elasticsearch.client.support.ingest.NodeClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.testng.annotations.Test;
 
 public class ClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(ClientIngestTests.class);
 
-    @Test
+    //@Test
     public void testClientIngest() throws Exception {
-        ClientIngestSupport es = new ClientIngestSupport(client("1"),  INDEX, "test", 10, 10);
+        NodeClientIngestSupport es = new NodeClientIngestSupport(client("1"),  INDEX, "test", 10, 10);
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");

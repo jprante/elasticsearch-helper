@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.rest.action.bulk;
+package org.elasticsearch.rest.action.ingest;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.bulk.IngestProcessor;
-import org.elasticsearch.action.bulk.IngestRequest;
+import org.elasticsearch.action.ingest.IngestItemFailure;
+import org.elasticsearch.action.ingest.IngestProcessor;
+import org.elasticsearch.action.ingest.IngestRequest;
+import org.elasticsearch.action.ingest.IngestResponse;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
@@ -120,12 +121,14 @@ public class RestIngestAction extends BaseRestHandler {
             }
 
             @Override
-            public void afterBulk(long executionId, BulkResponse response) {
+            public void afterBulk(long executionId, IngestResponse response) {
                 long l = outstandingRequests.decrementAndGet();
-                logger.info("bulk [{}] success [{} items] [{}ms]",
-                        executionId, response.items().length, response.took().millis());
-                synchronized (responses) {
-                    responses.put(executionId, response);
+                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
+                        executionId, response.success().size(), response.failure().size(), response.took().millis());
+                if (!response.failure().isEmpty()) {
+                    for (IngestItemFailure f: response.failure()) {
+                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                    }
                 }
             }
 

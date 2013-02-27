@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <p/>
  * In order to create a new bulk processor, use the {@link Builder}.
  */
-public class IngestProcessor {
+public class BulkIngestProcessor {
 
     private final Client client;
     private final int concurrency;
@@ -50,7 +50,7 @@ public class IngestProcessor {
     private final int maxVolume;
     private final Semaphore semaphore;
     private final AtomicLong executionIdGen = new AtomicLong();
-    private final IngestRequest ingestRequest = new IngestRequest();
+    private final BulkIngestRequest ingestRequest = new BulkIngestRequest();
     private Listener listener;
     private volatile boolean closed = false;
 
@@ -58,7 +58,7 @@ public class IngestProcessor {
         return new Builder(client);
     }
 
-    IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
+    BulkIngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
         this.client = client;
         this.concurrency = concurrency;
         this.actions = actions;
@@ -66,27 +66,27 @@ public class IngestProcessor {
         this.semaphore = new Semaphore(concurrency);
     }
 
-    public IngestProcessor listener(Listener listener) {
+    public BulkIngestProcessor listener(Listener listener) {
         this.listener = listener;
         return this;
     }
 
-    public IngestProcessor listenerThreaded(boolean threaded) {
+    public BulkIngestProcessor listenerThreaded(boolean threaded) {
         ingestRequest.listenerThreaded(threaded);
         return this;
     }
 
-    public IngestProcessor replicationType(ReplicationType type) {
+    public BulkIngestProcessor replicationType(ReplicationType type) {
         ingestRequest.replicationType(type);
         return this;
     }
 
-    public IngestProcessor consistencyLevel(WriteConsistencyLevel level) {
+    public BulkIngestProcessor consistencyLevel(WriteConsistencyLevel level) {
         ingestRequest.consistencyLevel(level);
         return this;
     }
 
-    public IngestProcessor refresh(boolean refresh) {
+    public BulkIngestProcessor refresh(boolean refresh) {
         ingestRequest.refresh(refresh);
         return this;
     }
@@ -101,7 +101,7 @@ public class IngestProcessor {
      * {@link org.elasticsearch.action.index.IndexRequest} (for example, if no
      * id is provided, one will be generated, or usage of the create flag).
      */
-    public IngestProcessor add(IndexRequest request) {
+    public BulkIngestProcessor add(IndexRequest request) {
         ingestRequest.add((ActionRequest) request);
         flushIfNeeded();
         return this;
@@ -111,13 +111,13 @@ public class IngestProcessor {
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list
      * of actions to execute.
      */
-    public IngestProcessor add(DeleteRequest request) {
+    public BulkIngestProcessor add(DeleteRequest request) {
         ingestRequest.add((ActionRequest) request);
         flushIfNeeded();
         return this;
     }
 
-    public IngestProcessor add(BytesReference data, boolean contentUnsafe,
+    public BulkIngestProcessor add(BytesReference data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                Listener listener) throws Exception {
         ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
@@ -179,7 +179,7 @@ public class IngestProcessor {
      *
      * @param request the ingest request
      */
-    private void process(final IngestRequest request, final Listener listener) {
+    private void process(final BulkIngestRequest request, final Listener listener) {
         if (request.numberOfActions() == 0) {
             return;
         }
@@ -255,7 +255,7 @@ public class IngestProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, IngestRequest request);
+        void beforeBulk(long executionId, BulkIngestRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
@@ -331,8 +331,8 @@ public class IngestProcessor {
         /**
          * Builds a new bulk processor.
          */
-        public IngestProcessor build() {
-            return new IngestProcessor(client, concurrency, actions, volume)
+        public BulkIngestProcessor build() {
+            return new BulkIngestProcessor(client, concurrency, actions, volume)
                     .listener(listener);
         }
     }

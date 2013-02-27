@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.bulk;
+package org.elasticsearch.action.ingest;
 
 import org.elasticsearch.action.Action;
 import org.elasticsearch.client.Client;
@@ -26,7 +26,7 @@ import org.elasticsearch.transport.TransportRequestOptions;
 /**
  * Ingest action
  */
-public class IngestAction extends Action<IngestRequest, BulkResponse, IngestRequestBuilder> {
+public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
     public static final IngestAction INSTANCE = new IngestAction();
     public static final String NAME = "ingest";
@@ -36,8 +36,8 @@ public class IngestAction extends Action<IngestRequest, BulkResponse, IngestRequ
     }
 
     @Override
-    public BulkResponse newResponse() {
-        return new BulkResponse(null, 0L);
+    public IngestResponse newResponse() {
+        return new IngestResponse();
     }
 
     @Override

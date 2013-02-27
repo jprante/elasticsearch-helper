@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.ingest.transport;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -24,12 +24,14 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.bulk.IngestProcessor;
-import org.elasticsearch.action.bulk.IngestRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.ingest.IngestItemFailure;
+import org.elasticsearch.action.ingest.IngestProcessor;
+import org.elasticsearch.action.ingest.IngestRequest;
+import org.elasticsearch.action.ingest.IngestResponse;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.support.search.transport.TransportClientSearchSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -58,7 +60,7 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     /**
      * The outstanding ingestProcessor requests
      */
-    private final AtomicLong outstandingBulkRequests = new AtomicLong();
+    private final AtomicLong outstandingRequests = new AtomicLong();
     /**
      * Count the ingestProcessor volume
      */
@@ -109,18 +111,6 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
     }
 
     /**
-     * Set the settings for new clients
-     *
-     * @param settings the settings
-     * @return this indexer
-     */
-    @Override
-    public TransportClientIngestSupport settings(Settings settings) {
-        super.settings(settings);
-        return this;
-    }
-
-    /**
      * Create a new client for this indexer
      *
      * @return this indexer
@@ -145,23 +135,28 @@ public class TransportClientIngestSupport extends TransportClientSearchSupport i
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, IngestRequest request) {
-                long l = outstandingBulkRequests.getAndIncrement();
+                long l = outstandingRequests.getAndIncrement();
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
                 logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                         executionId, request.numberOfActions(), v, l);
             }
 
             @Override
-            public void afterBulk(long executionId, BulkResponse response) {
-                long l = outstandingBulkRequests.decrementAndGet();
-                logger.info("bulk [{}] success [{} items] [{}ms]",
-                        executionId, response.items().length, response.took().millis());
+            public void afterBulk(long executionId, IngestResponse response) {
+                long l = outstandingRequests.decrementAndGet();
+                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
+                        executionId, response.success().size(), response.failure().size(), response.took().millis());
+                if (!response.failure().isEmpty()) {
+                    for (IngestItemFailure f: response.failure()) {
+                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                    }
+                }
             }
 
             @Override
             public void afterBulk(long executionId, Throwable failure) {
-                long l = outstandingBulkRequests.decrementAndGet();
-                logger.error("bulk [{}] error", executionId, failure);
+                long l = outstandingRequests.decrementAndGet();
+                logger.error("bulk ["+executionId+"] error", failure);
                 enabled = false;
             }
         };

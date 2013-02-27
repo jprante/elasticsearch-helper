@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.ingest;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -46,9 +46,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class ClientIngestSupport implements ClientIngest {
+public class NodeClientIngestSupport implements ClientIngest {
 
-    private final static ESLogger logger = Loggers.getLogger(ClientIngestSupport.class);
+    private final static ESLogger logger = Loggers.getLogger(NodeClientIngestSupport.class);
 
     private Client client;
 
@@ -57,7 +57,7 @@ public class ClientIngestSupport implements ClientIngest {
     private String type;
 
     /**
-     * The default size of a ingestProcessor request
+     * The default size of a request
      */
     private int maxBulkActions = 100;
     /**
@@ -65,11 +65,11 @@ public class ClientIngestSupport implements ClientIngest {
      */
     private int maxConcurrentBulkRequests = 30;
     /**
-     * The outstanding ingestProcessor requests
+     * The outstanding requests
      */
     private final AtomicLong outstandingBulkRequests = new AtomicLong();
     /**
-     * Count the ingestProcessor volume
+     * Count the volume
      */
     private final AtomicLong volumeCounter = new AtomicLong();
     /**
@@ -81,8 +81,8 @@ public class ClientIngestSupport implements ClientIngest {
      */
     private final BulkProcessor bulkProcessor;
 
-    public ClientIngestSupport(Client client, String index, String type,
-                               int maxBulkActions, int maxConcurrentBulkRequests) {
+    public NodeClientIngestSupport(Client client, String index, String type,
+                                   int maxBulkActions, int maxConcurrentBulkRequests) {
         this.client = client;
         this.index = index;
         this.type = type;
@@ -107,7 +107,7 @@ public class ClientIngestSupport implements ClientIngest {
             @Override
             public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
                 long l = outstandingBulkRequests.decrementAndGet();
-                logger.error("bulk [{}] error", executionId, failure);
+                logger.error("bulk ["+executionId+"] error", failure);
                 enabled = false;
             }
         };
@@ -134,7 +134,7 @@ public class ClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public ClientIngestSupport create(String index, String type, String id, String source) {
+    public NodeClientIngestSupport create(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -155,7 +155,7 @@ public class ClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public ClientIngestSupport index(String index, String type, String id, String source) {
+    public NodeClientIngestSupport index(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -176,7 +176,7 @@ public class ClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public ClientIngestSupport delete(String index, String type, String id) {
+    public NodeClientIngestSupport delete(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -197,7 +197,7 @@ public class ClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public ClientIngestSupport flush() {
+    public NodeClientIngestSupport flush() {
         if (!enabled) {
             return this;
         }
@@ -205,11 +205,11 @@ public class ClientIngestSupport implements ClientIngest {
         return this;
     }
 
-    public ClientIngestSupport waitForHealthyCluster() throws IOException {
+    public NodeClientIngestSupport waitForHealthyCluster() throws IOException {
         return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
     }
 
-    public ClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public NodeClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =

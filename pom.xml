@@ -104,7 +104,7 @@
                 <version>2.12.4</version>
                 <configuration>
                     <skip>false</skip>
-                    <forkMode>once</forkMode>
+                    <forkMode>none</forkMode>
                     <systemPropertyVariables>
                         <file.encoding>UTF-8</file.encoding>
                         <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.ingest;
 
 /**
  * ClientIngest interface. Minimal API for node client ingesting.

@@ -40,13 +40,13 @@ import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 import static org.elasticsearch.rest.RestStatus.OK;
 import static org.elasticsearch.rest.action.support.RestXContentBuilder.restContentBuilder;
 
-public class RestIngestResponseAction extends BaseRestHandler {
+public class RestBulkIngestResponseAction extends BaseRestHandler {
 
     @Inject
-    public RestIngestResponseAction(Settings settings, Client client, RestController controller) {
+    public RestBulkIngestResponseAction(Settings settings, Client client, RestController controller) {
         super(settings, client);
 
-        controller.registerHandler(GET, "/_ingest", this);
+        controller.registerHandler(GET, "/_bulkingest", this);
     }
 
     @Override
@@ -56,8 +56,8 @@ public class RestIngestResponseAction extends BaseRestHandler {
             builder.startObject();
             builder.field(Fields.OK, true);
             builder.startArray(Fields.RESPONSES);
-            synchronized (RestIngestAction.responses) {
-                for (Map.Entry<Long, Object> me : RestIngestAction.responses.entrySet()) {
+            synchronized (RestBulkIngestAction.responses) {
+                for (Map.Entry<Long, Object> me : RestBulkIngestAction.responses.entrySet()) {
                     builder.startObject();
                     builder.field(Fields.ID, me.getKey());
                     if (me.getValue() instanceof BulkResponse) {
@@ -97,11 +97,11 @@ public class RestIngestResponseAction extends BaseRestHandler {
                         builder.endObject();
                     } else if (me.getValue() instanceof Throwable) {
                         Throwable t = (Throwable)me.getValue();
-                        builder.field(Fields.ERROR, t.getMessage()); // TODO full stack trace
+                        builder.field(Fields.ERROR, t.getMessage());
                     }
                     builder.endObject();
                 }
-                RestIngestAction.responses.clear(); // write each response only once
+                RestBulkIngestAction.responses.clear(); // write each response only once
             }
             builder.endArray();
             builder.endObject();
@@ -117,8 +117,8 @@ public class RestIngestResponseAction extends BaseRestHandler {
     }
 
     static final class Fields {
-        static final XContentBuilderString RESPONSES = new XContentBuilderString("responses");
         static final XContentBuilderString ID = new XContentBuilderString("id");
+        static final XContentBuilderString RESPONSES = new XContentBuilderString("responses");
         static final XContentBuilderString ITEMS = new XContentBuilderString("items");
         static final XContentBuilderString _INDEX = new XContentBuilderString("_index");
         static final XContentBuilderString _TYPE = new XContentBuilderString("_type");

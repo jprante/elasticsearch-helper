@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.ingest.transport;
 
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.support.ingest.ClientIngest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,22 +31,14 @@ import java.net.URI;
 public interface TransportClientIngest extends ClientIngest {
 
     /**
-     * Set settings
-     *
-     * @param settings the settings
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest settings(Settings settings);
-
-    /**
-     * Create a new client
+     * Create a new transport client
      *
      * @return this TransportClientIndexer
      */
     TransportClientIngest newClient();
 
     /**
-     * Create a new client
+     * Create a new transport client
      *
      * @param uri the URI to connect to
      * @return this TransportClientIndexer
@@ -69,7 +60,7 @@ public interface TransportClientIngest extends ClientIngest {
     TransportClientIngest waitForHealthyCluster() throws IOException;
 
     /**
-     * Set index
+     * Set the default index
      *
      * @param index the index
      * @return this TransportClientIndexer
@@ -77,7 +68,7 @@ public interface TransportClientIngest extends ClientIngest {
     TransportClientIngest index(String index);
 
     /**
-     * Set type
+     * Set the default type
      *
      * @param type the type
      * @return this TransportClientIndexer
@@ -107,45 +98,6 @@ public interface TransportClientIngest extends ClientIngest {
      * @return this TransportClientIndexer
      */
     TransportClientIngest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
-
-    /**
-     * Create document
-     *
-     * @param index
-     * @param type
-     * @param id
-     * @param source
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest create(String index, String type, String id, String source);
-
-    /**
-     * Index document
-     *
-     * @param index
-     * @param type
-     * @param id
-     * @param source
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest index(String index, String type, String id, String source);
-
-    /**
-     * Delete document
-     *
-     * @param index
-     * @param type
-     * @param id
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest delete(String index, String type, String id);
-
-    /**
-     * Ensure that all bulk
-     *
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest flush();
 
     /**
      * Start bulk mode. Disables refresh.
@@ -191,7 +143,7 @@ public interface TransportClientIngest extends ClientIngest {
     TransportClientIngest deleteIndex();
 
     /**
-     * Shutdown this Elasticsearch Indexer
+     * Shutdown this client
      */
     void shutdown();
 

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.action.bulk;
+package org.elasticsearch.action.ingest;
 
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
@@ -49,7 +49,6 @@ import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p/>
  * This action registers a ConcurrentTransportHandler to the transport service
  */
-public class TransportIngestAction extends TransportAction<IngestRequest, BulkResponse> {
+public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
 
     private final AutoCreateIndex autoCreateIndex;
 
@@ -68,13 +67,13 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
 
     private final ClusterService clusterService;
 
-    private final TransportShardBulkAction shardBulkAction;
+    private final TransportShardIngestAction shardBulkAction;
 
     private final TransportCreateIndexAction createIndexAction;
 
     @Inject
     public TransportIngestAction(Settings settings, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                 TransportShardBulkAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
+                                 TransportShardIngestAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
         super(settings, threadPool);
         this.clusterService = clusterService;
         this.shardBulkAction = shardBulkAction;
@@ -83,14 +82,14 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
         this.autoCreateIndex = new AutoCreateIndex(settings);
         this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
 
-        transportService.registerHandler(IngestAction.NAME, new ConcurrentTransportHandler());
+        transportService.registerHandler(IngestAction.NAME, new IngestTransportHandler());
     }
 
     @Override
-    protected void doExecute(final IngestRequest bulkRequest, final ActionListener<BulkResponse> listener) {
+    protected void doExecute(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
         final long startTime = System.currentTimeMillis();
         Set<String> indices = Sets.newHashSet();
-        for (ActionRequest request : bulkRequest.requests) {
+        for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 if (!indices.contains(indexRequest.index())) {
@@ -114,7 +113,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                         @Override
                         public void onResponse(CreateIndexResponse result) {
                             if (counter.decrementAndGet() == 0) {
-                                executeBulk(bulkRequest, startTime, listener);
+                                executeBulk(ingestRequest, startTime, listener);
                             }
                         }
 
@@ -123,7 +122,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                             if (ExceptionsHelper.unwrapCause(e) instanceof IndexAlreadyExistsException) {
                                 // we have the index, do it
                                 if (counter.decrementAndGet() == 0) {
-                                    executeBulk(bulkRequest, startTime, listener);
+                                    executeBulk(ingestRequest, startTime, listener);
                                 }
                             } else if (failed.compareAndSet(false, true)) {
                                 listener.onFailure(e);
@@ -132,22 +131,22 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                     });
                 } else {
                     if (counter.decrementAndGet() == 0) {
-                        executeBulk(bulkRequest, startTime, listener);
+                        executeBulk(ingestRequest, startTime, listener);
                     }
                 }
             }
         } else {
-            executeBulk(bulkRequest, startTime, listener);
+            executeBulk(ingestRequest, startTime, listener);
         }
     }
 
-    private void executeBulk(final IngestRequest bulkRequest, final long startTime, final ActionListener<BulkResponse> listener) {
+    private void executeBulk(final IngestRequest ingestRequest, final long startTime, final ActionListener<IngestResponse> listener) {
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
 
         MetaData metaData = clusterState.metaData();
-        for (ActionRequest request : bulkRequest.requests) {
+        for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 String aliasOrIndex = indexRequest.index();
@@ -164,21 +163,20 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                 deleteRequest.index(clusterState.metaData().concreteIndex(deleteRequest.index()));
             }
         }
-        final BulkItemResponse[] responses = new BulkItemResponse[bulkRequest.requests.size()];
 
         // first, go over all the requests and create a ShardId -> Operations mapping
-        Map<ShardId, List<BulkItemRequest>> requestsByShard = Maps.newHashMap();
+        Map<ShardId, List<IngestItemRequest>> requestsByShard = Maps.newHashMap();
         int i = 0;
-        for (ActionRequest request : bulkRequest.requests) {
+        for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
-                List<BulkItemRequest> list = requestsByShard.get(shardId);
+                List<IngestItemRequest> list = requestsByShard.get(shardId);
                 if (list == null) {
                     list = Lists.newArrayList();
                     requestsByShard.put(shardId, list);
                 }
-                list.add(new BulkItemRequest(i, request));
+                list.add(new IngestItemRequest(i, request));
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
                 MappingMetaData mappingMd = clusterState.metaData().index(deleteRequest.index()).mappingOrDefault(deleteRequest.type());
@@ -186,45 +184,46 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                     // if routing is required, and no routing on the delete request, we need to broadcast it....
                     GroupShardsIterator groupShards = clusterService.operationRouting().broadcastDeleteShards(clusterState, deleteRequest.index());
                     for (ShardIterator shardIt : groupShards) {
-                        List<BulkItemRequest> list = requestsByShard.get(shardIt.shardId());
+                        List<IngestItemRequest> list = requestsByShard.get(shardIt.shardId());
                         if (list == null) {
                             list = Lists.newArrayList();
                             requestsByShard.put(shardIt.shardId(), list);
                         }
-                        list.add(new BulkItemRequest(i, new DeleteRequest(deleteRequest)));
+                        list.add(new IngestItemRequest(i, new DeleteRequest(deleteRequest)));
                     }
                 } else {
                     ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
-                    List<BulkItemRequest> list = requestsByShard.get(shardId);
+                    List<IngestItemRequest> list = requestsByShard.get(shardId);
                     if (list == null) {
                         list = Lists.newArrayList();
                         requestsByShard.put(shardId, list);
                     }
-                    list.add(new BulkItemRequest(i, request));
+                    list.add(new IngestItemRequest(i, request));
                 }
             }
             i++;
         }
 
+        final List<IngestItemSuccess> success = Lists.newLinkedList();
+        final List<IngestItemFailure> failure = Lists.newLinkedList();
+
         if (requestsByShard.isEmpty()) {
-            listener.onResponse(new BulkResponse(responses, System.currentTimeMillis() - startTime));
+            listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
             return;
         }
 
         final AtomicInteger counter = new AtomicInteger(requestsByShard.size());
-        for (Map.Entry<ShardId, List<BulkItemRequest>> entry : requestsByShard.entrySet()) {
+        for (Map.Entry<ShardId, List<IngestItemRequest>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
-            final List<BulkItemRequest> requests = entry.getValue();
-            BulkShardRequest bulkShardRequest = new BulkShardRequest(shardId.index().name(), shardId.id(), bulkRequest.refresh(), requests.toArray(new BulkItemRequest[requests.size()]));
-            bulkShardRequest.replicationType(bulkRequest.replicationType());
-            bulkShardRequest.consistencyLevel(bulkRequest.consistencyLevel());
-            shardBulkAction.execute(bulkShardRequest, new ActionListener<BulkShardResponse>() {
+            final List<IngestItemRequest> requests = entry.getValue();
+            IngestShardRequest ingestShardRequest = new IngestShardRequest(shardId.index().name(), shardId.id(), ingestRequest.refresh(), requests.toArray(new IngestItemRequest[requests.size()]));
+            ingestShardRequest.replicationType(ingestRequest.replicationType());
+            ingestShardRequest.consistencyLevel(ingestRequest.consistencyLevel());
+            shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestShardResponse>() {
                 @Override
-                public void onResponse(BulkShardResponse bulkShardResponse) {
-                    synchronized (responses) {
-                        for (BulkItemResponse bulkItemResponse : bulkShardResponse.responses()) {
-                            responses[bulkItemResponse.itemId()] = bulkItemResponse;
-                        }
+                public void onResponse(IngestShardResponse ingestShardResponse) {
+                    synchronized (success) {
+                        success.addAll(ingestShardResponse.success());
                     }
                     if (counter.decrementAndGet() == 0) {
                         finishHim();
@@ -235,17 +234,9 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                 public void onFailure(Throwable e) {
                     // create failures for all relevant requests
                     String message = ExceptionsHelper.detailedMessage(e);
-                    synchronized (responses) {
-                        for (BulkItemRequest request : requests) {
-                            if (request.request() instanceof IndexRequest) {
-                                IndexRequest indexRequest = (IndexRequest) request.request();
-                                responses[request.id()] = new BulkItemResponse(request.id(), indexRequest.opType().toString().toLowerCase(Locale.ENGLISH),
-                                        new BulkItemResponse.Failure(indexRequest.index(), indexRequest.type(), indexRequest.id(), message));
-                            } else if (request.request() instanceof DeleteRequest) {
-                                DeleteRequest deleteRequest = (DeleteRequest) request.request();
-                                responses[request.id()] = new BulkItemResponse(request.id(), "delete",
-                                        new BulkItemResponse.Failure(deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), message));
-                            }
+                    synchronized (failure) {
+                        for (IngestItemRequest request : requests) {
+                            failure.add(new IngestItemFailure(request.id(), message));
                         }
                     }
                     if (counter.decrementAndGet() == 0) {
@@ -254,13 +245,13 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                 }
 
                 private void finishHim() {
-                    listener.onResponse(new BulkResponse(responses, System.currentTimeMillis() - startTime));
+                    listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
                 }
             });
         }
     }
 
-    class ConcurrentTransportHandler extends BaseTransportRequestHandler<IngestRequest> {
+    class IngestTransportHandler extends BaseTransportRequestHandler<IngestRequest> {
 
         @Override
         public IngestRequest newInstance() {
@@ -271,9 +262,9 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
         public void messageReceived(final IngestRequest request, final TransportChannel channel) throws Exception {
             // no need to use threaded listener, since we just send a response
             request.listenerThreaded(false);
-            execute(request, new ActionListener<BulkResponse>() {
+            execute(request, new ActionListener<IngestResponse>() {
                 @Override
-                public void onResponse(BulkResponse result) {
+                public void onResponse(IngestResponse result) {
                     try {
                         channel.sendResponse(result);
                     } catch (Exception e) {
@@ -286,7 +277,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, BulkRe
                     try {
                         channel.sendResponse(e);
                     } catch (Exception e1) {
-                        logger.warn("Failed to send error response for action [" + BulkAction.NAME + "] and request [" + request + "]", e1);
+                        logger.warn("Failed to send error response for action [" + IngestAction.NAME + "] and request [" + request + "]", e1);
                     }
                 }
             });

@@ -36,17 +36,17 @@ import org.elasticsearch.common.Nullable;
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, BulkResponse, IngestRequestBuilder> {
+public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestRequest, BulkResponse, BulkIngestRequestBuilder> {
 
-    public IngestRequestBuilder(Client client) {
-        super((InternalClient) client, new IngestRequest());
+    public BulkIngestRequestBuilder(Client client) {
+        super((InternalClient) client, new BulkIngestRequest());
     }
 
     /**
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public IngestRequestBuilder add(IndexRequest request) {
+    public BulkIngestRequestBuilder add(IndexRequest request) {
         super.request.add(request);
         return this;
     }
@@ -55,7 +55,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public IngestRequestBuilder add(IndexRequestBuilder request) {
+    public BulkIngestRequestBuilder add(IndexRequestBuilder request) {
         super.request.add(request.request());
         return this;
     }
@@ -63,7 +63,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public IngestRequestBuilder add(DeleteRequest request) {
+    public BulkIngestRequestBuilder add(DeleteRequest request) {
         super.request.add(request);
         return this;
     }
@@ -71,7 +71,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public IngestRequestBuilder add(DeleteRequestBuilder request) {
+    public BulkIngestRequestBuilder add(DeleteRequestBuilder request) {
         super.request.add(request.request());
         return this;
     }
@@ -79,7 +79,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Adds a framed data in binary format
      */
-    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
+    public BulkIngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
         request.add(data, from, length, contentUnsafe, null, null);
         return this;
     }
@@ -87,7 +87,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Adds a framed data in binary format
      */
-    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public BulkIngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         request.add(data, from, length, contentUnsafe, defaultIndex, defaultType);
         return this;
     }
@@ -95,7 +95,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Set the replication type for this operation.
      */
-    public IngestRequestBuilder setReplicationType(ReplicationType replicationType) {
+    public BulkIngestRequestBuilder setReplicationType(ReplicationType replicationType) {
         request.replicationType(replicationType);
         return this;
     }
@@ -103,7 +103,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
     /**
      * Sets the consistency level. Defaults to {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}.
      */
-    public IngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
+    public BulkIngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
         return this;
     }
@@ -113,7 +113,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, Bu
      * be searchable. Note, heavy indexing should not set this to <tt>true</tt>. Defaults
      * to <tt>false</tt>.
      */
-    public IngestRequestBuilder setRefresh(boolean refresh) {
+    public BulkIngestRequestBuilder setRefresh(boolean refresh) {
         request.refresh(refresh);
         return this;
     }

@@ -16,15 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support;
+package org.elasticsearch.client.support.ingest.transport;
 
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.client.support.search.transport.MockTransportClientSearch;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
  * TransportClientIngest Mockup. Do not perform actions on a real cluster.
+ * Useful for testing or dry runs.
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
