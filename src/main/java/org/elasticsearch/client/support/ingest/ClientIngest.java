@@ -22,7 +22,7 @@ package org.elasticsearch.client.support.ingest;
  * ClientIngest interface. Minimal API for node client ingesting.
  * Useful for river implementations.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface ClientIngest {
 

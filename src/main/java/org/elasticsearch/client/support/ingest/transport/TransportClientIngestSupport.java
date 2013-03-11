@@ -30,6 +30,7 @@ import org.elasticsearch.action.ingest.IngestItemFailure;
 import org.elasticsearch.action.ingest.IngestProcessor;
 import org.elasticsearch.action.ingest.IngestRequest;
 import org.elasticsearch.action.ingest.IngestResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * TransportClientIngest support
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class TransportClientIngestSupport extends TransportClientSupport implements TransportClientIngest {
 
@@ -124,9 +125,13 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this.newClient(findURI());
     }
 
+    public Client client() {
+        return client;
+    }
+
     /**
      * Create new client with concurrent ingestProcessor processor.
-     * <p/>
+     *
      * The URI describes host and port of the node the client should connect to,
      * with the parameter <tt>es.cluster.name</tt> for the cluster name.
      *
@@ -419,7 +424,8 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         if (logger.isTraceEnabled()) {
             logger.trace("create: {}/{}/{} source = {}", index, type, id, source);
         }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
+        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id).create(true).source(source);
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
@@ -437,7 +443,8 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         if (logger.isTraceEnabled()) {
             logger.trace("index: {}/{}/{} source = {}", index, type, id, source);
         }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
+        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id).create(false).source(source);
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
@@ -455,7 +462,8 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         if (logger.isTraceEnabled()) {
             logger.trace("delete: {}/{}/{} ", index, type, id);
         }
-        DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
+        DeleteRequest deleteRequest = Requests.deleteRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id);
         try {
             ingestProcessor.add(deleteRequest);
         } catch (Exception e) {

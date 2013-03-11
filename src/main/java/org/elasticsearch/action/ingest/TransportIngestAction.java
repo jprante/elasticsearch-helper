@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A concurrent bulk transport action
- * <p/>
+ *
  * This action registers a ConcurrentTransportHandler to the transport service
  */
 public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {

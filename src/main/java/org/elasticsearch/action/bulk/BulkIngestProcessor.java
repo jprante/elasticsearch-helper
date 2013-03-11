@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * set when to "flush" a new bulk request (either based on number of actions,
  * based on the size, or time), and to easily control the number of concurrent
  * bulk requests allowed to be executed in parallel.
- * <p/>
+ *
  * In order to create a new bulk processor, use the {@link Builder}.
  */
 public class BulkIngestProcessor {

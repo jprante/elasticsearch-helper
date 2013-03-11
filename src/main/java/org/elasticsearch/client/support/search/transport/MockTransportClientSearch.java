@@ -39,7 +39,7 @@ import java.util.Set;
 /**
  * TransportClientSearch mockup. Do not perform actions on a real cluster.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class MockTransportClientSearch extends TransportClientSearchSupport {
 

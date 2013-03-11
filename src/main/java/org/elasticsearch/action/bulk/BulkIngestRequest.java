@@ -322,7 +322,6 @@ public class BulkIngestRequest extends BulkRequest {
     /**
      * Take a number of requests out of this bulk request and put them
      * into an array list.
-     * <p/>
      * This method is thread safe.
      *
      * @param numRequests

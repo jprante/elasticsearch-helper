@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * Helper class for Elasticsearch search/get requests
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class BasicRequest {
 

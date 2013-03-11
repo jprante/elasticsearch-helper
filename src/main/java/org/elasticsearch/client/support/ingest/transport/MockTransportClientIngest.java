@@ -25,7 +25,7 @@ import java.net.URI;
  * TransportClientIngest Mockup. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class MockTransportClientIngest extends TransportClientIngestSupport implements TransportClientIngest {
 

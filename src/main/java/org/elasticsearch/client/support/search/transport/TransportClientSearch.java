@@ -26,7 +26,7 @@ import java.net.URI;
 /**
  * Transport client search helper API
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface TransportClientSearch {
 
@@ -34,7 +34,7 @@ public interface TransportClientSearch {
      * Set index
      *
      * @param index
-     * @return this TransportClientHelper
+     * @return this TransportClientSearch
      */
     TransportClientSearch setIndex(String index);
 
@@ -44,6 +44,21 @@ public interface TransportClientSearch {
      * @return the index
      */
     String getIndex();
+
+    /**
+     * Set index
+     *
+     * @param type
+     * @return this TransportClientSearch
+     */
+    TransportClientSearch setType(String type);
+
+    /**
+     * Get type
+     *
+     * @return the type
+     */
+    String getType();
 
     /**
      * Create a new client

@@ -330,7 +330,6 @@ public class IngestRequest extends ActionRequest<IngestRequest> {
     /**
      * Take a number of requests out of this bulk request and put them
      * into an array list.
-     * <p/>
      * This method is thread safe.
      *
      * @param numRequests

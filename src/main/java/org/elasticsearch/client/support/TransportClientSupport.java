@@ -53,6 +53,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+/**
+ *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public abstract class TransportClientSupport {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientSupport.class);

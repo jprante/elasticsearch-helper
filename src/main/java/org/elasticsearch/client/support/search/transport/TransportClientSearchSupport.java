@@ -18,47 +18,20 @@
  */
 package org.elasticsearch.client.support.search.transport;
 
-import org.elasticsearch.ElasticSearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.search.support.BasicRequest;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.support.TransportClientSupport;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.URI;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * TransportClient support class
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class TransportClientSearchSupport extends TransportClientSupport implements TransportClientSearch {
 
@@ -70,6 +43,8 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
     protected Settings settings;
     // the default index
     private String index;
+    // the default type
+    private String type;
 
     public TransportClientSearchSupport setIndex(String index) {
         this.index = index;
@@ -79,6 +54,16 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
     @Override
     public String getIndex() {
         return index;
+    }
+
+    public TransportClientSearchSupport setType(String type) {
+        this.type = type;
+        return this;
+    }
+
+    @Override
+    public String getType() {
+        return type;
     }
 
     @Override
@@ -91,6 +76,10 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
     public TransportClientSearchSupport newClient(URI uri) {
         super.newClient(uri);
         return this;
+    }
+
+    public Client client() {
+        return client;
     }
 
     /**

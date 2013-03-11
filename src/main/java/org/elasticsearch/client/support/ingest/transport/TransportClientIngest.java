@@ -26,7 +26,7 @@ import java.net.URI;
 /**
  * TransportClientIngest is an interface for providing convenient ingest methods.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface TransportClientIngest extends ClientIngest {
 
