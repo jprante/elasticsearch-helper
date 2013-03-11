@@ -16,13 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.test;
+package org.elasticsearch.test.ingest;
 
 import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.test.AbstractNodeTest;
 import org.testng.annotations.Test;
 
 import java.net.URI;

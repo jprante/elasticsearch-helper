@@ -16,16 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.test;
+package org.elasticsearch.test.ingest;
 
 import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.test.AbstractNodeTest;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.net.URI;
 
 public class ReplicaLevelTests extends AbstractNodeTest {
 

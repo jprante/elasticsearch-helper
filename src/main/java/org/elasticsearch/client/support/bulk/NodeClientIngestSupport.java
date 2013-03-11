@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.client.support.ingest;
+package org.elasticsearch.client.support.bulk;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -28,6 +28,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.support.ingest.ClientIngest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * but are not answered by BulkResponses. No timeout, it just hangs.
  * So we fall back to BulkProcessor for now.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class NodeClientIngestSupport implements ClientIngest {
 
@@ -123,6 +124,10 @@ public class NodeClientIngestSupport implements ClientIngest {
             logger.warn(e.getMessage(), e);
             this.enabled = false;
         }
+    }
+
+    public Client client() {
+        return client;
     }
 
     public String getIndex() {

@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.test;
+package org.elasticsearch.test.ingest;
 
-import org.elasticsearch.client.support.ingest.NodeClientIngestSupport;
+import org.elasticsearch.client.support.bulk.NodeClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.testng.annotations.Test;
+import org.elasticsearch.test.AbstractNodeTest;
 
 public class ClientIngestTests extends AbstractNodeTest {
 
