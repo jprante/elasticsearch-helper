@@ -24,6 +24,8 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -32,14 +34,14 @@ public class IngestShardRequest extends ShardReplicationOperationRequest<IngestS
 
     private int shardId;
 
-    private IngestItemRequest[] items;
+    private List<IngestItemRequest> items;
 
     private boolean refresh;
 
     IngestShardRequest() {
     }
 
-    IngestShardRequest(String index, int shardId, boolean refresh, IngestItemRequest[] items) {
+    IngestShardRequest(String index, int shardId, boolean refresh, List<IngestItemRequest> items) {
         this.index = index;
         this.shardId = shardId;
         this.items = items;
@@ -54,7 +56,7 @@ public class IngestShardRequest extends ShardReplicationOperationRequest<IngestS
         return shardId;
     }
 
-    IngestItemRequest[] items() {
+    List<IngestItemRequest> items() {
         return items;
     }
 
@@ -72,7 +74,7 @@ public class IngestShardRequest extends ShardReplicationOperationRequest<IngestS
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeVInt(shardId);
-        out.writeVInt(items.length);
+        out.writeVInt(items.size());
         for (IngestItemRequest item : items) {
             if (item != null) {
                 out.writeBoolean(true);
@@ -88,10 +90,11 @@ public class IngestShardRequest extends ShardReplicationOperationRequest<IngestS
     public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
         shardId = in.readVInt();
-        items = new IngestItemRequest[in.readVInt()];
-        for (int i = 0; i < items.length; i++) {
+        int size = in.readVInt();
+        items = new ArrayList();
+        for (int i = 0; i < size; i++) {
             if (in.readBoolean()) {
-                items[i] = IngestItemRequest.readBulkItem(in);
+                items.add(IngestItemRequest.readBulkItem(in));
             }
         }
         refresh = in.readBoolean();

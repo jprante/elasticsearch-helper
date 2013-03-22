@@ -30,12 +30,14 @@ import org.elasticsearch.action.ingest.IngestItemFailure;
 import org.elasticsearch.action.ingest.IngestProcessor;
 import org.elasticsearch.action.ingest.IngestRequest;
 import org.elasticsearch.action.ingest.IngestResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -173,6 +175,11 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
+    @Override
+    public Client client() {
+        return client;
+    }
+
     /**
      * Initial settings tailored for index/ingestProcessor client use. Transport
      * sniffing, only thread pool is for ingestProcessor/indexing, other thread pools are
@@ -274,17 +281,23 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
+    @Override
     public TransportClientIngestSupport mapping(String mapping) {
         this.mapping = mapping;
         return this;
     }
 
+    @Override
     public TransportClientIngestSupport newIndex() {
         return newIndex(true);
     }
 
     public synchronized TransportClientIngestSupport newIndex(boolean ignoreException) {
+        if (!enabled) {
+            return this;
+        }
         if (client == null) {
+            logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
@@ -303,17 +316,14 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
             mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
         }
         request.mapping(getType(), mapping);
+        logger.info("creating index = {} type = {} settings = {} mapping = {}",
+                getIndex(),
+                getType(),
+                settingsBuilder != null ? settingsBuilder.build().getAsMap() : "",
+                mapping);
         try {
-            if (enabled) {
-                logger.debug("index = {} type = {} settings = {} mapping = {}",
-                        getIndex(),
-                        getType(),
-                        settingsBuilder.build().getAsMap(),
-                        mapping
-                );
-                client.admin().indices().create(request).actionGet();
-            }
-        } catch (Exception e) {
+            client.admin().indices().create(request).actionGet();
+        } catch (IndexAlreadyExistsException e) {
             if (!ignoreException) {
                 throw new RuntimeException(e);
             }
@@ -326,16 +336,19 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     public TransportClientIngestSupport deleteIndex(boolean ignoreException) {
+        if (!enabled) {
+            return this;
+        }
         if (client == null) {
+            logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
+            logger.warn("no index name given to create");
             return this;
         }
         try {
-            if (enabled) {
-                client.admin().indices().delete(new DeleteIndexRequest(getIndex()));
-            }
+            client.admin().indices().delete(new DeleteIndexRequest(getIndex()));
         } catch (Exception e) {
             if (!ignoreException) {
                 throw new RuntimeException(e);
@@ -344,16 +357,25 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
-    public TransportClientIngestSupport newType(String mapping) {
+    @Override
+    public TransportClientIngestSupport newType() {
+        if (!enabled) {
+            return this;
+        }
         if (client == null) {
+            logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return this;
+        }
+        if (mapping == null) {
+            mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
         }
         client.admin().indices().putMapping(new PutMappingRequest()
                 .indices(new String[]{getIndex()})
-                .type(type)
+                .type(getType())
                 .source(mapping))
                 .actionGet();
         return this;
@@ -368,18 +390,21 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     public TransportClientIngestSupport deleteType(boolean enabled, boolean ignoreException) {
+        if (!enabled) {
+            return this;
+        }
         if (client == null) {
+            logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return this;
         }
         try {
-            if (enabled) {
-                client.admin().indices().deleteMapping(new DeleteMappingRequest()
+            client.admin().indices().deleteMapping(new DeleteMappingRequest()
                         .indices(new String[]{getIndex()})
                         .type(type));
-            }
         } catch (Exception e) {
             if (!ignoreException) {
                 throw new RuntimeException(e);
@@ -400,11 +425,14 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
+    @Override
     public TransportClientIngestSupport refresh() {
         if (client == null) {
+            logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return this;
         }
         client.admin().indices().refresh(new RefreshRequest().indices(getIndex()));
@@ -478,7 +506,11 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     public TransportClientIngestSupport numberOfShards(int value) {
+        if (!enabled) {
+            return this;
+        }
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return this;
         }
         setting("index.number_of_shards", value);
@@ -487,6 +519,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
 
     public TransportClientIngestSupport numberOfReplicas(int value) {
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return this;
         }
         setting("index.number_of_replicas", value);
@@ -496,6 +529,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     @Override
     public int updateReplicaLevel(int level) throws IOException {
         if (getIndex() == null) {
+            logger.warn("no index name given");
             return -1;
         }
         super.waitForHealthyCluster(ClusterHealthStatus.YELLOW, "1m");
@@ -508,6 +542,10 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         if (!enabled) {
             return this;
         }
+        if (client == null) {
+            logger.warn("no client");
+            return this;
+        }
         ingestProcessor.flush();
         return this;
     }
@@ -516,6 +554,10 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     public synchronized void shutdown() {
         if (!enabled) {
             super.shutdown();
+            return;
+        }
+        if (client == null) {
+            logger.warn("no client");
             return;
         }
         try {

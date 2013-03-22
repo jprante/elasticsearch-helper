@@ -123,7 +123,7 @@ public class RestBulkIngestAction extends BaseRestHandler {
             public void afterBulk(long executionId, BulkResponse response) {
                 long l = outstandingRequests.decrementAndGet();
                 logger.info("bulk [{}] success [{} items] [{}ms]",
-                        executionId, response.items().length, response.took().millis());
+                        executionId, response.getItems().length, response.getTook().millis());
                 if (response.hasFailures()) {
                     logger.error(response.buildFailureMessage());
                 }

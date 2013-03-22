@@ -18,6 +18,10 @@
  */
 package org.elasticsearch.client.support.ingest.transport;
 
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
+
 import java.io.IOException;
 import java.net.URI;
 
@@ -29,6 +33,7 @@ import java.net.URI;
  */
 public class MockTransportClientIngest extends TransportClientIngestSupport implements TransportClientIngest {
 
+    private final static ESLogger logger = Loggers.getLogger(MockTransportClientIngest.class);
 
     @Override
     public MockTransportClientIngest newClient() {
@@ -40,6 +45,10 @@ public class MockTransportClientIngest extends TransportClientIngestSupport impl
     public MockTransportClientIngest newClient(URI uri) {
         super.newClient(uri);
         return this;
+    }
+
+    public Client client() {
+        return null;
     }
 
     @Override
@@ -121,6 +130,7 @@ public class MockTransportClientIngest extends TransportClientIngestSupport impl
 
     @Override
     public MockTransportClientIngest newIndex() {
+        logger.info("mock newIndex");
         return this;
     }
 }

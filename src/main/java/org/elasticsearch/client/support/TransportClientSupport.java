@@ -24,6 +24,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.logging.ESLogger;
@@ -100,6 +101,10 @@ public abstract class TransportClientSupport {
             }
         }
         return this;
+    }
+
+    public Client client() {
+        return client;
     }
 
     public boolean isConnected() {
@@ -270,7 +275,7 @@ public abstract class TransportClientSupport {
         }
         IndicesStatusResponse response = client.admin().indices()
                 .status(new IndicesStatusRequest(getIndex()).recovery(true)).actionGet();
-        return response.totalShards();
+        return response.getTotalShards();
     }
 
     protected TransportClientSupport enableRefreshInterval() {

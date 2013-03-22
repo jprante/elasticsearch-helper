@@ -48,7 +48,7 @@ public class BasicResponse {
     }
 
     public long tookInMillis() {
-        return searchResponse.tookInMillis();
+        return searchResponse.getTookInMillis();
     }
 
     public long totalHits() {
@@ -56,7 +56,7 @@ public class BasicResponse {
     }
 
     public boolean exists() {
-        return getResponse.exists();
+        return getResponse.isExists();
     }
 
     public BasicResponse toJson(OutputStream out) throws IOException {

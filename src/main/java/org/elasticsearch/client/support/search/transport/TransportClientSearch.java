@@ -19,6 +19,7 @@
 package org.elasticsearch.client.support.search.transport;
 
 import org.elasticsearch.action.search.support.BasicRequest;
+import org.elasticsearch.client.Client;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,6 +55,8 @@ public interface TransportClientSearch {
      * Create a new client
      */
     TransportClientSearch newClient(URI uri);
+
+    Client client();
 
     boolean isConnected();
 

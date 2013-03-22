@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.client.support.ingest.transport;
 
+import org.elasticsearch.client.Client;
 import org.elasticsearch.client.support.ingest.ClientIngest;
 
 import java.io.IOException;
@@ -60,6 +61,8 @@ public interface TransportClientIngest extends ClientIngest {
      * @return this TransportClientIndexer
      */
     TransportClientIngest newClient(URI uri);
+
+    Client client();
 
     /**
      * Get connection status
@@ -128,6 +131,8 @@ public interface TransportClientIngest extends ClientIngest {
      */
     long getVolumeInBytes();
 
+    TransportClientIngest mapping(String mapping);
+
     /**
      * Create a new index
      *
@@ -142,7 +147,12 @@ public interface TransportClientIngest extends ClientIngest {
      */
     TransportClientIngest deleteIndex();
 
+    TransportClientIngest newType();
+
+    TransportClientIngest refresh();
+
     /**
+     *
      * Shutdown this client
      */
     void shutdown();

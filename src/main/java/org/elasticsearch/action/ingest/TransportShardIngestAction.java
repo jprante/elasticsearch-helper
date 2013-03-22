@@ -133,9 +133,10 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
         List<IngestItemSuccess> success = Lists.newLinkedList();
         List<IngestItemFailure> failure = Lists.newLinkedList();
 
-        long[] versions = new long[request.items().length];
-        for (int i = 0; i < request.items().length; i++) {
-            IngestItemRequest item = request.items()[i];
+        int size = request.items().size();
+        long[] versions = new long[size];
+        for (int i = 0; i < size; i++) {
+            IngestItemRequest item = request.items().get(i);
             if (item.request() instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) item.request();
                 try {
@@ -179,7 +180,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     // if we are going to percolate, then we need to keep this op for the postPrimary operation
                     if (Strings.hasLength(indexRequest.percolate())) {
                         if (ops == null) {
-                            ops = new Engine.IndexingOperation[request.items().length];
+                            ops = new Engine.IndexingOperation[size];
                         }
                         ops[i] = op;
                     }
@@ -190,7 +191,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     if (retryPrimaryException(e)) {
                         // restore updated versions...
                         for (int j = 0; j < i; j++) {
-                            applyVersion(request.items()[j], versions[j]);
+                            applyVersion(request.items().get(j), versions[j]);
                         }
                         throw (ElasticSearchException) e;
                     }
@@ -201,7 +202,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     }
                     failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));
                     // nullify the request so it won't execute on the replicas
-                    request.items()[i] = null;
+                    request.items().set(i, null);
                 }
             } else if (item.request() instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) item.request();
@@ -218,7 +219,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     if (retryPrimaryException(e)) {
                         // restore updated versions...
                         for (int j = 0; j < i; j++) {
-                            applyVersion(request.items()[j], versions[j]);
+                            applyVersion(request.items().get(j), versions[j]);
                         }
                         throw (ElasticSearchException) e;
                     }
@@ -229,7 +230,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     }
                     failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));
                     // nullify the request so it won't execute on the replicas
-                    request.items()[i] = null;
+                    request.items().set(i, null);
                 }
             }
         }
@@ -260,8 +261,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
     protected void shardOperationOnReplica(ReplicaOperationRequest shardRequest) {
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
         final IngestShardRequest request = shardRequest.request;
-        for (int i = 0; i < request.items().length; i++) {
-            IngestItemRequest item = request.items()[i];
+        for (int i = 0; i < request.items().size(); i++) {
+            IngestItemRequest item = request.items().get(i);
             if (item == null) {
                 continue;
             }
@@ -331,6 +332,9 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
     }
 
     private void applyVersion(IngestItemRequest item, long version) {
+        if (item == null) {
+            return;
+        }
         if (item.request() instanceof IndexRequest) {
             ((IndexRequest) item.request()).version(version);
         } else if (item.request() instanceof DeleteRequest) {

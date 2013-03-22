@@ -216,7 +216,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         for (Map.Entry<ShardId, List<IngestItemRequest>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
             final List<IngestItemRequest> requests = entry.getValue();
-            IngestShardRequest ingestShardRequest = new IngestShardRequest(shardId.index().name(), shardId.id(), ingestRequest.refresh(), requests.toArray(new IngestItemRequest[requests.size()]));
+            IngestShardRequest ingestShardRequest = new IngestShardRequest(shardId.index().name(), shardId.id(), ingestRequest.refresh(), requests);
             ingestShardRequest.replicationType(ingestRequest.replicationType());
             ingestShardRequest.consistencyLevel(ingestRequest.consistencyLevel());
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestShardResponse>() {
