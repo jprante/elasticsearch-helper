@@ -18,14 +18,13 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
+import org.xbib.elasticsearch.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.net.URI;
 
 public class ReplicaLevelTests extends AbstractNodeTest {
 
