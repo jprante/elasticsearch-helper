@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.elasticsearch.action.bulk;
+package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
@@ -38,25 +38,25 @@ import org.elasticsearch.common.Nullable;
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestRequest, BulkResponse, BulkIngestRequestBuilder> {
+public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
-    protected BulkIngestRequestBuilder(Client client) {
-        super((InternalClient) client, new BulkIngestRequest());
+    protected IngestRequestBuilder(Client client) {
+        super((InternalClient) client, new IngestRequest());
     }
 
-    public BulkIngestRequest request() {
+    public IngestRequest request() {
         return this.request;
     }
 
     @Override
-    public ListenableActionFuture<BulkResponse> execute() {
-        PlainListenableActionFuture<BulkResponse> future = new PlainListenableActionFuture<BulkResponse>(request.listenerThreaded(), client.threadPool());
+    public ListenableActionFuture<IngestResponse> execute() {
+        PlainListenableActionFuture<IngestResponse> future = new PlainListenableActionFuture<IngestResponse>(request.listenerThreaded(), client.threadPool());
         execute(future);
         return future;
     }
 
     @Override
-    public void execute(ActionListener<BulkResponse> listener) {
+    public void execute(ActionListener<IngestResponse> listener) {
         doExecute(listener);
     }
 
@@ -64,7 +64,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public BulkIngestRequestBuilder add(IndexRequest request) {
+    public IngestRequestBuilder add(IndexRequest request) {
         this.request.add(request);
         return this;
     }
@@ -73,7 +73,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
      * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows the same behavior of {@link org.elasticsearch.action.index.IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
      */
-    public BulkIngestRequestBuilder add(IndexRequestBuilder request) {
+    public IngestRequestBuilder add(IndexRequestBuilder request) {
         this.request.add(request.request());
         return this;
     }
@@ -81,7 +81,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public BulkIngestRequestBuilder add(DeleteRequest request) {
+    public IngestRequestBuilder add(DeleteRequest request) {
         this.request.add(request);
         return this;
     }
@@ -89,7 +89,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     /**
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
-    public BulkIngestRequestBuilder add(DeleteRequestBuilder request) {
+    public IngestRequestBuilder add(DeleteRequestBuilder request) {
         this.request.add(request.request());
         return this;
     }
@@ -97,7 +97,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     /**
      * Adds a framed data in binary format
      */
-    public BulkIngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
+    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
         this.request.add(data, from, length, contentUnsafe, null, null);
         return this;
     }
@@ -105,7 +105,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     /**
      * Adds a framed data in binary format
      */
-    public BulkIngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         this.request.add(data, from, length, contentUnsafe, defaultIndex, defaultType);
         return this;
     }
@@ -113,16 +113,16 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     /**
      * Set the replication type for this operation.
      */
-    public BulkIngestRequestBuilder setReplicationType(ReplicationType replicationType) {
-        request.replicationType(replicationType);
+    public IngestRequestBuilder setReplicationType(ReplicationType replicationType) {
+        this.request.replicationType(replicationType);
         return this;
     }
 
     /**
      * Sets the consistency level. Defaults to {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}.
      */
-    public BulkIngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
-        this.request.consistencyLevel(consistencyLevel);
+    public IngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
+        request.consistencyLevel(consistencyLevel);
         return this;
     }
 
@@ -131,7 +131,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
      * be searchable. Note, heavy indexing should not set this to <tt>true</tt>. Defaults
      * to <tt>false</tt>.
      */
-    public BulkIngestRequestBuilder setRefresh(boolean refresh) {
+    public IngestRequestBuilder setRefresh(boolean refresh) {
         request.refresh(refresh);
         return this;
     }
@@ -143,7 +143,7 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
         return request.numberOfActions();
     }
 
-    protected void doExecute(ActionListener<BulkResponse> listener) {
-        ((Client)client).bulk(request, listener);
+    protected void doExecute(ActionListener<IngestResponse> listener) {
+        ((Client)client).execute(IngestAction.INSTANCE, request, listener);
     }
 }

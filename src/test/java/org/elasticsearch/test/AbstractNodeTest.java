@@ -35,7 +35,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Map;
 import java.util.Random;

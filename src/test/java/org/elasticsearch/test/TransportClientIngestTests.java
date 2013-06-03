@@ -18,20 +18,18 @@
  */
 package org.elasticsearch.test;
 
-import org.elasticsearch.client.support.ingest.transport.TransportClientIngestSupport;
+import org.xbib.elasticsearch.support.ingest.transport.TransportClientIngestSupport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Like TransportClientBulkTests, but using ingest processor
- */
 public class TransportClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientIngestTests.class);
