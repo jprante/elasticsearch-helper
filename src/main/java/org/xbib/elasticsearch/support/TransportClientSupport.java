@@ -198,15 +198,33 @@ public abstract class TransportClientSupport {
                 addresses.add(address);
                 newaddresses = true;
             }
+        } else if ("interfaces".equals(hostname)) {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface netint : Collections.list(nets)) {
+                logger.info("checking network interface = {}", netint.getName());
+                Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+                for (InetAddress addr : Collections.list(inetAddresses)) {
+                     logger.info("checking address = {}", addr.getHostAddress());
+                     InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);
+                     if (!addresses.contains(address)) {
+                         logger.info("adding address to transport client: {}", address);
+                         client.addTransportAddress(address);
+                         addresses.add(address);
+                         newaddresses = true;
+                     }
+                }
+            }
         } else if ("inet4".equals(hostname)) {
             Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
             for (NetworkInterface netint : Collections.list(nets)) {
+                logger.info("checking network interface = {}", netint.getName());
                 Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
                 for (InetAddress addr : Collections.list(inetAddresses)) {
                     if (addr instanceof Inet4Address) {
+                        logger.info("checking address = {}", addr.getHostAddress());
                         InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);
                         if (!addresses.contains(address)) {
-                            logger.info("adding interface address for transport client: {}", address);
+                            logger.info("adding address for transport client: {}", address);
                             client.addTransportAddress(address);
                             addresses.add(address);
                             newaddresses = true;
@@ -217,12 +235,14 @@ public abstract class TransportClientSupport {
         } else if ("inet6".equals(hostname)) {
             Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
             for (NetworkInterface netint : Collections.list(nets)) {
+                logger.info("checking network interface = {}", netint.getName());
                 Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
                 for (InetAddress addr : Collections.list(inetAddresses)) {
                     if (addr instanceof Inet6Address) {
+                        logger.info("checking address = {}", addr.getHostAddress());
                         InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);
                         if (!addresses.contains(address)) {
-                            logger.info("adding interface address for transport client: {}", address);
+                            logger.info("adding address for transport client: {}", address);
                             client.addTransportAddress(address);
                             addresses.add(address);
                             newaddresses = true;

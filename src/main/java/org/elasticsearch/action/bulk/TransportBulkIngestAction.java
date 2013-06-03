@@ -191,7 +191,7 @@ public class TransportBulkIngestAction extends TransportAction<BulkIngestRequest
                             list = Lists.newArrayList();
                             requestsByShard.put(shardIt.shardId(), list);
                         }
-                        list.add(new BulkItemRequest(i, new DeleteRequest(deleteRequest)));
+                        list.add(new BulkItemRequest(i, deleteRequest));
                     }
                 } else {
                     ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();

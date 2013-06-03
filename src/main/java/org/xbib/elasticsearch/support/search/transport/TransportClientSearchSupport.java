@@ -18,13 +18,12 @@
  */
 package org.xbib.elasticsearch.support.search.transport;
 
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.client.Client;
-import org.xbib.elasticsearch.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.xbib.elasticsearch.support.TransportClientSupport;
 
