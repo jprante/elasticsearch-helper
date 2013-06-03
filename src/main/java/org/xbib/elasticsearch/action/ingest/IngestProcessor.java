@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.elasticsearch.action.bulk;
+package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
@@ -34,15 +34,8 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * A bulk processor is a thread safe bulk processing class, allowing to easily
- * set when to "flush" a new bulk request (either based on number of actions,
- * based on the size, or time), and to easily control the number of concurrent
- * bulk requests allowed to be executed in parallel.
- * <p/>
- * In order to create a new bulk processor, use the {@link Builder}.
- */
-public class BulkIngestProcessor {
+
+public class IngestProcessor {
 
     private final Client client;
     private final int concurrency;
@@ -50,7 +43,7 @@ public class BulkIngestProcessor {
     private final int maxVolume;
     private final Semaphore semaphore;
     private final AtomicLong executionIdGen = new AtomicLong();
-    private final BulkIngestRequest ingestRequest = new BulkIngestRequest();
+    private final IngestRequest ingestRequest = new IngestRequest();
     private Listener listener;
     private volatile boolean closed = false;
 
@@ -58,7 +51,7 @@ public class BulkIngestProcessor {
         return new Builder(client);
     }
 
-    BulkIngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
+    IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
         this.client = client;
         this.concurrency = concurrency;
         this.actions = actions;
@@ -66,27 +59,27 @@ public class BulkIngestProcessor {
         this.semaphore = new Semaphore(concurrency);
     }
 
-    public BulkIngestProcessor listener(Listener listener) {
+    public IngestProcessor listener(Listener listener) {
         this.listener = listener;
         return this;
     }
 
-    public BulkIngestProcessor listenerThreaded(boolean threaded) {
+    public IngestProcessor listenerThreaded(boolean threaded) {
         ingestRequest.listenerThreaded(threaded);
         return this;
     }
 
-    public BulkIngestProcessor replicationType(ReplicationType type) {
+    public IngestProcessor replicationType(ReplicationType type) {
         ingestRequest.replicationType(type);
         return this;
     }
 
-    public BulkIngestProcessor consistencyLevel(WriteConsistencyLevel level) {
+    public IngestProcessor consistencyLevel(WriteConsistencyLevel level) {
         ingestRequest.consistencyLevel(level);
         return this;
     }
 
-    public BulkIngestProcessor refresh(boolean refresh) {
+    public IngestProcessor refresh(boolean refresh) {
         ingestRequest.refresh(refresh);
         return this;
     }
@@ -101,7 +94,7 @@ public class BulkIngestProcessor {
      * {@link org.elasticsearch.action.index.IndexRequest} (for example, if no
      * id is provided, one will be generated, or usage of the create flag).
      */
-    public BulkIngestProcessor add(IndexRequest request) {
+    public IngestProcessor add(IndexRequest request) {
         ingestRequest.add((ActionRequest) request);
         flushIfNeeded();
         return this;
@@ -111,13 +104,13 @@ public class BulkIngestProcessor {
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list
      * of actions to execute.
      */
-    public BulkIngestProcessor add(DeleteRequest request) {
+    public IngestProcessor add(DeleteRequest request) {
         ingestRequest.add((ActionRequest) request);
         flushIfNeeded();
         return this;
     }
 
-    public BulkIngestProcessor add(BytesReference data, boolean contentUnsafe,
+    public IngestProcessor add(BytesReference data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                Listener listener) throws Exception {
         ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
@@ -179,7 +172,7 @@ public class BulkIngestProcessor {
      *
      * @param request the ingest request
      */
-    private void process(final BulkIngestRequest request, final Listener listener) {
+    private void process(final IngestRequest request, final Listener listener) {
         if (request.numberOfActions() == 0) {
             return;
         }
@@ -194,7 +187,7 @@ public class BulkIngestProcessor {
             // execute in a blocking fashion...
             try {
                 listener.beforeBulk(executionId, request);
-                listener.afterBulk(executionId, client.bulk(request).actionGet());
+                listener.afterBulk(executionId, client.execute(IngestAction.INSTANCE, request).actionGet());
             } catch (Exception e) {
                 listener.afterBulk(executionId, e);
             }
@@ -209,9 +202,9 @@ public class BulkIngestProcessor {
                 return;
             }
 
-            client.bulk(request, new ActionListener<BulkResponse>() {
+            client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
                 @Override
-                public void onResponse(BulkResponse response) {
+                public void onResponse(IngestResponse response) {
                     try {
                         listener.afterBulk(executionId, response);
                     } finally {
@@ -255,12 +248,12 @@ public class BulkIngestProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, BulkIngestRequest request);
+        void beforeBulk(long executionId, IngestRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
          */
-        void afterBulk(long executionId, BulkResponse response);
+        void afterBulk(long executionId, IngestResponse response);
 
         /**
          * Callback after a failed execution of bulk request.
@@ -331,9 +324,8 @@ public class BulkIngestProcessor {
         /**
          * Builds a new bulk processor.
          */
-        public BulkIngestProcessor build() {
-            return new BulkIngestProcessor(client, concurrency, actions, volume)
-                    .listener(listener);
+        public IngestProcessor build() {
+            return new IngestProcessor(client, concurrency, actions, volume).listener(listener);
         }
     }
 }
