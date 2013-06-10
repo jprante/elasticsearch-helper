@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.xbib.elasticsearch</groupId>
-    <artifactId>elasticsearch-transport-support</artifactId>
+    <artifactId>elasticsearch-support</artifactId>
     <version>0.19.11</version>
     <packaging>jar</packaging>
 
-    <name>elasticsearch-transport-support</name>
-    <description>Transport support classes for Elasticsearch</description>
+    <name>elasticsearch-support</name>
+    <description>Support classes for Elasticsearch</description>
 
     <inceptionYear>2013</inceptionYear>
 
@@ -23,16 +23,16 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git@github.com:jprante/elasticsearch-transport-support.git</connection>
-        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-transport-support.git</developerConnection>
-        <url>http://github.com/jprante/elasticsearch-transport-support</url>
+        <connection>scm:git:git@github.com:jprante/elasticsearch-support.git</connection>
+        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-support.git</developerConnection>
+        <url>http://github.com/jprante/elasticsearch-support</url>
     </scm>
 
     <distributionManagement>
         <repository>
-            <id>bintray-jprante-elasticsearch-plugins-elasticsearch-transport-support</id>
-            <name>jprante-elasticsearch-plugins-elasticsearch-transport-support</name>
-            <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-transport-support</url>
+            <id>bintray-jprante-elasticsearch-plugins-elasticsearch-support</id>
+            <name>jprante-elasticsearch-plugins-elasticsearch-support</name>
+            <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-support</url>
         </repository>
     </distributionManagement>
 

@@ -16,9 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.ingest.transport;
+package org.xbib.elasticsearch.support.bulk.transport;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.ingest.ClientIngest;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ import java.net.URI;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public interface TransportClientIngest extends ClientIngest {
+public interface TransportClientBulk extends ClientIngest {
 
     /**
      * Set the default index
@@ -37,7 +39,7 @@ public interface TransportClientIngest extends ClientIngest {
      * @param index the index
      * @return this TransportClientIndexer
      */
-    TransportClientIngest setIndex(String index);
+    TransportClientBulk setIndex(String index);
 
     /**
      * Set the default type
@@ -45,14 +47,14 @@ public interface TransportClientIngest extends ClientIngest {
      * @param type the type
      * @return this TransportClientIndexer
      */
-    TransportClientIngest setType(String type);
+    TransportClientBulk setType(String type);
 
     /**
      * Create a new transport client
      *
      * @return this TransportClientIndexer
      */
-    TransportClientIngest newClient();
+    TransportClientBulk newClient();
 
     /**
      * Create a new transport client
@@ -60,7 +62,7 @@ public interface TransportClientIngest extends ClientIngest {
      * @param uri the URI to connect to
      * @return this TransportClientIndexer
      */
-    TransportClientIngest newClient(URI uri);
+    TransportClientBulk newClient(URI uri);
 
     Client client();
 
@@ -76,7 +78,9 @@ public interface TransportClientIngest extends ClientIngest {
      * @return this TransportClientIndexer
      * @throws java.io.IOException
      */
-    TransportClientIngest waitForHealthyCluster() throws IOException;
+    TransportClientBulk waitForHealthyCluster() throws IOException;
+
+    TransportClientBulk waitForHealthyCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
 
     /**
      * Enable or disable automatic date detection
@@ -84,7 +88,7 @@ public interface TransportClientIngest extends ClientIngest {
      * @param dateDetection
      * @return this TransportClientIndexer
      */
-    TransportClientIngest dateDetection(boolean dateDetection);
+    TransportClientBulk dateDetection(boolean dateDetection);
 
     /**
      * Set maximum number of bulk actions
@@ -92,7 +96,7 @@ public interface TransportClientIngest extends ClientIngest {
      * @param bulkActions
      * @return this TransportClientIndexer
      */
-    TransportClientIngest maxBulkActions(int bulkActions);
+    TransportClientBulk maxBulkActions(int bulkActions);
 
     /**
      * Set maximum concurent bulk requests
@@ -100,21 +104,21 @@ public interface TransportClientIngest extends ClientIngest {
      * @param maxConcurentBulkRequests
      * @return this TransportClientIndexer
      */
-    TransportClientIngest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
+    TransportClientBulk maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
     /**
      * Start bulk mode. Disables refresh.
      *
      * @return this TransportClientIndexer
      */
-    TransportClientIngest startBulkMode();
+    TransportClientBulk startBulkMode();
 
     /**
      * Stops bulk mode. Enables refresh.
      *
      * @return this TransportClientIndexer
      */
-    TransportClientIngest stopBulkMode();
+    TransportClientBulk stopBulkMode();
 
     /**
      * Add replica level.
@@ -131,25 +135,27 @@ public interface TransportClientIngest extends ClientIngest {
      */
     long getVolumeInBytes();
 
-    TransportClientIngest mapping(String mapping);
+    TransportClientBulk mapping(String mapping);
 
     /**
      * Create a new index
      *
      * @return this TransportClientIndexer
      */
-    TransportClientIngest newIndex();
+    TransportClientBulk newIndex();
+
+    TransportClientBulk newIndex(boolean ignoreExceptions);
 
     /**
      * Delete index
      *
      * @return this TransportClientIndexer
      */
-    TransportClientIngest deleteIndex();
+    TransportClientBulk deleteIndex();
 
-    TransportClientIngest newType();
+    TransportClientBulk newType();
 
-    TransportClientIngest refresh();
+    TransportClientBulk refresh();
 
     /**
      *

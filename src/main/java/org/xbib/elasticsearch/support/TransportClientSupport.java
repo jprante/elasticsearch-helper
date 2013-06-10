@@ -32,6 +32,7 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -270,10 +271,10 @@ public abstract class TransportClientSupport {
     }
 
     public TransportClientSupport waitForHealthyCluster() throws IOException {
-        return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
+        return waitForHealthyCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
     }
 
-    public TransportClientSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public TransportClientSupport waitForHealthyCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =
