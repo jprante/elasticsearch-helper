@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.ingest.transport;
+package org.xbib.elasticsearch.support.bulk.transport;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -24,21 +24,21 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
-import org.xbib.elasticsearch.action.ingest.IngestProcessor;
-import org.xbib.elasticsearch.action.ingest.IngestRequest;
-import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.xbib.elasticsearch.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
+
+import org.xbib.elasticsearch.support.TransportClientSupport;
 
 import java.io.IOException;
 import java.net.URI;
@@ -49,9 +49,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author Jörg Prante <joergprante@gmail.com>
  */
-public class TransportClientIngestSupport extends TransportClientSupport implements TransportClientIngest {
+public class TransportClientBulkSupport extends TransportClientSupport implements TransportClientBulk {
 
-    private final static ESLogger logger = Loggers.getLogger(TransportClientIngestSupport.class);
+    private final static ESLogger logger = Loggers.getLogger(TransportClientBulkSupport.class);
     /**
      * The default size of a ingestProcessor request
      */
@@ -73,9 +73,9 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
      */
     private boolean enabled = true;
     /**
-     * The IngestProcessor
+     * The BulkProcessor
      */
-    private IngestProcessor ingestProcessor;
+    private BulkProcessor bulkProcessor;
     /**
      * The default index
      */
@@ -103,7 +103,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
      * @param enabled true for enable, false for disable
      * @return this indexer
      */
-    public TransportClientIngestSupport enable(boolean enabled) {
+    public TransportClientBulkSupport enable(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -123,7 +123,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
      * @return this indexer
      */
     @Override
-    public TransportClientIngestSupport newClient() {
+    public TransportClientBulkSupport newClient() {
         return this.newClient(findURI());
     }
 
@@ -137,11 +137,11 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
      * @return this indexer
      */
     @Override
-    public TransportClientIngestSupport newClient(URI uri) {
+    public TransportClientBulkSupport newClient(URI uri) {
         super.newClient(uri);
-        IngestProcessor.Listener listener = new IngestProcessor.Listener() {
+        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, IngestRequest request) {
+            public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingRequests.getAndIncrement();
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
                 logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
@@ -149,28 +149,30 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
             }
 
             @Override
-            public void afterBulk(long executionId, IngestResponse response) {
+            public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 long l = outstandingRequests.decrementAndGet();
-                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                        executionId, response.success().size(), response.failure().size(), response.took().millis());
-                if (!response.failure().isEmpty()) {
-                    for (IngestItemFailure f: response.failure()) {
-                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
-                    }
+
+                logger.info("bulk [{}] [{} items] [{}]  [{}ms]",
+                        executionId,
+                        response.getItems().length,
+                        response.hasFailures() ? "failure" : "ok",
+                        response.getTook().millis());
+                if (response.hasFailures()) {
+                    logger.error("bulk [{}] failure reason: {}",
+                            executionId, response.buildFailureMessage());
                 }
             }
 
             @Override
-            public void afterBulk(long executionId, Throwable failure) {
+            public void afterBulk(long executionId, BulkRequest requst, Throwable failure) {
                 long l = outstandingRequests.decrementAndGet();
                 logger.error("bulk ["+executionId+"] error", failure);
                 enabled = false;
             }
         };
-        this.ingestProcessor = IngestProcessor.builder(client)
-                .listener(listener)
-                .actions(maxBulkActions)
-                .concurrency(maxConcurrentBulkRequests)
+        this.bulkProcessor = BulkProcessor.builder(client, listener)
+                .setBulkActions(maxBulkActions-1)  // off-by-one
+                .setConcurrentRequests(maxConcurrentBulkRequests)
                 .build();
         this.enabled = true;
         return this;
@@ -227,7 +229,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport setIndex(String index) {
+    public TransportClientBulkSupport setIndex(String index) {
         this.index = index;
         return this;
     }
@@ -238,7 +240,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport setType(String type) {
+    public TransportClientBulkSupport setType(String type) {
         this.type = type;
         return this;
     }
@@ -249,24 +251,24 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport dateDetection(boolean dateDetection) {
+    public TransportClientBulkSupport dateDetection(boolean dateDetection) {
         this.dateDetection = dateDetection;
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport maxBulkActions(int maxBulkActions) {
+    public TransportClientBulkSupport maxBulkActions(int maxBulkActions) {
         this.maxBulkActions = maxBulkActions;
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
+    public TransportClientBulkSupport maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
-    public TransportClientIngestSupport setting(String key, String value) {
+    public TransportClientBulkSupport setting(String key, String value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -274,7 +276,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
-    public TransportClientIngestSupport setting(String key, Integer value) {
+    public TransportClientBulkSupport setting(String key, Integer value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -283,17 +285,18 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport mapping(String mapping) {
+    public TransportClientBulkSupport mapping(String mapping) {
         this.mapping = mapping;
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport newIndex() {
+    public TransportClientBulkSupport newIndex() {
         return newIndex(true);
     }
 
-    public synchronized TransportClientIngestSupport newIndex(boolean ignoreException) {
+    @Override
+    public synchronized TransportClientBulkSupport newIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
@@ -332,11 +335,11 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
-    public TransportClientIngestSupport deleteIndex() {
+    public TransportClientBulkSupport deleteIndex() {
         return deleteIndex(true);
     }
 
-    public TransportClientIngestSupport deleteIndex(boolean ignoreException) {
+    public TransportClientBulkSupport deleteIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
@@ -359,7 +362,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport newType() {
+    public TransportClientBulkSupport newType() {
         if (!enabled) {
             return this;
         }
@@ -382,15 +385,15 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
-    public TransportClientIngestSupport deleteType() {
+    public TransportClientBulkSupport deleteType() {
         return deleteType(true, true);
     }
 
-    public TransportClientIngestSupport deleteType(boolean enabled) {
+    public TransportClientBulkSupport deleteType(boolean enabled) {
         return deleteType(enabled, true);
     }
 
-    public TransportClientIngestSupport deleteType(boolean enabled, boolean ignoreException) {
+    public TransportClientBulkSupport deleteType(boolean enabled, boolean ignoreException) {
         if (!enabled) {
             return this;
         }
@@ -415,19 +418,19 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport startBulkMode() {
+    public TransportClientBulkSupport startBulkMode() {
         disableRefreshInterval();
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport stopBulkMode() {
+    public TransportClientBulkSupport stopBulkMode() {
         enableRefreshInterval();
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport refresh() {
+    public TransportClientBulkSupport refresh() {
         if (client == null) {
             logger.warn("no client");
             return this;
@@ -441,7 +444,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport createDocument(String index, String type, String id, String source) {
+    public TransportClientBulkSupport createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -450,7 +453,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
         try {
-            ingestProcessor.add(indexRequest);
+            bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of create failed: " + e.getMessage(), e);
             enabled = false;
@@ -459,7 +462,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport indexDocument(String index, String type, String id, String source) {
+    public TransportClientBulkSupport indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -468,7 +471,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
-            ingestProcessor.add(indexRequest);
+            bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of index failed: " + e.getMessage(), e);
             enabled = false;
@@ -477,7 +480,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport deleteDocument(String index, String type, String id) {
+    public TransportClientBulkSupport deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -486,7 +489,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         }
         DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
-            ingestProcessor.add(deleteRequest);
+            bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
             enabled = false;
@@ -495,18 +498,18 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport waitForHealthyCluster() throws IOException {
+    public TransportClientBulkSupport waitForHealthyCluster() throws IOException {
         super.waitForHealthyCluster();
         return this;
     }
 
     @Override
-    public TransportClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+    public TransportClientBulkSupport waitForHealthyCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
         super.waitForHealthyCluster(status, timeout);
         return this;
     }
 
-    public TransportClientIngestSupport numberOfShards(int value) {
+    public TransportClientBulkSupport numberOfShards(int value) {
         if (!enabled) {
             return this;
         }
@@ -518,7 +521,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
-    public TransportClientIngestSupport numberOfReplicas(int value) {
+    public TransportClientBulkSupport numberOfReplicas(int value) {
         if (getIndex() == null) {
             logger.warn("no index name given");
             return this;
@@ -539,7 +542,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientIngestSupport flush() {
+    public TransportClientBulkSupport flush() {
         if (!enabled) {
             return this;
         }
@@ -547,7 +550,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
             logger.warn("no client");
             return this;
         }
-        ingestProcessor.flush();
+        //bulkProcessor.flush();
         return this;
     }
 
@@ -562,9 +565,9 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
             return;
         }
         try {
-            if (ingestProcessor != null) {
+            if (bulkProcessor != null) {
                 logger.info("closing ingest processor...");
-                ingestProcessor.close();
+                bulkProcessor.close();
             }
             logger.info("enabling refresh interval...");
             enableRefreshInterval();
