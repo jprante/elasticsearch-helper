@@ -18,6 +18,11 @@
  */
 package org.xbib.facet;
 
+/**
+ * Facet listener
+ *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public interface FacetListener {
 
      void receive(Facet facet);

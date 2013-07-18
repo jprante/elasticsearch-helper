@@ -40,7 +40,6 @@ import org.elasticsearch.index.VersionType;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 

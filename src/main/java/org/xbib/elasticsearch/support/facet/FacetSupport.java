@@ -26,6 +26,11 @@ import org.xbib.facet.FacetTerm;
 
 import java.util.Iterator;
 
+/**
+ * Facet support
+ *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public class FacetSupport  {
 
     private final FacetListener listener;

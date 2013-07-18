@@ -30,7 +30,7 @@ import java.io.OutputStream;
 /**
  * Helper class for Elasticsearch responses
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class BasicResponse {
 

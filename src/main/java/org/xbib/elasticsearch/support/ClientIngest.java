@@ -16,15 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.ingest;
+package org.xbib.elasticsearch.support;
+
+import org.elasticsearch.client.Client;
 
 /**
  * ClientIngest interface. Minimal API for node client ingesting.
  * Useful for river implementations.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface ClientIngest {
+
+    Client client();
 
     /**
      * Returns the default index
@@ -78,4 +82,10 @@ public interface ClientIngest {
      * @return this ClientIngest
      */
     ClientIngest flush();
+
+    /**
+     *
+     * Shutdown this client
+     */
+    void shutdown();
 }

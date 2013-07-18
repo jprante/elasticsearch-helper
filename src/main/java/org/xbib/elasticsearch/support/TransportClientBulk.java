@@ -16,12 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.bulk.transport;
+package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.ingest.ClientIngest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,7 +28,7 @@ import java.net.URI;
 /**
  * TransportClientIngest is an interface for providing convenient ingest methods.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface TransportClientBulk extends ClientIngest {
 
@@ -64,14 +63,6 @@ public interface TransportClientBulk extends ClientIngest {
      */
     TransportClientBulk newClient(URI uri);
 
-    Client client();
-
-    /**
-     * Get connection status
-     * @return true is connected
-     */
-   boolean isConnected();
-
     /**
      * Wait for healthy cluster
      *
@@ -81,14 +72,6 @@ public interface TransportClientBulk extends ClientIngest {
     TransportClientBulk waitForHealthyCluster() throws IOException;
 
     TransportClientBulk waitForHealthyCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
-
-    /**
-     * Enable or disable automatic date detection
-     *
-     * @param dateDetection
-     * @return this TransportClientIndexer
-     */
-    TransportClientBulk dateDetection(boolean dateDetection);
 
     /**
      * Set maximum number of bulk actions
@@ -121,23 +104,6 @@ public interface TransportClientBulk extends ClientIngest {
     TransportClientBulk stopBulkMode();
 
     /**
-     * Add replica level.
-     *
-     * @param level
-     * @return number of shards after updating replica level
-     */
-    int updateReplicaLevel(int level) throws IOException;
-
-    /**
-     * Get the ingested data volume so far.
-     *
-     * @return the volume in bytes
-     */
-    long getVolumeInBytes();
-
-    TransportClientBulk mapping(String mapping);
-
-    /**
      * Create a new index
      *
      * @return this TransportClientIndexer
@@ -158,9 +124,18 @@ public interface TransportClientBulk extends ClientIngest {
     TransportClientBulk refresh();
 
     /**
+     * Add replica level.
      *
-     * Shutdown this client
+     * @param level
+     * @return number of shards after updating replica level
      */
-    void shutdown();
+    int updateReplicaLevel(int level) throws IOException;
+
+    /**
+     * Get the ingested data volume so far.
+     *
+     * @return the volume in bytes
+     */
+    long getVolumeInBytes();
 
 }

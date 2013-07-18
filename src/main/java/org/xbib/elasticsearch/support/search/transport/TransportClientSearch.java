@@ -20,17 +20,17 @@ package org.xbib.elasticsearch.support.search.transport;
 
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.client.Client;
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
 
-import java.io.IOException;
 import java.net.URI;
 
 /**
  * Transport client search helper API
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface TransportClientSearch {
+
+    Client client();
 
     /**
      * Set index
@@ -56,10 +56,6 @@ public interface TransportClientSearch {
      * Create a new client
      */
     TransportClientSearch newClient(URI uri);
-
-    Client client();
-
-    boolean isConnected();
 
     /**
      * Create new search request

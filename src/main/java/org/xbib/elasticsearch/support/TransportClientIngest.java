@@ -16,10 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.ingest.transport;
+package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.client.Client;
-import org.xbib.elasticsearch.support.ingest.ClientIngest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,7 +26,7 @@ import java.net.URI;
 /**
  * TransportClientIngest is an interface for providing convenient ingest methods.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public interface TransportClientIngest extends ClientIngest {
 
@@ -62,14 +61,6 @@ public interface TransportClientIngest extends ClientIngest {
      */
     TransportClientIngest newClient(URI uri);
 
-    Client client();
-
-    /**
-     * Get connection status
-     * @return true is connected
-     */
-   boolean isConnected();
-
     /**
      * Wait for healthy cluster
      *
@@ -77,14 +68,6 @@ public interface TransportClientIngest extends ClientIngest {
      * @throws java.io.IOException
      */
     TransportClientIngest waitForHealthyCluster() throws IOException;
-
-    /**
-     * Enable or disable automatic date detection
-     *
-     * @param dateDetection
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest dateDetection(boolean dateDetection);
 
     /**
      * Set maximum number of bulk actions
@@ -131,8 +114,6 @@ public interface TransportClientIngest extends ClientIngest {
      */
     long getVolumeInBytes();
 
-    TransportClientIngest mapping(String mapping);
-
     /**
      * Create a new index
      *
@@ -151,10 +132,5 @@ public interface TransportClientIngest extends ClientIngest {
 
     TransportClientIngest refresh();
 
-    /**
-     *
-     * Shutdown this client
-     */
-    void shutdown();
 
 }

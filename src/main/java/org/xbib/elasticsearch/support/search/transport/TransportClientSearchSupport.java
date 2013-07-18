@@ -19,8 +19,6 @@
 package org.xbib.elasticsearch.support.search.transport;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
@@ -32,11 +30,9 @@ import java.net.URI;
 /**
  * TransportClient support class
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class TransportClientSearchSupport extends TransportClientSupport implements TransportClientSearch {
-
-    private final static ESLogger logger = Loggers.getLogger(TransportClientSearchSupport.class);
 
     // the settings
     protected Settings settings;
@@ -73,27 +69,27 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
      * Create settings
      *
      * @param uri
+     * @param n the client thread pool size
      * @return the settings
      */
-    protected Settings initialSettings(URI uri) {
-        int n = Runtime.getRuntime().availableProcessors();
+    protected Settings initialSettings(URI uri, int n) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
-                .put("transport.netty.worker_count", n * 4)
+                .put("transport.netty.worker_count", n)
                 .put("transport.netty.connections_per_node.low", 0)
                 .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", n * 4)
+                .put("transport.netty.connections_per_node.high", n)
                 .put("threadpool.index.type", "fixed")
                 .put("threadpool.index.size", 1)
                 .put("threadpool.bulk.type", "fixed")
                 .put("threadpool.bulk.size", 1)
                 .put("threadpool.get.type", "fixed")
-                .put("threadpool.get.size", n * 4)
+                .put("threadpool.get.size", n)
                 .put("threadpool.search.type", "fixed")
-                .put("threadpool.search.size", n * 4)
+                .put("threadpool.search.size", n)
                 .put("threadpool.percolate.type", "fixed")
                 .put("threadpool.percolate.size", 1)
                 .put("threadpool.management.type", "fixed")
