@@ -158,6 +158,7 @@ public class MockTransportClientIngest
 
     @Override
     public MockTransportClientIngest newIndex() {
+        logger.info("mock newIndex");
         return this;
     }
 
