@@ -50,7 +50,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class TransportClientBulkSupport extends TransportClientSupport implements TransportClientBulk {
+public class TransportClientBulkSupport
+        extends TransportClientSupport implements TransportClientBulk {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientBulkSupport.class);
     /**
@@ -248,6 +249,31 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
     @Override
     public TransportClientBulkSupport maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
+        return this;
+    }
+
+    public TransportClientBulkSupport setting(String key, String value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientBulkSupport setting(String key, Integer value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientBulkSupport setting(String key, Boolean value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientBulkSupport shards(int value) {
+        super.shards(value);
+        return this;
+    }
+
+    public TransportClientBulkSupport replica(int value) {
+        super.replica(value);
         return this;
     }
 

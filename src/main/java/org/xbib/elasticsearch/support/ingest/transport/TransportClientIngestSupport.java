@@ -249,6 +249,31 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         return this;
     }
 
+    public TransportClientIngestSupport setting(String key, String value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientIngestSupport setting(String key, Integer value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientIngestSupport setting(String key, Boolean value) {
+        super.setting(key, value);
+        return this;
+    }
+
+    public TransportClientIngestSupport shards(int value) {
+        super.shards(value);
+        return this;
+    }
+
+    public TransportClientIngestSupport replica(int value) {
+        super.replica(value);
+        return this;
+    }
+
     @Override
     public TransportClientIngestSupport newIndex() {
         return newIndex(true);
@@ -258,38 +283,7 @@ public class TransportClientIngestSupport extends TransportClientSupport impleme
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        if (getType() == null) {
-            logger.warn("no type name given to create");
-            return this;
-        }
-        CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settings() != null) {
-            request.settings(settings());
-        }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
-        request.mapping(getType(), mapping());
-        logger.info("creating index = {} type = {} settings = {} mapping = {}",
-                getIndex(),
-                getType(),
-                settings() != null ? settings().build().getAsMap() : "",
-                mapping());
-        try {
-            client.admin().indices().create(request).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.newIndex(ignoreException);
         return this;
     }
 

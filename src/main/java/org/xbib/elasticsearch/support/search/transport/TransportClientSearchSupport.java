@@ -38,15 +38,28 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
     protected Settings settings;
     // the default index
     private String index;
+    // the default type
+
+    private String type;
 
     public TransportClientSearchSupport setIndex(String index) {
         this.index = index;
         return this;
     }
 
+    public TransportClientSearchSupport setType(String type) {
+        this.type = type;
+        return this;
+    }
+
     @Override
     public String getIndex() {
         return index;
+    }
+
+    @Override
+    public String getType() {
+        return type;
     }
 
     @Override

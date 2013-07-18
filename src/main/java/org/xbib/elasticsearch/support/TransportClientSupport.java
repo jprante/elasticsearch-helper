@@ -21,6 +21,7 @@ package org.xbib.elasticsearch.support;
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
@@ -34,6 +35,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,6 +98,8 @@ public abstract class TransportClientSupport {
     private String timeStampField = "@timestamp";
 
     public abstract String getIndex();
+
+    public abstract String getType();
 
     protected abstract Settings initialSettings(URI uri, int poolsize);
 
@@ -326,7 +330,23 @@ public abstract class TransportClientSupport {
         return response.getTotalShards();
     }
 
+    public TransportClientSupport shards(int shards) {
+        return setting("index.number_of_shards", shards);
+    }
+
+    public TransportClientSupport replica(int replica) {
+        return setting("index.number_of_replicas", replica);
+    }
+
     public TransportClientSupport setting(String key, String value) {
+        if (settingsBuilder == null) {
+            settingsBuilder = ImmutableSettings.settingsBuilder();
+        }
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
+    public TransportClientSupport setting(String key, Boolean value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -434,6 +454,42 @@ public abstract class TransportClientSupport {
 
     protected TransportClientSupport disableRefreshInterval() {
         update("refresh_interval", -1);
+        return this;
+    }
+
+    public synchronized TransportClientSupport newIndex(boolean ignoreException) {
+        if (client == null) {
+            logger.warn("no client");
+            return this;
+        }
+        if (getIndex() == null) {
+            logger.warn("no index name given to create");
+            return this;
+        }
+        if (getType() == null) {
+            logger.warn("no type name given to create");
+            return this;
+        }
+        CreateIndexRequest request = new CreateIndexRequest(getIndex());
+        if (settings() != null) {
+            request.settings(settings());
+        }
+        if (mapping() == null) {
+            mapping(defaultMapping());
+        }
+        request.mapping(getType(), mapping());
+        logger.info("creating index = {} type = {} settings = {} mapping = {}",
+                getIndex(),
+                getType(),
+                settings() != null ? settings().build().getAsMap() : "",
+                mapping());
+        try {
+            client.admin().indices().create(request).actionGet();
+        } catch (IndexAlreadyExistsException e) {
+            if (!ignoreException) {
+                throw new RuntimeException(e);
+            }
+        }
         return this;
     }
 
