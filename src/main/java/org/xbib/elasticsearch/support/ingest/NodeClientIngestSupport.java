@@ -31,6 +31,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.ClientIngest;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -39,12 +40,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * ClientIngest support. Implements minimal API for node client ingesting.
  * Useful for river implementations.
  *
- * For reasons not completely clear, the IngestProcessor, although initiated as
- * plugin on the node of the client, does not work. Bulk requests are sent,
- * but are not answered by BulkResponses. No timeout, it just hangs.
- * So we fall back to BulkProcessor for now.
- *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class NodeClientIngestSupport implements ClientIngest {
 
@@ -125,6 +121,11 @@ public class NodeClientIngestSupport implements ClientIngest {
         }
     }
 
+    @Override
+    public Client client() {
+        return client;
+    }
+
     public String getIndex() {
         return index;
     }
@@ -188,6 +189,11 @@ public class NodeClientIngestSupport implements ClientIngest {
         }
         // no nothing
         return this;
+    }
+
+    @Override
+    public void shutdown() {
+        client.close();
     }
 
     public NodeClientIngestSupport waitForHealthyCluster() throws IOException {

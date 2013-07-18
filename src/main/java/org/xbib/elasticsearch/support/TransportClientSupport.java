@@ -33,6 +33,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,6 +56,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+/**
+ * Transport client support
+ *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public abstract class TransportClientSupport {
 
     private final static ESLogger logger = Loggers.getLogger(TransportClientSupport.class);
@@ -72,22 +80,41 @@ public abstract class TransportClientSupport {
     // if the client has connectd nodes or not
     private boolean connected;
 
+    /**
+     * Optional settings
+     */
+    private ImmutableSettings.Builder settingsBuilder;
+    /**
+     * An optional mapping
+     */
+    private String mapping;
+
+    private boolean dateDetection = false;
+
+    private boolean timeStampFieldEnabled = true;
+
+    private String timeStampField = "@timestamp";
+
     public abstract String getIndex();
 
-    protected abstract Settings initialSettings(URI uri);
+    protected abstract Settings initialSettings(URI uri, int poolsize);
 
     public TransportClientSupport newClient() {
         return newClient(findURI());
     }
 
     public synchronized TransportClientSupport newClient(URI uri) {
+        return newClient(uri, Runtime.getRuntime().availableProcessors() * 4);
+    }
+
+    public synchronized TransportClientSupport newClient(URI uri, int poolsize) {
         if (client != null) {
             client.close();
             client = null;
         }
         if (client == null) {
             this.connected = false;
-            this.settings = initialSettings(uri);
+            this.settings = initialSettings(uri, poolsize);
             logger.info("settings={}", settings.getAsMap());
             this.client = new TransportClient(settings);
             try {
@@ -297,6 +324,107 @@ public abstract class TransportClientSupport {
         IndicesStatusResponse response = client.admin().indices()
                 .status(new IndicesStatusRequest(getIndex()).recovery(true)).actionGet();
         return response.getTotalShards();
+    }
+
+    public TransportClientSupport setting(String key, String value) {
+        if (settingsBuilder == null) {
+            settingsBuilder = ImmutableSettings.settingsBuilder();
+        }
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
+    public TransportClientSupport setting(String key, Integer value) {
+        if (settingsBuilder == null) {
+            settingsBuilder = ImmutableSettings.settingsBuilder();
+        }
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
+    public ImmutableSettings.Builder settings() {
+        return settingsBuilder != null ? settingsBuilder : null;
+    }
+
+    public TransportClientSupport dateDetection(boolean dateDetection) {
+        this.dateDetection = dateDetection;
+        return this;
+    }
+
+    public boolean dateDetection() {
+        return dateDetection;
+    }
+
+    public TransportClientSupport timeStampField(String timeStampField) {
+        this.timeStampField = timeStampField;
+        return this;
+    }
+
+    public String timeStampField() {
+        return timeStampField;
+    }
+
+    public TransportClientSupport mapping(String mapping) {
+        this.mapping = mapping;
+        return this;
+    }
+
+    public String mapping() {
+        return mapping;
+    }
+
+    public String defaultMapping() {
+        try {
+            XContentBuilder b =
+                    jsonBuilder()
+                            .startObject()
+                            .startObject("_default_")
+                            .field("date_detection", dateDetection)
+                            .startObject("_timestamp")
+                            .field("enabled", timeStampFieldEnabled)
+                            .field("path", timeStampField)
+                            .endObject()
+                            .startObject("properties")
+                            .startObject("@fields")
+                            .field("type", "object")
+                            .field("dynamic", true)
+                            .field("path", "full")
+                            .endObject()
+                            .startObject("@message")
+                            .field("type", "string")
+                            .field("index", "analyzed")
+                            .endObject()
+                            .startObject("@source")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("@source_host")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("@source_path")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("@tags")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .startObject("@timestamp")
+                            .field("type", "date")
+                            .endObject()
+                            .startObject("@type")
+                            .field("type", "string")
+                            .field("index", "not_analyzed")
+                            .endObject()
+                            .endObject()
+                            .endObject()
+                            .endObject();
+            return b.string();
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     protected TransportClientSupport enableRefreshInterval() {

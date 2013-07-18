@@ -21,6 +21,9 @@ package org.xbib.elasticsearch.support.bulk.transport;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.xbib.elasticsearch.support.TransportClientBulk;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,11 +32,28 @@ import java.net.URI;
  * TransportClientBulk Mockup. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class MockTransportClientBulk extends TransportClientBulkSupport implements TransportClientBulk {
 
     private final static ESLogger logger = Loggers.getLogger(MockTransportClientBulk.class);
+
+    public Client client() {
+        return null;
+    }
+
+    /**
+     * No special initial settings except cluster name
+     *
+     * @param uri
+     * @return initial settings
+     */
+    @Override
+    protected Settings initialSettings(URI uri, int n) {
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .build();
+    }
 
     @Override
     public MockTransportClientBulk newClient() {
@@ -47,9 +67,6 @@ public class MockTransportClientBulk extends TransportClientBulkSupport implemen
         return this;
     }
 
-    public Client client() {
-        return null;
-    }
 
     @Override
     public MockTransportClientBulk dateDetection(boolean dateDetection) {
@@ -130,7 +147,21 @@ public class MockTransportClientBulk extends TransportClientBulkSupport implemen
 
     @Override
     public MockTransportClientBulk newIndex() {
-        logger.info("mock newIndex");
         return this;
     }
+
+    @Override
+    public MockTransportClientBulk newType() {
+        return this;
+    }
+
+    @Override
+    public MockTransportClientBulk refresh() {
+        return this;
+    }
+
+    @Override
+    public void shutdown() {
+    }
+
 }

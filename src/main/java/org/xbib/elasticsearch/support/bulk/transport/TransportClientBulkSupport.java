@@ -38,6 +38,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 
+import org.xbib.elasticsearch.support.TransportClientBulk;
 import org.xbib.elasticsearch.support.TransportClientSupport;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * TransportClientIngest support
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class TransportClientBulkSupport extends TransportClientSupport implements TransportClientBulk {
 
@@ -84,18 +85,6 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
      * The default type
      */
     private String type;
-    /**
-     * Date detection enabled or not?
-     */
-    private boolean dateDetection = false;
-    /**
-     * Optional settings
-     */
-    private ImmutableSettings.Builder settingsBuilder;
-    /**
-     * An optional mapping
-     */
-    private String mapping;
 
     /**
      * Enable or disable this indxer
@@ -189,24 +178,24 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
      * minimal, 4 * cpucore Netty connections in parallel.
      *
      * @param uri the cluster name URI
+     * @param n the client threadpool size
      * @return the initial settings
      */
     @Override
-    protected Settings initialSettings(URI uri) {
-        int n = Runtime.getRuntime().availableProcessors();
+    protected Settings initialSettings(URI uri, int n) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
-                .put("transport.netty.worker_count", n * 4)
+                .put("transport.netty.worker_count", n)
                 .put("transport.netty.connections_per_node.low", 0)
                 .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", n * 4)
+                .put("transport.netty.connections_per_node.high", n)
                 .put("threadpool.index.type", "fixed")
-                .put("threadpool.index.size", n * 4)
+                .put("threadpool.index.size", n)
                 .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", n * 4)
+                .put("threadpool.bulk.size", n)
                 .put("threadpool.get.type", "fixed")
                 .put("threadpool.get.size", 1)
                 .put("threadpool.search.type", "fixed")
@@ -251,12 +240,6 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
     }
 
     @Override
-    public TransportClientBulkSupport dateDetection(boolean dateDetection) {
-        this.dateDetection = dateDetection;
-        return this;
-    }
-
-    @Override
     public TransportClientBulkSupport maxBulkActions(int maxBulkActions) {
         this.maxBulkActions = maxBulkActions;
         return this;
@@ -265,28 +248,6 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
     @Override
     public TransportClientBulkSupport maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
-        return this;
-    }
-
-    public TransportClientBulkSupport setting(String key, String value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
-        return this;
-    }
-
-    public TransportClientBulkSupport setting(String key, Integer value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
-        return this;
-    }
-
-    @Override
-    public TransportClientBulkSupport mapping(String mapping) {
-        this.mapping = mapping;
         return this;
     }
 
@@ -313,18 +274,18 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
             return this;
         }
         CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settingsBuilder != null) {
-            request.settings(settingsBuilder);
+        if (settings() != null) {
+            request.settings(settings());
         }
-        if (mapping == null) {
-            mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
+        if (mapping() == null) {
+            mapping(defaultMapping());
         }
-        request.mapping(getType(), mapping);
+        request.mapping(getType(), mapping());
         logger.info("creating index = {} type = {} settings = {} mapping = {}",
                 getIndex(),
                 getType(),
-                settingsBuilder != null ? settingsBuilder.build().getAsMap() : "",
-                mapping);
+                settings() != null ? settings().build().getAsMap() : "",
+                mapping());
         try {
             client.admin().indices().create(request).actionGet();
         } catch (IndexAlreadyExistsException e) {
@@ -374,13 +335,13 @@ public class TransportClientBulkSupport extends TransportClientSupport implement
             logger.warn("no index name given");
             return this;
         }
-        if (mapping == null) {
-            mapping = "{\"_default_\":{\"date_detection\":" + dateDetection + "}}";
+        if (mapping() == null) {
+            mapping(defaultMapping());
         }
         client.admin().indices().putMapping(new PutMappingRequest()
                 .indices(new String[]{getIndex()})
                 .type(getType())
-                .source(mapping))
+                .source(mapping()))
                 .actionGet();
         return this;
     }

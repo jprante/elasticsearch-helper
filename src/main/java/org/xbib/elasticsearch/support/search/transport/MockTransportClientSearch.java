@@ -41,7 +41,7 @@ import java.util.Set;
 /**
  * TransportClientSearch mockup. Do not perform actions on a real cluster.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class MockTransportClientSearch extends TransportClientSearchSupport {
 
@@ -56,7 +56,7 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
      * @return initial settings
      */
     @Override
-    protected Settings initialSettings(URI uri) {
+    protected Settings initialSettings(URI uri, int n) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build();
@@ -73,7 +73,7 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
     }
 
     public MockTransportClientSearch newClient(URI uri) {
-        settings = initialSettings(uri);
+        settings = initialSettings(uri, 0);
         return this;
     }
 

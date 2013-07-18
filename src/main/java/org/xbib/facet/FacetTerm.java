@@ -18,6 +18,11 @@
  */
 package org.xbib.facet;
 
+/**
+ * Facet term
+ *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public class FacetTerm {
 
     private String actualTerm;

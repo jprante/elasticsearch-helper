@@ -21,6 +21,9 @@ package org.xbib.elasticsearch.support.ingest.transport;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.xbib.elasticsearch.support.TransportClientIngest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,11 +32,26 @@ import java.net.URI;
  * TransportClientIngest Mockup. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
  *
- * @author Jörg Prante <joergprante@gmail.com>
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class MockTransportClientIngest extends TransportClientIngestSupport implements TransportClientIngest {
+public class MockTransportClientIngest
+        extends TransportClientIngestSupport
+        implements TransportClientIngest {
 
     private final static ESLogger logger = Loggers.getLogger(MockTransportClientIngest.class);
+
+    /**
+     * No special initial settings except cluster name
+     *
+     * @param uri
+     * @return initial settings
+     */
+    @Override
+    protected Settings initialSettings(URI uri, int n) {
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .build();
+    }
 
     @Override
     public MockTransportClientIngest newClient() {
@@ -49,6 +67,16 @@ public class MockTransportClientIngest extends TransportClientIngestSupport impl
 
     public Client client() {
         return null;
+    }
+
+    @Override
+    public String getIndex() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public String getType() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
@@ -130,7 +158,22 @@ public class MockTransportClientIngest extends TransportClientIngestSupport impl
 
     @Override
     public MockTransportClientIngest newIndex() {
-        logger.info("mock newIndex");
         return this;
     }
+
+    @Override
+    public MockTransportClientIngest newType() {
+        return this;
+    }
+
+    @Override
+    public MockTransportClientIngest refresh() {
+        return this;
+    }
+
+    @Override
+    public void shutdown() {
+        // do nothing
+    }
+
 }

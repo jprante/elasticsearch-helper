@@ -21,6 +21,11 @@ package org.xbib.facet;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *  Facet
+ *  
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
+ */
 public class Facet {
 
     private String displayLabel;

@@ -31,7 +31,11 @@ import org.xbib.elasticsearch.action.ingest.RestIngestAction;
 import org.xbib.elasticsearch.action.ingest.RestIngestResponseAction;
 
 /**
+ * Ingest plugin. A replacement for bulk. Returns only short bulk responses
+ * and allows concurrenct in the action bulk request building.
+ * Must be installed on server and client.
  *
+ * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class IngestPlugin extends AbstractPlugin {
 
