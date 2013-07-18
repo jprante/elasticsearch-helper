@@ -31,6 +31,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.ClientIngest;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;

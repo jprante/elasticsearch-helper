@@ -16,11 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.xbib.elasticsearch.support.ingest.transport;
+package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.client.Client;
-import org.xbib.elasticsearch.support.ingest.ClientIngest;
-import org.xbib.elasticsearch.support.ingest.ClientIngest;
 
 import java.io.IOException;
 import java.net.URI;

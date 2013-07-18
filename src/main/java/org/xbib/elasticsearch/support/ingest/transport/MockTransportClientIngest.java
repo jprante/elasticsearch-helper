@@ -21,6 +21,7 @@ package org.xbib.elasticsearch.support.ingest.transport;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.xbib.elasticsearch.support.TransportClientIngest;
 
 import java.io.IOException;
 import java.net.URI;

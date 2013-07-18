@@ -32,6 +32,7 @@ import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.xbib.elasticsearch.support.TransportClientIngest;
 import org.xbib.elasticsearch.support.TransportClientSupport;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
