@@ -62,12 +62,6 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
                 .build();
     }
 
-    @Override
-    public MockTransportClientSearch setIndex(String index) {
-        super.setIndex(index);
-        return this;
-    }
-
     public MockTransportClientSearch newClient() {
         return newClient(TransportClientSupport.findURI());
     }

@@ -18,7 +18,9 @@
  */
 package org.xbib.elasticsearch.support;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -69,6 +71,8 @@ public interface TransportClientIngest extends ClientIngest {
      */
     TransportClientIngest waitForHealthyCluster() throws IOException;
 
+    TransportClientIngest waitForHealthyCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
+
     /**
      * Set maximum number of bulk actions
      *
@@ -99,6 +103,36 @@ public interface TransportClientIngest extends ClientIngest {
      */
     TransportClientIngest stopBulkMode();
 
+    TransportClientIngest shards(int shards);
+
+    TransportClientIngest replica(int replica);
+
+    TransportClientIngest setting(String key, String value);
+
+    TransportClientIngest setting(String key, Integer value);
+
+    TransportClientIngest setting(String key, Boolean value);
+
+    /**
+     * Create a new index
+     *
+     * @return this TransportClientIndexer
+     */
+    TransportClientIngest newIndex();
+
+    TransportClientIngest newIndex(boolean ignoreExceptions);
+
+    /**
+     * Delete index
+     *
+     * @return this TransportClientIndexer
+     */
+    TransportClientIngest deleteIndex();
+
+    TransportClientIngest newType();
+
+    TransportClientIngest refresh();
+
     /**
      * Add replica level.
      *
@@ -113,24 +147,4 @@ public interface TransportClientIngest extends ClientIngest {
      * @return the volume in bytes
      */
     long getVolumeInBytes();
-
-    /**
-     * Create a new index
-     *
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest newIndex();
-
-    /**
-     * Delete index
-     *
-     * @return this TransportClientIndexer
-     */
-    TransportClientIngest deleteIndex();
-
-    TransportClientIngest newType();
-
-    TransportClientIngest refresh();
-
-
 }

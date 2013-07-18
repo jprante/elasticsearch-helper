@@ -103,6 +103,16 @@ public interface TransportClientBulk extends ClientIngest {
      */
     TransportClientBulk stopBulkMode();
 
+    TransportClientBulk shards(int shards);
+
+    TransportClientBulk replica(int replica);
+
+    TransportClientBulk setting(String key, String value);
+
+    TransportClientBulk setting(String key, Integer value);
+
+    TransportClientBulk setting(String key, Boolean value);
+
     /**
      * Create a new index
      *
