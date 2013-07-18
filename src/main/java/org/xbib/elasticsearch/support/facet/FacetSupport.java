@@ -54,7 +54,7 @@ public class FacetSupport  {
                 // String displayLabel, String description, String index, String relation
                 Facet facet = new Facet("", "", f.getName(), "=");
                 for (TermsFacet.Entry e : tf.getEntries()) {
-                    FacetTerm term = new FacetTerm(e.getTerm().string(), e.getCount(), null, null);
+                    FacetTerm term = new FacetTerm(e.getTerm(), e.getCount(), null, null);
                     facet.add(term);
                 }
                 listener.receive(facet);

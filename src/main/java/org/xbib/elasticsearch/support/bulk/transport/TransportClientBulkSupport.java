@@ -144,7 +144,7 @@ public class TransportClientBulkSupport
 
                 logger.info("bulk [{}] [{} items] [{}]  [{}ms]",
                         executionId,
-                        response.getItems().length,
+                        response.items().length,
                         response.hasFailures() ? "failure" : "ok",
                         response.getTook().millis());
                 if (response.hasFailures()) {
