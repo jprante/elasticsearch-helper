@@ -117,8 +117,8 @@ public abstract class AbstractIngester extends AbstractClient
                         .recovery(true)
                 ).actionGet();
         logger.info("indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
-        for (ShardStatus status : response.shards()) {
-            logger.info("shard {} status {}", status.shardId(), status.state().name());
+        for (ShardStatus status : response.getShards()) {
+            logger.info("shard {} status {}", status.getShardId(), status.getState().name());
         }
         return response.getTotalShards();
     }

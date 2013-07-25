@@ -6,7 +6,7 @@
 
     <groupId>org.xbib.elasticsearch</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>0.19.11</version>
+    <version>0.90.2</version>
     <packaging>jar</packaging>
 
     <name>elasticsearch-support</name>
@@ -39,7 +39,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
-        <elasticsearch.version>0.19.11</elasticsearch.version>
+        <elasticsearch.version>0.90.2</elasticsearch.version>
     </properties>
 
     <dependencies>
