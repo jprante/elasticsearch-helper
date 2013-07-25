@@ -31,20 +31,20 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.ClientIngest;
+import org.xbib.elasticsearch.support.DocumentIngester;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * ClientIngest support. Implements minimal API for node client ingesting.
+ * Node client support. Implements minimal API for node client ingesting.
  * Useful for river implementations.
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class NodeClientIngestSupport implements ClientIngest {
+public class NodeClientSupport implements DocumentIngester {
 
-    private final static ESLogger logger = Loggers.getLogger(NodeClientIngestSupport.class);
+    private final static ESLogger logger = Loggers.getLogger(NodeClientSupport.class);
 
     private Client client;
 
@@ -77,8 +77,8 @@ public class NodeClientIngestSupport implements ClientIngest {
      */
     private final BulkProcessor bulkProcessor;
 
-    public NodeClientIngestSupport(Client client, String index, String type,
-                                   int maxBulkActions, int maxConcurrentBulkRequests) {
+    public NodeClientSupport(Client client, String index, String type,
+                             int maxBulkActions, int maxConcurrentBulkRequests) {
         this.client = client;
         this.index = index;
         this.type = type;
@@ -126,6 +126,18 @@ public class NodeClientIngestSupport implements ClientIngest {
         return client;
     }
 
+    @Override
+    public NodeClientSupport setIndex(String index) {
+        this.index = index;
+        return this;
+    }
+
+    @Override
+    public NodeClientSupport setType(String type) {
+        this.type = type;
+        return this;
+    }
+
     public String getIndex() {
         return index;
     }
@@ -135,7 +147,7 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport createDocument(String index, String type, String id, String source) {
+    public NodeClientSupport createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -151,7 +163,7 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport indexDocument(String index, String type, String id, String source) {
+    public NodeClientSupport indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -167,7 +179,7 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport deleteDocument(String index, String type, String id) {
+    public NodeClientSupport deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -183,7 +195,7 @@ public class NodeClientIngestSupport implements ClientIngest {
     }
 
     @Override
-    public NodeClientIngestSupport flush() {
+    public NodeClientSupport flush() {
         if (!enabled) {
             return this;
         }
@@ -196,11 +208,11 @@ public class NodeClientIngestSupport implements ClientIngest {
         client.close();
     }
 
-    public NodeClientIngestSupport waitForHealthyCluster() throws IOException {
+    public NodeClientSupport waitForHealthyCluster() throws IOException {
         return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
     }
 
-    public NodeClientIngestSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public NodeClientSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =
