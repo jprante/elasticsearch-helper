@@ -18,26 +18,119 @@
  */
 package org.elasticsearch.test;
 
-import org.xbib.elasticsearch.support.ingest.NodeClientIngestSupport;
+import org.xbib.elasticsearch.support.ingest.transport.IngestClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ClientIngestTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(ClientIngestTests.class);
 
-    public void testClientIngest() throws Exception {
-        NodeClientIngestSupport es = new NodeClientIngestSupport(client("1"),  INDEX, "test", 10, 10);
+    @Test
+    public void testTransportClient() {
+
+        final IngestClient es = new IngestClient()
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
+        es.shutdown();
+    }
+
+    @Test
+    public void testDeleteIndex() {
+
+        final IngestClient es = new IngestClient()
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
+        logger.info("transport client up");
         try {
-            for (int i = 0; i < 12345; i++) {
-                es.indexDocument(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
-            }
+            es.deleteIndex()
+              .newIndex()
+              .deleteIndex();
+        } catch (NoNodeAvailableException e) {
+            logger.error("no node available");
+        } finally {
+            es.shutdown();
+            logger.info("transport client down");
+        }
+    }
+
+    @Test
+    public void testSingleDocIngest() {
+
+        final IngestClient es = new IngestClient()
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test");
+        try {
+            es.deleteIndex();
+            es.newIndex();
+            es.indexDocument("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
+        } finally {
+            es.shutdown();
         }
+    }
+
+    @Test
+    public void testRandomIngest() {
+
+        final IngestClient es = new IngestClient()
+                .newClient(ADDRESS);
+
+        try {
+            for (int i = 0; i < 12345; i++) {
+                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+            }
+        } catch (NoNodeAvailableException e) {
+            logger.warn("skipping, no node available");
+        } finally {
+            es.shutdown();
+        }
+    }
+
+    @Test
+    public void testThreadedRandomIngest() throws Exception {
+
+        final IngestClient es = new IngestClient()
+                .newClient(ADDRESS);
+        try {
+            int min = 0;
+            int max = 4;
+            ThreadPoolExecutor pool = EsExecutors.newScalingExecutorService(min, max, 100, TimeUnit.DAYS,
+                    EsExecutors.daemonThreadFactory("ingest"));
+            final CountDownLatch latch = new CountDownLatch(max);
+            for (int i = 0; i < max; i++) {
+                pool.execute(new Runnable() {
+                    public void run() {
+                            for (int i = 0; i < 12345; i++) {
+                                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                            }
+                            logger.info("done");
+                            latch.countDown();
+                    }
+                });
+            }
+            logger.info("waiting for 30 seconds...");
+            latch.await(30, TimeUnit.SECONDS);
+            pool.shutdown();
+            es.flush();
+        } catch (NoNodeAvailableException e) {
+            logger.warn("skipping, no node available");
+        } finally {
+            es.shutdown();
+        }
+
     }
 
 }

@@ -23,31 +23,29 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
-import org.xbib.elasticsearch.support.TransportClientSupport;
+import org.xbib.elasticsearch.support.AbstractClient;
 
 import java.net.URI;
 
 /**
- * TransportClient support class
+ * Search client support
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class TransportClientSearchSupport extends TransportClientSupport implements TransportClientSearch {
+public class SearchClientSupport extends AbstractClient implements SearchClient {
 
-    // the settings
     protected Settings settings;
-    // the default index
+
     private String index;
-    // the default type
 
     private String type;
 
-    public TransportClientSearchSupport setIndex(String index) {
+    public SearchClientSupport setIndex(String index) {
         this.index = index;
         return this;
     }
 
-    public TransportClientSearchSupport setType(String type) {
+    public SearchClientSupport setType(String type) {
         this.type = type;
         return this;
     }
@@ -63,13 +61,13 @@ public class TransportClientSearchSupport extends TransportClientSupport impleme
     }
 
     @Override
-    public TransportClientSearchSupport newClient() {
+    public SearchClientSupport newClient() {
         super.newClient();
         return this;
     }
 
     @Override
-    public TransportClientSearchSupport newClient(URI uri) {
+    public SearchClientSupport newClient(URI uri) {
         super.newClient(uri);
         return this;
     }

@@ -38,10 +38,15 @@ import org.elasticsearch.common.Nullable;
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestRequest, BulkResponse, BulkIngestRequestBuilder> {
+public class BulkIngestRequestBuilder implements ActionRequestBuilder<BulkIngestRequest, BulkResponse> {
+
+    protected final InternalClient client;
+
+    protected final BulkIngestRequest request;
 
     protected BulkIngestRequestBuilder(Client client) {
-        super((InternalClient) client, new BulkIngestRequest());
+        this.client = (InternalClient) client;
+        this.request = new BulkIngestRequest();
     }
 
     public BulkIngestRequest request() {
@@ -144,6 +149,6 @@ public class BulkIngestRequestBuilder extends ActionRequestBuilder<BulkIngestReq
     }
 
     protected void doExecute(ActionListener<BulkResponse> listener) {
-        ((Client)client).bulk(request, listener);
+        client.bulk(request, listener);
     }
 }

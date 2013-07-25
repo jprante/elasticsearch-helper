@@ -19,24 +19,20 @@
 package org.xbib.elasticsearch.support.bulk.transport;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.support.TransportClientBulk;
+import org.xbib.elasticsearch.support.ClientIngester;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
- * TransportClientBulk Mockup. Do not perform actions on a real cluster.
+ * Mock client for Bulk API. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class MockTransportClientBulk extends TransportClientBulkSupport implements TransportClientBulk {
-
-    private final static ESLogger logger = Loggers.getLogger(MockTransportClientBulk.class);
+public class MockBulkClient extends BulkClient implements ClientIngester {
 
     public Client client() {
         return null;
@@ -56,35 +52,35 @@ public class MockTransportClientBulk extends TransportClientBulkSupport implemen
     }
 
     @Override
-    public MockTransportClientBulk newClient() {
+    public MockBulkClient newClient() {
         super.newClient();
         return this;
     }
 
     @Override
-    public MockTransportClientBulk newClient(URI uri) {
+    public MockBulkClient newClient(URI uri) {
         super.newClient(uri);
         return this;
     }
 
 
     @Override
-    public MockTransportClientBulk dateDetection(boolean dateDetection) {
+    public MockBulkClient dateDetection(boolean dateDetection) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk maxBulkActions(int maxBulkActions) {
+    public MockBulkClient maxBulkActions(int maxBulkActions) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockBulkClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk waitForHealthyCluster() throws IOException {
+    public MockBulkClient waitForCluster() throws IOException {
         return this;
     }
 
@@ -94,44 +90,44 @@ public class MockTransportClientBulk extends TransportClientBulkSupport implemen
     }
 
     @Override
-    public MockTransportClientBulk setIndex(String index) {
+    public MockBulkClient setIndex(String index) {
         super.setIndex(index);
         return this;
     }
 
     @Override
-    public MockTransportClientBulk setType(String type) {
+    public MockBulkClient setType(String type) {
         super.setType(type);
         return this;
     }
 
     @Override
-    public MockTransportClientBulk createDocument(String index, String type, String id, String source) {
+    public MockBulkClient createDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk indexDocument(String index, String type, String id, String source) {
+    public MockBulkClient indexDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk deleteDocument(String index, String type, String id) {
+    public MockBulkClient deleteDocument(String index, String type, String id) {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk flush() {
+    public MockBulkClient flush() {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk startBulkMode() {
+    public MockBulkClient startBulkMode() {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk stopBulkMode() {
+    public MockBulkClient stopBulkMode() {
         return this;
     }
 
@@ -141,22 +137,22 @@ public class MockTransportClientBulk extends TransportClientBulkSupport implemen
     }
 
     @Override
-    public MockTransportClientBulk deleteIndex() {
+    public MockBulkClient deleteIndex() {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk newIndex() {
+    public MockBulkClient newIndex() {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk newType() {
+    public MockBulkClient newType() {
         return this;
     }
 
     @Override
-    public MockTransportClientBulk refresh() {
+    public MockBulkClient refresh() {
         return this;
     }
 

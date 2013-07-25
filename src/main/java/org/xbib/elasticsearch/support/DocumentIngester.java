@@ -26,9 +26,17 @@ import org.elasticsearch.client.Client;
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public interface ClientIngest {
+public interface DocumentIngester {
 
     Client client();
+
+    /**
+     * Set the default index
+     *
+     * @param index the index
+     * @return this TransportClientIndexer
+     */
+    DocumentIngester setIndex(String index);
 
     /**
      * Returns the default index
@@ -36,6 +44,14 @@ public interface ClientIngest {
      * @return the index
      */
     String getIndex();
+
+    /**
+     * Set the default type
+     *
+     * @param type the type
+     * @return this TransportClientIndexer
+     */
+    DocumentIngester setType(String type);
 
     /**
      * Returns the default type
@@ -53,7 +69,7 @@ public interface ClientIngest {
      * @param source
      * @return this ClientIngest
      */
-    ClientIngest createDocument(String index, String type, String id, String source);
+    DocumentIngester createDocument(String index, String type, String id, String source);
 
     /**
      * Index document
@@ -64,7 +80,7 @@ public interface ClientIngest {
      * @param source
      * @return this ClientIngest
      */
-    ClientIngest indexDocument(String index, String type, String id, String source);
+    DocumentIngester indexDocument(String index, String type, String id, String source);
 
     /**
      * Delete document
@@ -74,14 +90,14 @@ public interface ClientIngest {
      * @param id
      * @return this ClientIngest
      */
-    ClientIngest deleteDocument(String index, String type, String id);
+    DocumentIngester deleteDocument(String index, String type, String id);
 
     /**
      * Ensure that all documents arrive.
      *
      * @return this ClientIngest
      */
-    ClientIngest flush();
+    DocumentIngester flush();
 
     /**
      *

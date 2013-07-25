@@ -24,8 +24,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
-import org.xbib.elasticsearch.support.TransportClientSupport;
+import org.xbib.elasticsearch.support.AbstractIngester;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -43,9 +42,9 @@ import java.util.Set;
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class MockTransportClientSearch extends TransportClientSearchSupport {
+public class MockSearchClient extends SearchClientSupport {
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(MockTransportClientSearch.class.getName());
+    private final ESLogger logger = ESLoggerFactory.getLogger(MockSearchClient.class.getName());
 
     private final Set<InetSocketTransportAddress> addresses = new HashSet();
 
@@ -62,11 +61,11 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
                 .build();
     }
 
-    public MockTransportClientSearch newClient() {
-        return newClient(TransportClientSupport.findURI());
+    public MockSearchClient newClient() {
+        return newClient(AbstractIngester.findURI());
     }
 
-    public MockTransportClientSearch newClient(URI uri) {
+    public MockSearchClient newClient(URI uri) {
         settings = initialSettings(uri, 0);
         return this;
     }
@@ -137,7 +136,7 @@ public class MockTransportClientSearch extends TransportClientSearchSupport {
         logger.info("configured addresses to connect = {}", addresses);
     }
 
-    public MockTransportClientSearch waitForHealthyCluster() throws IOException {
+    public MockSearchClient waitForHealthyCluster() throws IOException {
         return this;
     }
 

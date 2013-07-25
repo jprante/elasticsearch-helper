@@ -23,22 +23,19 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.support.TransportClientIngest;
 
 import java.io.IOException;
 import java.net.URI;
 
 /**
- * TransportClientIngest Mockup. Do not perform actions on a real cluster.
+ * Mock ingest client. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class MockTransportClientIngest
-        extends TransportClientIngestSupport
-        implements TransportClientIngest {
+public class MockIngestClient extends IngestClient {
 
-    private final static ESLogger logger = Loggers.getLogger(MockTransportClientIngest.class);
+    private final static ESLogger logger = Loggers.getLogger(MockIngestClient.class);
 
     /**
      * No special initial settings except cluster name
@@ -54,13 +51,13 @@ public class MockTransportClientIngest
     }
 
     @Override
-    public MockTransportClientIngest newClient() {
+    public MockIngestClient newClient() {
         super.newClient();
         return this;
     }
 
     @Override
-    public MockTransportClientIngest newClient(URI uri) {
+    public MockIngestClient newClient(URI uri) {
         super.newClient(uri);
         return this;
     }
@@ -71,31 +68,31 @@ public class MockTransportClientIngest
 
     @Override
     public String getIndex() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public String getType() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
-    public MockTransportClientIngest dateDetection(boolean dateDetection) {
+    public MockIngestClient dateDetection(boolean dateDetection) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest maxBulkActions(int maxBulkActions) {
+    public MockIngestClient maxBulkActions(int maxBulkActions) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockIngestClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest waitForHealthyCluster() throws IOException {
+    public MockIngestClient waitForCluster() throws IOException {
         return this;
     }
 
@@ -105,44 +102,44 @@ public class MockTransportClientIngest
     }
 
     @Override
-    public MockTransportClientIngest setIndex(String index) {
+    public MockIngestClient setIndex(String index) {
         super.setIndex(index);
         return this;
     }
 
     @Override
-    public MockTransportClientIngest setType(String type) {
+    public MockIngestClient setType(String type) {
         super.setType(type);
         return this;
     }
 
     @Override
-    public MockTransportClientIngest createDocument(String index, String type, String id, String source) {
+    public MockIngestClient createDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest indexDocument(String index, String type, String id, String source) {
+    public MockIngestClient indexDocument(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest deleteDocument(String index, String type, String id) {
+    public MockIngestClient deleteDocument(String index, String type, String id) {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest flush() {
+    public MockIngestClient flush() {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest startBulkMode() {
+    public MockIngestClient startBulkMode() {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest stopBulkMode() {
+    public MockIngestClient stopBulkMode() {
         return this;
     }
 
@@ -152,23 +149,22 @@ public class MockTransportClientIngest
     }
 
     @Override
-    public MockTransportClientIngest deleteIndex() {
+    public MockIngestClient deleteIndex() {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest newIndex() {
-        logger.info("mock newIndex");
+    public MockIngestClient newIndex() {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest newType() {
+    public MockIngestClient newType() {
         return this;
     }
 
     @Override
-    public MockTransportClientIngest refresh() {
+    public MockIngestClient refresh() {
         return this;
     }
 

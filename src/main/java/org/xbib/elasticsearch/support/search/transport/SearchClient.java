@@ -28,7 +28,7 @@ import java.net.URI;
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public interface TransportClientSearch {
+public interface SearchClient {
 
     Client client();
 
@@ -38,7 +38,7 @@ public interface TransportClientSearch {
      * @param index
      * @return this TransportClientHelper
      */
-    TransportClientSearch setIndex(String index);
+    SearchClient setIndex(String index);
 
     /**
      * Get index
@@ -47,15 +47,17 @@ public interface TransportClientSearch {
      */
     String getIndex();
 
-    /**
-     * Create a new client
-     */
-    TransportClientSearch newClient();
+    String getType();
 
     /**
      * Create a new client
      */
-    TransportClientSearch newClient(URI uri);
+    SearchClient newClient();
+
+    /**
+     * Create a new client
+     */
+    SearchClient newClient(URI uri);
 
     /**
      * Create new search request

@@ -31,7 +31,7 @@ import java.util.List;
 /**
  *
  */
-public class IngestShardResponse extends ActionResponse {
+public class IngestShardResponse implements ActionResponse {
 
     private ShardId shardId;
     private List<IngestItemSuccess> success;

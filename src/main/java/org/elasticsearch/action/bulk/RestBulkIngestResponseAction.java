@@ -65,21 +65,21 @@ public class RestBulkIngestResponseAction extends BaseRestHandler {
                         builder.startArray(Fields.ITEMS);
                         for (BulkItemResponse itemResponse : response) {
                             builder.startObject();
-                            builder.startObject(itemResponse.getOpType());
+                            builder.startObject(itemResponse.opType());
                             builder.field(Fields._INDEX, itemResponse.getIndex());
                             builder.field(Fields._TYPE, itemResponse.getType());
                             builder.field(Fields._ID, itemResponse.getId());
-                            long version = itemResponse.getVersion();
+                            long version = itemResponse.version();
                             if (version != -1) {
-                                builder.field(Fields._VERSION, itemResponse.getVersion());
+                                builder.field(Fields._VERSION, itemResponse.version());
                             }
                             if (itemResponse.isFailed()) {
                                 builder.field(Fields.ERROR, itemResponse.getFailure().getMessage());
                             } else {
                                 builder.field(Fields.OK, true);
                             }
-                            if (itemResponse.getResponse() instanceof IndexResponse) {
-                                IndexResponse indexResponse = itemResponse.getResponse();
+                            if (itemResponse.response() instanceof IndexResponse) {
+                                IndexResponse indexResponse = itemResponse.response();
                                 if (indexResponse.getMatches() != null) {
                                     builder.startArray(Fields.MATCHES);
                                     for (String match : indexResponse.getMatches()) {

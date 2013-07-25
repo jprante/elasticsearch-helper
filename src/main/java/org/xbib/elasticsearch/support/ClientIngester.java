@@ -19,49 +19,16 @@
 package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.net.URI;
 
 /**
  * TransportClientIngest is an interface for providing convenient ingest methods.
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public interface TransportClientBulk extends ClientIngest {
-
-    /**
-     * Set the default index
-     *
-     * @param index the index
-     * @return this TransportClientIndexer
-     */
-    TransportClientBulk setIndex(String index);
-
-    /**
-     * Set the default type
-     *
-     * @param type the type
-     * @return this TransportClientIndexer
-     */
-    TransportClientBulk setType(String type);
-
-    /**
-     * Create a new transport client
-     *
-     * @return this TransportClientIndexer
-     */
-    TransportClientBulk newClient();
-
-    /**
-     * Create a new transport client
-     *
-     * @param uri the URI to connect to
-     * @return this TransportClientIndexer
-     */
-    TransportClientBulk newClient(URI uri);
+public interface ClientIngester {
 
     /**
      * Wait for healthy cluster
@@ -69,9 +36,9 @@ public interface TransportClientBulk extends ClientIngest {
      * @return this TransportClientIndexer
      * @throws java.io.IOException
      */
-    TransportClientBulk waitForHealthyCluster() throws IOException;
+    ClientIngester waitForCluster() throws IOException;
 
-    TransportClientBulk waitForHealthyCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
+    ClientIngester waitForCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
 
     /**
      * Set maximum number of bulk actions
@@ -79,7 +46,7 @@ public interface TransportClientBulk extends ClientIngest {
      * @param bulkActions
      * @return this TransportClientIndexer
      */
-    TransportClientBulk maxBulkActions(int bulkActions);
+    ClientIngester maxBulkActions(int bulkActions);
 
     /**
      * Set maximum concurent bulk requests
@@ -87,51 +54,51 @@ public interface TransportClientBulk extends ClientIngest {
      * @param maxConcurentBulkRequests
      * @return this TransportClientIndexer
      */
-    TransportClientBulk maxConcurrentBulkRequests(int maxConcurentBulkRequests);
+    ClientIngester maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
     /**
      * Start bulk mode. Disables refresh.
      *
      * @return this TransportClientIndexer
      */
-    TransportClientBulk startBulkMode();
+    ClientIngester startBulkMode();
 
     /**
      * Stops bulk mode. Enables refresh.
      *
      * @return this TransportClientIndexer
      */
-    TransportClientBulk stopBulkMode();
+    ClientIngester stopBulkMode();
 
-    TransportClientBulk shards(int shards);
+    ClientIngester shards(int shards);
 
-    TransportClientBulk replica(int replica);
+    ClientIngester replica(int replica);
 
-    TransportClientBulk setting(String key, String value);
+    ClientIngester setting(String key, String value);
 
-    TransportClientBulk setting(String key, Integer value);
+    ClientIngester setting(String key, Integer value);
 
-    TransportClientBulk setting(String key, Boolean value);
+    ClientIngester setting(String key, Boolean value);
 
     /**
      * Create a new index
      *
      * @return this TransportClientIndexer
      */
-    TransportClientBulk newIndex();
+    ClientIngester newIndex();
 
-    TransportClientBulk newIndex(boolean ignoreExceptions);
+    ClientIngester newIndex(boolean ignoreExceptions);
 
     /**
      * Delete index
      *
      * @return this TransportClientIndexer
      */
-    TransportClientBulk deleteIndex();
+    ClientIngester deleteIndex();
 
-    TransportClientBulk newType();
+    ClientIngester newType();
 
-    TransportClientBulk refresh();
+    ClientIngester refresh();
 
     /**
      * Add replica level.
