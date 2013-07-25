@@ -142,7 +142,7 @@ public class BulkClient extends AbstractIngester {
 
                 logger.info("bulk [{}] [{} items] [{}]  [{}ms]",
                         executionId,
-                        response.items().length,
+                        response.getItems().length,
                         response.hasFailures() ? "failure" : "ok",
                         response.getTook().millis());
                 if (response.hasFailures()) {

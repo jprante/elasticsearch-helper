@@ -97,7 +97,7 @@ public class NodeClientSupport implements DocumentIngester {
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 long l = outstandingBulkRequests.decrementAndGet();
                 logger.info("bulk [{}] success [{} items] [{}ms]",
-                        executionId, response.items().length, response.getTook().millis());
+                        executionId, response.getItems().length, response.getTook().millis());
             }
 
             @Override

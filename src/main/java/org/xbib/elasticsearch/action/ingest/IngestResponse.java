@@ -33,7 +33,7 @@ import java.util.List;
  * bulk requests. Each item holds the index/type/id is operated on, and if it failed or not (with the
  * failure message).
  */
-public class IngestResponse implements ActionResponse {
+public class IngestResponse extends ActionResponse {
 
     private List<IngestItemSuccess> success;
     private List<IngestItemFailure> failure;

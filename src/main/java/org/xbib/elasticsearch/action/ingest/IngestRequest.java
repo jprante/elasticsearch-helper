@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public class IngestRequest implements ActionRequest {
+public class IngestRequest extends ActionRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
     private final Queue<ActionRequest> requests = newQueue();
@@ -384,17 +384,6 @@ public class IngestRequest implements ActionRequest {
         }
 
         return validationException;
-    }
-
-    @Override
-    public boolean listenerThreaded() {
-        return listenerThreaded;
-    }
-
-    @Override
-    public IngestRequest listenerThreaded(boolean listenerThreaded) {
-        this.listenerThreaded = listenerThreaded;
-        return this;
     }
 
     @Override
