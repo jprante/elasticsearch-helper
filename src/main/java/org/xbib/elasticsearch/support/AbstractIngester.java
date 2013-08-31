@@ -40,6 +40,8 @@ public abstract class AbstractIngester extends AbstractClient
 
     private boolean timeStampFieldEnabled = false;
 
+    private boolean kibanaEnabled = false;
+
     private String timeStampField = "@timestamp";
 
     /**
@@ -199,6 +201,11 @@ public abstract class AbstractIngester extends AbstractClient
         return this;
     }
 
+    public AbstractIngester kibanaEnabled(boolean enable) {
+        this.kibanaEnabled = enable;
+        return this;
+    }
+
     public AbstractIngester mapping(String mapping) {
         this.mapping = mapping;
         return this;
@@ -221,7 +228,7 @@ public abstract class AbstractIngester extends AbstractClient
                             .field("path", timeStampField)
                             .endObject();
             }
-
+            if (kibanaEnabled) {
                             b.startObject("properties")
                             .startObject("@fields")
                             .field("type", "object")
@@ -255,8 +262,9 @@ public abstract class AbstractIngester extends AbstractClient
                             .field("type", "string")
                             .field("index", "not_analyzed")
                             .endObject()
-                            .endObject()
-                            .endObject()
+                            .endObject();
+            }
+                            b.endObject()
                             .endObject();
             return b.string();
         } catch (IOException e) {
