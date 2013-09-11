@@ -161,6 +161,7 @@ public class BulkClient extends AbstractIngester {
         this.bulkProcessor = BulkProcessor.builder(client, listener)
                 .setBulkActions(maxBulkActions-1)  // off-by-one
                 .setConcurrentRequests(maxConcurrentBulkRequests)
+                .setFlushInterval(TimeValue.timeValueSeconds(30))
                 .build();
         this.enabled = true;
         return this;
@@ -498,7 +499,12 @@ public class BulkClient extends AbstractIngester {
             logger.warn("no client");
             return this;
         }
-        //bulkProcessor.flush();
+        // we simply wait long enough, because BulkProcessor has a 30 sec flush set
+        try {
+            Thread.sleep(30 * 1000L);
+        } catch (InterruptedException e) {
+            logger.error("interrupted", e);
+        }
         return this;
     }
 

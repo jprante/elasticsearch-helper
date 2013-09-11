@@ -51,7 +51,7 @@ public abstract class AbstractClient {
         return newClient(findURI());
     }
 
-    public synchronized AbstractClient newClient(URI uri) {
+    public AbstractClient newClient(URI uri) {
         return newClient(uri, Runtime.getRuntime().availableProcessors() * 4);
     }
 
