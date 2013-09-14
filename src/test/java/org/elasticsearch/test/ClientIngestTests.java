@@ -25,6 +25,7 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +76,9 @@ public class ClientIngestTests extends AbstractNodeTest {
             es.newIndex();
             es.indexDocument("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
+            logger.info("stats={}", es.stats());
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
