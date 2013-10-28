@@ -26,11 +26,24 @@
         </license>
     </licenses>
 
+    <developers>
+        <developer>
+            <id>jprante</id>
+            <name>Jörg Prante</name>
+            <url>https://github.com/jprante</url>
+        </developer>
+    </developers>
+
     <scm>
         <connection>scm:git:git@github.com:jprante/elasticsearch-support.git</connection>
         <developerConnection>scm:git:git@github.com:jprante/elasticsearch-support.git</developerConnection>
         <url>http://github.com/jprante/elasticsearch-support</url>
     </scm>
+
+    <issueManagement>
+        <system>Github Issue Tracker</system>
+        <url>https://github.com/jprante/elasticsearch-support/issues</url>
+    </issueManagement>
 
     <distributionManagement>
         <repository>
@@ -88,7 +101,6 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
-            <scope>test</scope>
             <type>jar</type>
             <optional>true</optional>
         </dependency>

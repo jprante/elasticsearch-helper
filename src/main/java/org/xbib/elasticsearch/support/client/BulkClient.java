@@ -141,6 +141,7 @@ public class BulkClient extends AbstractIngestClient {
         this.bulkProcessor = BulkProcessor.builder(client, listener)
                 .setBulkActions(maxBulkActions-1)  // off-by-one
                 .setConcurrentRequests(maxConcurrentBulkRequests)
+                .setFlushInterval(TimeValue.timeValueSeconds(30))
                 .build();
         this.enabled = true;
         return this;
@@ -166,33 +167,7 @@ public class BulkClient extends AbstractIngestClient {
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
-                .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
-                .put("transport.netty.worker_count", n)
-                .put("transport.netty.connections_per_node.low", 0)
-                .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", n)
-                .put("threadpool.index.type", "fixed")
-                .put("threadpool.index.size", n)
-                .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", n)
-                .put("threadpool.get.type", "fixed")
-                .put("threadpool.get.size", 1)
-                .put("threadpool.search.type", "fixed")
-                .put("threadpool.search.size", 1)
-                .put("threadpool.percolate.type", "fixed")
-                .put("threadpool.percolate.size", 1)
-                .put("threadpool.management.type", "fixed")
-                .put("threadpool.management.size", 1)
-                .put("threadpool.flush.type", "fixed")
-                .put("threadpool.flush.size", 1)
-                .put("threadpool.merge.type", "fixed")
-                .put("threadpool.merge.size", 1)
-                .put("threadpool.refresh.type", "fixed")
-                .put("threadpool.refresh.size", 1)
-                .put("threadpool.cache.type", "fixed")
-                .put("threadpool.cache.size", 1)
-                .put("threadpool.snapshot.type", "fixed")
-                .put("threadpool.snapshot.size", 1)
+                .put("client.transport.sniff", false)
                 .build();
     }
 
@@ -504,7 +479,12 @@ public class BulkClient extends AbstractIngestClient {
             logger.warn("no client");
             return this;
         }
-        //bulkProcessor.flush();
+        // we simply wait long enough, because BulkProcessor has a 30 sec flush set
+        try {
+            Thread.sleep(30 * 1000L);
+        } catch (InterruptedException e) {
+            logger.error("interrupted", e);
+        }
         return this;
     }
 

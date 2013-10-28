@@ -7,6 +7,8 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +30,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public abstract class AbstractClient {
 
@@ -51,7 +55,7 @@ public abstract class AbstractClient {
         return newClient(findURI());
     }
 
-    public synchronized AbstractClient newClient(URI uri) {
+    public AbstractClient newClient(URI uri) {
         return newClient(uri, Runtime.getRuntime().availableProcessors() * 4);
     }
 
@@ -80,6 +84,14 @@ public abstract class AbstractClient {
 
     public Client client() {
         return client;
+    }
+
+    public String stats() throws IOException {
+        XContentBuilder builder = jsonBuilder();
+        builder.startObject();
+        client.threadPool().stats().toXContent(builder, ToXContent.EMPTY_PARAMS);
+        builder.endObject();
+        return builder.string();
     }
 
     public synchronized void shutdown() {
