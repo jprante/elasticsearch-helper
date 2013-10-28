@@ -1,21 +1,4 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticSearchIllegalArgumentException;
@@ -48,12 +31,14 @@ import static org.elasticsearch.action.ValidateActions.addValidationError;
 public class IngestRequest extends ActionRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
+
     private final Queue<ActionRequest> requests = newQueue();
+
     private final AtomicLong sizeInBytes = new AtomicLong();
+
     private ReplicationType replicationType = ReplicationType.DEFAULT;
+
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
-    private boolean refresh = false;
-    private boolean listenerThreaded = false;
 
 
     protected Queue<ActionRequest> newQueue() {
@@ -293,20 +278,6 @@ public class IngestRequest extends ActionRequest {
     }
 
     /**
-     * Should a refresh be executed post this bulk operation causing the
-     * operations to be searchable. Note, heavy indexing should not set this to
-     * <tt>true</tt>. Defaults to <tt>false</tt>.
-     */
-    public IngestRequest refresh(boolean refresh) {
-        this.refresh = refresh;
-        return this;
-    }
-
-    public boolean refresh() {
-        return this.refresh;
-    }
-
-    /**
      * Set the replication type for this operation.
      */
     public IngestRequest replicationType(ReplicationType replicationType) {
@@ -334,7 +305,7 @@ public class IngestRequest extends ActionRequest {
      * <p/>
      * This method is thread safe.
      *
-     * @param numRequests
+     * @param numRequests number of requests
      * @return a partial bulk request
      */
     public synchronized IngestRequest take(int numRequests) {
@@ -403,7 +374,6 @@ public class IngestRequest extends ActionRequest {
                 requests.add(request);
             }
         }
-        refresh = in.readBoolean();
     }
 
     @Override
@@ -419,6 +389,5 @@ public class IngestRequest extends ActionRequest {
             }
             request.writeTo(out);
         }
-        out.writeBoolean(refresh);
     }
 }

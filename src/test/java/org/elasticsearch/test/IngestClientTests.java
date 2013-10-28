@@ -1,24 +1,7 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+
 package org.elasticsearch.test;
 
-import org.xbib.elasticsearch.support.ingest.transport.IngestClient;
+import org.xbib.elasticsearch.support.client.IngestClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -30,9 +13,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class ClientIngestTests extends AbstractNodeTest {
+public class IngestClientTests extends AbstractNodeTest {
 
-    private final static ESLogger logger = Loggers.getLogger(ClientIngestTests.class);
+    private final static ESLogger logger = Loggers.getLogger(IngestClientTests.class);
 
     @Test
     public void testTransportClient() {
@@ -111,7 +94,7 @@ public class ClientIngestTests extends AbstractNodeTest {
         try {
             int min = 0;
             int max = 4;
-            ThreadPoolExecutor pool = EsExecutors.newScalingExecutorService(min, max, 100, TimeUnit.DAYS,
+            ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,
                     EsExecutors.daemonThreadFactory("ingest"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
