@@ -2,15 +2,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.xbib.elasticsearch</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>0.90.2</version>
+    <version>0.90.5.1</version>
+
     <packaging>jar</packaging>
 
     <name>elasticsearch-support</name>
     <description>Support classes for Elasticsearch</description>
+
+    <url>http://github.com/jprante/elasticsearch-support</url>
 
     <inceptionYear>2013</inceptionYear>
 
@@ -36,10 +40,23 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>xbib-releases</id>
+            <name>xbib Maven Repository</name>
+            <url>http://github.com/xbib/maven-repo/raw/master/releases</url>
+        </repository>
+        <repository>
+            <id>xbib-snapshots</id>
+            <name>xbib Maven Repository</name>
+            <url>http://github.com/xbib/maven-repo/raw/master/snapshots</url>
+        </repository>
+    </repositories>
+
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
-        <elasticsearch.version>0.90.2</elasticsearch.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <elasticsearch.version>0.90.5</elasticsearch.version>
     </properties>
 
     <dependencies>
@@ -47,12 +64,15 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>${elasticsearch.version}</version>
+            <type>jar</type>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.8.5</version>
+            <version>6.8.7</version>
+            <type>jar</type>
             <scope>test</scope>
         </dependency>
 
@@ -60,6 +80,7 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <version>1.3</version>
+            <type>jar</type>
             <scope>test</scope>
         </dependency>
 
@@ -68,6 +89,7 @@
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
             <scope>test</scope>
+            <type>jar</type>
             <optional>true</optional>
         </dependency>
 
@@ -101,7 +123,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.14</version>
+                <version>2.15</version>
                 <configuration>
                     <skip>false</skip>
                     <forkMode>none</forkMode>
@@ -114,6 +136,18 @@
                         <include>**/*Tests.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.2</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -135,20 +169,19 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.7</version>
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9</version>
+                <version>2.9.1</version>
                 <configuration>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <locale>en</locale>
@@ -166,7 +199,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.0</version>
+                <version>3.3</version>
                 <configuration>
                     <locales>en</locales>
                     <inputEncoding>UTF-8</inputEncoding>
@@ -176,7 +209,7 @@
             <plugin>
                 <groupId>com.github.github</groupId>
                 <artifactId>site-maven-plugin</artifactId>
-                <version>0.7</version>
+                <version>0.9</version>
                 <configuration>
                     <message>Building site for ${project.version}</message>
                 </configuration>
@@ -191,5 +224,24 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9.1</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <locale>en</locale>
+                    <linksource>true</linksource>
+                    <validateLinks>true</validateLinks>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.15</version>
+            </plugin>
+        </plugins>
+    </reporting>
 
 </project>

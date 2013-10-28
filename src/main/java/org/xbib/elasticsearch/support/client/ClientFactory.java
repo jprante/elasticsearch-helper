@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client;
 
 import java.net.URI;
 
@@ -9,7 +9,7 @@ public interface ClientFactory {
      *
      * @return this TransportClientIndexer
      */
-    ClientIngester newClient();
+    Ingest newClient();
 
     /**
      * Create a new client
@@ -17,6 +17,6 @@ public interface ClientFactory {
      * @param uri the URI to connect to
      * @return this TransportClientIndexer
      */
-    ClientIngester newClient(URI uri);
+    Ingest newClient(URI uri);
 
 }

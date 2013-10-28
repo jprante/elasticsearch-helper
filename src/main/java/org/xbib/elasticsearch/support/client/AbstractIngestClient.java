@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -21,15 +21,10 @@ import java.net.URI;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-/**
- * Transport client support
- *
- * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
- */
-public abstract class AbstractIngester extends AbstractClient
-        implements DocumentIngester, ClientIngester, ClientFactory {
+public abstract class AbstractIngestClient extends AbstractClient
+        implements Ingest, ClientFactory {
 
-    private final static ESLogger logger = Loggers.getLogger(AbstractIngester.class);
+    private final static ESLogger logger = Loggers.getLogger(AbstractIngestClient.class);
 
     /**
      * An optional mapping
@@ -39,6 +34,8 @@ public abstract class AbstractIngester extends AbstractClient
     private boolean dateDetection = false;
 
     private boolean timeStampFieldEnabled = false;
+
+    private boolean kibanaEnabled = false;
 
     private String timeStampField = "@timestamp";
 
@@ -51,18 +48,18 @@ public abstract class AbstractIngester extends AbstractClient
      */
     private String type;
 
-    public AbstractIngester newClient() {
+    public AbstractIngestClient newClient() {
         super.newClient();
         return this;
     }
 
-    public AbstractIngester newClient(URI uri) {
+    public AbstractIngestClient newClient(URI uri) {
         super.newClient(uri);
         return this;
     }
 
     @Override
-    public AbstractIngester setIndex(String index) {
+    public AbstractIngestClient setIndex(String index) {
         this.index = index;
         return this;
     }
@@ -73,7 +70,7 @@ public abstract class AbstractIngester extends AbstractClient
     }
 
     @Override
-    public AbstractIngester setType(String type) {
+    public AbstractIngestClient setType(String type) {
         this.type = type;
         return this;
     }
@@ -84,12 +81,12 @@ public abstract class AbstractIngester extends AbstractClient
     }
 
     @Override
-    public AbstractIngester waitForCluster() throws IOException {
+    public AbstractIngestClient waitForCluster() throws IOException {
         return waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
     }
 
     @Override
-    public AbstractIngester waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+    public AbstractIngestClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
         try {
             logger.info("waiting for cluster state {}", status.name());
             ClusterHealthResponse healthResponse =
@@ -134,11 +131,11 @@ public abstract class AbstractIngester extends AbstractClient
     }
 
 
-    public AbstractIngester shards(int shards) {
+    public AbstractIngestClient shards(int shards) {
         return setting("index.number_of_shards", shards);
     }
 
-    public AbstractIngester replica(int replica) {
+    public AbstractIngestClient replica(int replica) {
         return setting("index.number_of_replicas", replica);
     }
 
@@ -148,7 +145,7 @@ public abstract class AbstractIngester extends AbstractClient
     private ImmutableSettings.Builder settingsBuilder;
 
 
-    public AbstractIngester setting(String key, String value) {
+    public AbstractIngestClient setting(String key, String value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -156,7 +153,7 @@ public abstract class AbstractIngester extends AbstractClient
         return this;
     }
 
-    public AbstractIngester setting(String key, Boolean value) {
+    public AbstractIngestClient setting(String key, Boolean value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -164,7 +161,7 @@ public abstract class AbstractIngester extends AbstractClient
         return this;
     }
 
-    public AbstractIngester setting(String key, Integer value) {
+    public AbstractIngestClient setting(String key, Integer value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
@@ -176,7 +173,7 @@ public abstract class AbstractIngester extends AbstractClient
         return settingsBuilder != null ? settingsBuilder : null;
     }
 
-    public AbstractIngester dateDetection(boolean dateDetection) {
+    public AbstractIngestClient dateDetection(boolean dateDetection) {
         this.dateDetection = dateDetection;
         return this;
     }
@@ -185,7 +182,7 @@ public abstract class AbstractIngester extends AbstractClient
         return dateDetection;
     }
 
-    public AbstractIngester timeStampField(String timeStampField) {
+    public AbstractIngestClient timeStampField(String timeStampField) {
         this.timeStampField = timeStampField;
         return this;
     }
@@ -194,12 +191,17 @@ public abstract class AbstractIngester extends AbstractClient
         return timeStampField;
     }
 
-    public AbstractIngester timeStampFieldEnabled(boolean enable) {
+    public AbstractIngestClient timeStampFieldEnabled(boolean enable) {
         this.timeStampFieldEnabled = enable;
         return this;
     }
 
-    public AbstractIngester mapping(String mapping) {
+    public AbstractIngestClient kibanaEnabled(boolean enable) {
+        this.kibanaEnabled = enable;
+        return this;
+    }
+
+    public AbstractIngestClient mapping(String mapping) {
         this.mapping = mapping;
         return this;
     }
@@ -221,7 +223,7 @@ public abstract class AbstractIngester extends AbstractClient
                             .field("path", timeStampField)
                             .endObject();
             }
-
+            if (kibanaEnabled) {
                             b.startObject("properties")
                             .startObject("@fields")
                             .field("type", "object")
@@ -255,8 +257,9 @@ public abstract class AbstractIngester extends AbstractClient
                             .field("type", "string")
                             .field("index", "not_analyzed")
                             .endObject()
-                            .endObject()
-                            .endObject()
+                            .endObject();
+            }
+                            b.endObject()
                             .endObject();
             return b.string();
         } catch (IOException e) {
@@ -265,17 +268,17 @@ public abstract class AbstractIngester extends AbstractClient
         return null;
     }
 
-    protected AbstractIngester enableRefreshInterval() {
+    protected AbstractIngestClient enableRefreshInterval() {
         update("refresh_interval", 1000);
         return this;
     }
 
-    protected AbstractIngester disableRefreshInterval() {
+    protected AbstractIngestClient disableRefreshInterval() {
         update("refresh_interval", -1);
         return this;
     }
 
-    public synchronized AbstractIngester newIndex(boolean ignoreException) {
+    public synchronized AbstractIngestClient newIndex(boolean ignoreException) {
         if (client == null) {
             logger.warn("no client");
             return this;
@@ -329,6 +332,5 @@ public abstract class AbstractIngester extends AbstractClient
                 .updateSettings(updateSettingsRequest)
                 .actionGet();
     }
-
 
 }
