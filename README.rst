@@ -11,6 +11,8 @@ Installation
 
 Current version of the plugin: **0.90.5.1** (Oct 27, 2013)
 
+.. image:: https://travis-ci.org/jprante/elasticsearch-support.png
+
 Prerequisites::
 
   Elasticsearch 0.90.x
