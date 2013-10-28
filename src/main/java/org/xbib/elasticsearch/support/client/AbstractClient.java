@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
@@ -7,7 +7,6 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -99,7 +98,7 @@ public abstract class AbstractClient {
         try {
             hostname = InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
-            URL url = AbstractIngester.class.getResource("/org/xbib/elasticsearch/cluster.properties");
+            URL url = AbstractIngestClient.class.getResource("/org/xbib/elasticsearch/cluster.properties");
             if (url != null) {
                 InputStream in = url.openStream();
                 Properties p = new Properties();

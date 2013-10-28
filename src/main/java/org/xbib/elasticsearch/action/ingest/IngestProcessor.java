@@ -1,21 +1,4 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
@@ -34,17 +17,24 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 public class IngestProcessor {
 
     private final Client client;
+
     private final int concurrency;
+
     private final int actions;
+
     private final int maxVolume;
+
     private final Semaphore semaphore;
+
     private final AtomicLong executionIdGen = new AtomicLong();
+
     private final IngestRequest ingestRequest = new IngestRequest();
+
     private Listener listener;
+
     private volatile boolean closed = false;
 
     public static Builder builder(Client client) {
@@ -77,15 +67,6 @@ public class IngestProcessor {
     public IngestProcessor consistencyLevel(WriteConsistencyLevel level) {
         ingestRequest.consistencyLevel(level);
         return this;
-    }
-
-    public IngestProcessor refresh(boolean refresh) {
-        ingestRequest.refresh(refresh);
-        return this;
-    }
-
-    public boolean refresh() {
-        return ingestRequest.refresh();
     }
 
     /**
@@ -281,7 +262,7 @@ public class IngestProcessor {
 
         /**
          *  Set the listener that will be used to be notified on the completion of bulk requests.
-         * @param listener
+         * @param listener the listener
          * @return the builder
          */
         public Builder listener(Listener listener) {

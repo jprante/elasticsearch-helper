@@ -1,22 +1,5 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-package org.xbib.elasticsearch.support.ingest;
+
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -31,7 +14,6 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.DocumentIngester;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,11 +22,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * Node client support. Implements minimal API for node client ingesting.
  * Useful for river implementations.
  *
- * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class NodeClientSupport implements DocumentIngester {
+public class NodeClient implements DocumentIngest {
 
-    private final static ESLogger logger = Loggers.getLogger(NodeClientSupport.class);
+    private final static ESLogger logger = Loggers.getLogger(NodeClient.class);
 
     private Client client;
 
@@ -77,8 +58,8 @@ public class NodeClientSupport implements DocumentIngester {
      */
     private final BulkProcessor bulkProcessor;
 
-    public NodeClientSupport(Client client, String index, String type,
-                             int maxBulkActions, int maxConcurrentBulkRequests) {
+    public NodeClient(Client client, String index, String type,
+                      int maxBulkActions, int maxConcurrentBulkRequests) {
         this.client = client;
         this.index = index;
         this.type = type;
@@ -127,13 +108,13 @@ public class NodeClientSupport implements DocumentIngester {
     }
 
     @Override
-    public NodeClientSupport setIndex(String index) {
+    public NodeClient setIndex(String index) {
         this.index = index;
         return this;
     }
 
     @Override
-    public NodeClientSupport setType(String type) {
+    public NodeClient setType(String type) {
         this.type = type;
         return this;
     }
@@ -147,7 +128,7 @@ public class NodeClientSupport implements DocumentIngester {
     }
 
     @Override
-    public NodeClientSupport createDocument(String index, String type, String id, String source) {
+    public NodeClient createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -163,7 +144,7 @@ public class NodeClientSupport implements DocumentIngester {
     }
 
     @Override
-    public NodeClientSupport indexDocument(String index, String type, String id, String source) {
+    public NodeClient indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -179,7 +160,7 @@ public class NodeClientSupport implements DocumentIngester {
     }
 
     @Override
-    public NodeClientSupport deleteDocument(String index, String type, String id) {
+    public NodeClient deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -195,7 +176,7 @@ public class NodeClientSupport implements DocumentIngester {
     }
 
     @Override
-    public NodeClientSupport flush() {
+    public NodeClient flush() {
         if (!enabled) {
             return this;
         }
@@ -208,11 +189,11 @@ public class NodeClientSupport implements DocumentIngester {
         client.close();
     }
 
-    public NodeClientSupport waitForHealthyCluster() throws IOException {
+    public NodeClient waitForHealthyCluster() throws IOException {
         return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
     }
 
-    public NodeClientSupport waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
+    public NodeClient waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
         try {
             logger.info("waiting for cluster health...");
             ClusterHealthResponse healthResponse =

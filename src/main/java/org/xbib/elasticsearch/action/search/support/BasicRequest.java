@@ -1,21 +1,4 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
+
 package org.xbib.elasticsearch.action.search.support;
 
 import org.elasticsearch.action.get.GetRequestBuilder;
@@ -29,16 +12,21 @@ import java.io.IOException;
 /**
  * Helper class for Elasticsearch search/get requests
  *
- * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class BasicRequest {
 
     private final ESLogger logger = ESLoggerFactory.getLogger(BasicRequest.class.getName());
+
     private SearchRequestBuilder searchRequestBuilder;
+
     private GetRequestBuilder getRequestBuilder;
+
     private String[] index;
+
     private String[] type;
+
     private String id;
+
     private String query;
 
     public BasicRequest newSearchRequest(SearchRequestBuilder searchRequestBuilder) {
@@ -156,11 +144,21 @@ public class BasicRequest {
 
     public BasicResponse executeGet() throws IOException {
         BasicResponse response = new BasicResponse();
+        if (getRequestBuilder == null) {
+            return response;
+        }
+        getRequestBuilder
+                .setIndex(index[0])
+                .setType(type[0])
+                .setId(id);
         long t0 = System.currentTimeMillis();
         response.getResponse(getRequestBuilder.execute().actionGet());
         long t1 = System.currentTimeMillis();
         logger.info(" get complete: {}/{}/{} [{}ms] {}",
-                index, type, getRequestBuilder.request().id(), (t1 - t0), response.exists());
+                getRequestBuilder.request().index(),
+                getRequestBuilder.request().type(),
+                getRequestBuilder.request().id(),
+                (t1 - t0), response.exists());
         return response;
     }
 

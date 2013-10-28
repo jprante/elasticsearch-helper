@@ -1,57 +1,39 @@
-/*
- * Licensed to ElasticSearch and Shay Banon under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. ElasticSearch licenses this
- * file to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-package org.xbib.elasticsearch.support.bulk.transport;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
-
-import org.xbib.elasticsearch.support.AbstractIngester;
+package org.xbib.elasticsearch.support.client;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
+
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
+import org.xbib.elasticsearch.action.ingest.IngestProcessor;
+import org.xbib.elasticsearch.action.ingest.IngestRequest;
+import org.xbib.elasticsearch.action.ingest.IngestResponse;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.xbib.elasticsearch.support.client.AbstractIngestClient;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+
 /**
- * Bulk API based client support
+ * Ingest client
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class BulkClient extends AbstractIngester {
+public class IngestClient extends AbstractIngestClient {
 
-    private final static ESLogger logger = Loggers.getLogger(BulkClient.class.getName());
+    private final static ESLogger logger = Loggers.getLogger(IngestClient.class.getName());
     /**
      * The default size of a ingestProcessor request
      */
@@ -73,17 +55,9 @@ public class BulkClient extends AbstractIngester {
      */
     private boolean enabled = true;
     /**
-     * The BulkProcessor
+     * The IngestProcessor
      */
-    private BulkProcessor bulkProcessor;
-    /**
-     * The default index
-     */
-    private String index;
-    /**
-     * The default type
-     */
-    private String type;
+    private IngestProcessor ingestProcessor;
 
     /**
      * Enable or disable this indxer
@@ -91,7 +65,7 @@ public class BulkClient extends AbstractIngester {
      * @param enabled true for enable, false for disable
      * @return this indexer
      */
-    public BulkClient enable(boolean enabled) {
+    public IngestClient enable(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -111,7 +85,7 @@ public class BulkClient extends AbstractIngester {
      * @return this indexer
      */
     @Override
-    public BulkClient newClient() {
+    public IngestClient newClient() {
         return this.newClient(findURI());
     }
 
@@ -125,11 +99,11 @@ public class BulkClient extends AbstractIngester {
      * @return this indexer
      */
     @Override
-    public BulkClient newClient(URI uri) {
+    public IngestClient newClient(URI uri) {
         super.newClient(uri);
-        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
+        IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, BulkRequest request) {
+            public void beforeBulk(long executionId, IngestRequest request) {
                 long l = outstandingRequests.getAndIncrement();
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
                 logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
@@ -137,31 +111,28 @@ public class BulkClient extends AbstractIngester {
             }
 
             @Override
-            public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
+            public void afterBulk(long executionId, IngestResponse response) {
                 long l = outstandingRequests.decrementAndGet();
-
-                logger.info("bulk [{}] [{} items] [{}]  [{}ms]",
-                        executionId,
-                        response.items().length,
-                        response.hasFailures() ? "failure" : "ok",
-                        response.getTook().millis());
-                if (response.hasFailures()) {
-                    logger.error("bulk [{}] failure reason: {}",
-                            executionId, response.buildFailureMessage());
+                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
+                        executionId, response.success().size(), response.failure().size(), response.took().millis());
+                if (!response.failure().isEmpty()) {
+                    for (IngestItemFailure f: response.failure()) {
+                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                    }
                 }
             }
 
             @Override
-            public void afterBulk(long executionId, BulkRequest requst, Throwable failure) {
+            public void afterBulk(long executionId, Throwable failure) {
                 long l = outstandingRequests.decrementAndGet();
                 logger.error("bulk ["+executionId+"] error", failure);
                 enabled = false;
             }
         };
-        this.bulkProcessor = BulkProcessor.builder(client, listener)
-                .setBulkActions(maxBulkActions-1)  // off-by-one
-                .setConcurrentRequests(maxConcurrentBulkRequests)
-                .setFlushInterval(TimeValue.timeValueSeconds(30))
+        this.ingestProcessor = IngestProcessor.builder(client)
+                .listener(listener)
+                .actions(maxBulkActions)
+                .concurrency(maxConcurrentBulkRequests)
                 .build();
         this.enabled = true;
         return this;
@@ -178,7 +149,7 @@ public class BulkClient extends AbstractIngester {
      * minimal, 4 * cpucore Netty connections in parallel.
      *
      * @param uri the cluster name URI
-     * @param n the client threadpool size
+     * @param n the client thread pool size
      * @return the initial settings
      */
     @Override
@@ -218,114 +189,72 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient setIndex(String index) {
-        this.index = index;
+    public IngestClient setIndex(String index) {
+        super.setIndex(index);
         return this;
     }
 
     @Override
-    public String getIndex() {
-        return index;
-    }
-
-    @Override
-    public BulkClient setType(String type) {
-        this.type = type;
+    public IngestClient setType(String type) {
+        super.setType(type);
         return this;
     }
 
     @Override
-    public String getType() {
-        return type;
-    }
-
-    @Override
-    public BulkClient maxBulkActions(int maxBulkActions) {
+    public IngestClient maxBulkActions(int maxBulkActions) {
         this.maxBulkActions = maxBulkActions;
         return this;
     }
 
     @Override
-    public BulkClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
+    public IngestClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
-    public BulkClient setting(String key, String value) {
+    public IngestClient setting(String key, String value) {
         super.setting(key, value);
         return this;
     }
 
-    public BulkClient setting(String key, Integer value) {
+    public IngestClient setting(String key, Integer value) {
         super.setting(key, value);
         return this;
     }
 
-    public BulkClient setting(String key, Boolean value) {
+    public IngestClient setting(String key, Boolean value) {
         super.setting(key, value);
         return this;
     }
 
-    public BulkClient shards(int value) {
+    public IngestClient shards(int value) {
         super.shards(value);
         return this;
     }
 
-    public BulkClient replica(int value) {
+    public IngestClient replica(int value) {
         super.replica(value);
         return this;
     }
 
     @Override
-    public BulkClient newIndex() {
+    public IngestClient newIndex() {
         return newIndex(true);
     }
 
-    @Override
-    public synchronized BulkClient newIndex(boolean ignoreException) {
+    public synchronized IngestClient newIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        if (getType() == null) {
-            logger.warn("no type name given to create");
-            return this;
-        }
-        CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settings() != null) {
-            request.settings(settings());
-        }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
-        request.mapping(getType(), mapping());
-        logger.info("creating index = {} type = {} settings = {} mapping = {}",
-                getIndex(),
-                getType(),
-                settings() != null ? settings().build().getAsMap() : "",
-                mapping());
-        try {
-            client.admin().indices().create(request).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.newIndex(ignoreException);
         return this;
     }
 
-    public BulkClient deleteIndex() {
+    public IngestClient deleteIndex() {
         return deleteIndex(true);
     }
 
-    public BulkClient deleteIndex(boolean ignoreException) {
+    public IngestClient deleteIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
@@ -348,7 +277,7 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient newType() {
+    public IngestClient newType() {
         if (!enabled) {
             return this;
         }
@@ -371,15 +300,15 @@ public class BulkClient extends AbstractIngester {
         return this;
     }
 
-    public BulkClient deleteType() {
+    public IngestClient deleteType() {
         return deleteType(true, true);
     }
 
-    public BulkClient deleteType(boolean enabled) {
+    public IngestClient deleteType(boolean enabled) {
         return deleteType(enabled, true);
     }
 
-    public BulkClient deleteType(boolean enabled, boolean ignoreException) {
+    public IngestClient deleteType(boolean enabled, boolean ignoreException) {
         if (!enabled) {
             return this;
         }
@@ -394,7 +323,7 @@ public class BulkClient extends AbstractIngester {
         try {
             client.admin().indices().deleteMapping(new DeleteMappingRequest()
                         .indices(new String[]{getIndex()})
-                        .type(type));
+                        .type(getType()));
         } catch (Exception e) {
             if (!ignoreException) {
                 throw new RuntimeException(e);
@@ -404,19 +333,19 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient startBulkMode() {
+    public IngestClient startBulkMode() {
         disableRefreshInterval();
         return this;
     }
 
     @Override
-    public BulkClient stopBulkMode() {
+    public IngestClient stopBulkMode() {
         enableRefreshInterval();
         return this;
     }
 
     @Override
-    public BulkClient refresh() {
+    public IngestClient refresh() {
         if (client == null) {
             logger.warn("no client");
             return this;
@@ -430,7 +359,7 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient createDocument(String index, String type, String id, String source) {
+    public IngestClient createDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -439,7 +368,7 @@ public class BulkClient extends AbstractIngester {
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
         try {
-            bulkProcessor.add(indexRequest);
+            ingestProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of create failed: " + e.getMessage(), e);
             enabled = false;
@@ -448,7 +377,7 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient indexDocument(String index, String type, String id, String source) {
+    public IngestClient indexDocument(String index, String type, String id, String source) {
         if (!enabled) {
             return this;
         }
@@ -457,7 +386,7 @@ public class BulkClient extends AbstractIngester {
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
-            bulkProcessor.add(indexRequest);
+            ingestProcessor.add(indexRequest);
         } catch (Exception e) {
             logger.error("bulk add of index failed: " + e.getMessage(), e);
             enabled = false;
@@ -466,7 +395,7 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient deleteDocument(String index, String type, String id) {
+    public IngestClient deleteDocument(String index, String type, String id) {
         if (!enabled) {
             return this;
         }
@@ -475,7 +404,7 @@ public class BulkClient extends AbstractIngester {
         }
         DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
-            bulkProcessor.add(deleteRequest);
+            ingestProcessor.add(deleteRequest);
         } catch (Exception e) {
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
             enabled = false;
@@ -484,18 +413,18 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient waitForCluster() throws IOException {
+    public IngestClient waitForCluster() throws IOException {
         super.waitForCluster();
         return this;
     }
 
     @Override
-    public BulkClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+    public IngestClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
         super.waitForCluster(status, timeout);
         return this;
     }
 
-    public BulkClient numberOfShards(int value) {
+    public IngestClient numberOfShards(int value) {
         if (!enabled) {
             return this;
         }
@@ -507,7 +436,7 @@ public class BulkClient extends AbstractIngester {
         return this;
     }
 
-    public BulkClient numberOfReplicas(int value) {
+    public IngestClient numberOfReplicas(int value) {
         if (getIndex() == null) {
             logger.warn("no index name given");
             return this;
@@ -517,7 +446,7 @@ public class BulkClient extends AbstractIngester {
     }
 
     @Override
-    public BulkClient flush() {
+    public IngestClient flush() {
         if (!enabled) {
             return this;
         }
@@ -525,12 +454,7 @@ public class BulkClient extends AbstractIngester {
             logger.warn("no client");
             return this;
         }
-        // we simply wait long enough, because BulkProcessor has a 30 sec flush set
-        try {
-            Thread.sleep(30 * 1000L);
-        } catch (InterruptedException e) {
-            logger.error("interrupted", e);
-        }
+        ingestProcessor.flush();
         return this;
     }
 
@@ -545,9 +469,9 @@ public class BulkClient extends AbstractIngester {
             return;
         }
         try {
-            if (bulkProcessor != null) {
+            if (ingestProcessor != null) {
                 logger.info("closing ingest processor...");
-                bulkProcessor.close();
+                ingestProcessor.close();
             }
             logger.info("enabling refresh interval...");
             enableRefreshInterval();
