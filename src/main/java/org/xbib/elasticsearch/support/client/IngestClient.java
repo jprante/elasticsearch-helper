@@ -5,31 +5,26 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
-
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
-import org.xbib.elasticsearch.action.ingest.IngestProcessor;
-import org.xbib.elasticsearch.action.ingest.IngestRequest;
-import org.xbib.elasticsearch.action.ingest.IngestResponse;
+
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.xbib.elasticsearch.support.client.AbstractIngestClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
+import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
+import org.xbib.elasticsearch.action.ingest.IngestProcessor;
+import org.xbib.elasticsearch.action.ingest.IngestRequest;
+import org.xbib.elasticsearch.action.ingest.IngestResponse;
+
 /**
  * Ingest client
- *
- * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class IngestClient extends AbstractIngestClient {
 
@@ -159,32 +154,6 @@ public class IngestClient extends AbstractIngestClient {
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
-                .put("transport.netty.worker_count", n)
-                .put("transport.netty.connections_per_node.low", 0)
-                .put("transport.netty.connections_per_node.med", 0)
-                .put("transport.netty.connections_per_node.high", n)
-                .put("threadpool.index.type", "fixed")
-                .put("threadpool.index.size", n)
-                .put("threadpool.bulk.type", "fixed")
-                .put("threadpool.bulk.size", n)
-                .put("threadpool.get.type", "fixed")
-                .put("threadpool.get.size", 1)
-                .put("threadpool.search.type", "fixed")
-                .put("threadpool.search.size", 1)
-                .put("threadpool.percolate.type", "fixed")
-                .put("threadpool.percolate.size", 1)
-                .put("threadpool.management.type", "fixed")
-                .put("threadpool.management.size", 1)
-                .put("threadpool.flush.type", "fixed")
-                .put("threadpool.flush.size", 1)
-                .put("threadpool.merge.type", "fixed")
-                .put("threadpool.merge.size", 1)
-                .put("threadpool.refresh.type", "fixed")
-                .put("threadpool.refresh.size", 1)
-                .put("threadpool.cache.type", "fixed")
-                .put("threadpool.cache.size", 1)
-                .put("threadpool.snapshot.type", "fixed")
-                .put("threadpool.snapshot.size", 1)
                 .build();
     }
 
@@ -239,107 +208,48 @@ public class IngestClient extends AbstractIngestClient {
 
     @Override
     public IngestClient newIndex() {
-        return newIndex(true);
-    }
-
-    public synchronized IngestClient newIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
-        super.newIndex(ignoreException);
+        super.newIndex();
         return this;
     }
 
-    public IngestClient deleteIndex() {
-        return deleteIndex(true);
-    }
-
-    public IngestClient deleteIndex(boolean ignoreException) {
+    public IngestClient deleteIndex(String name) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        try {
-            client.admin().indices().delete(new DeleteIndexRequest(getIndex()));
-        } catch (Exception e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.deleteIndex();
         return this;
     }
 
     @Override
-    public IngestClient newType() {
+    public IngestClient newMapping(String type) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
-        client.admin().indices().putMapping(new PutMappingRequest()
-                .indices(new String[]{getIndex()})
-                .type(getType())
-                .source(mapping()))
-                .actionGet();
-        return this;
-    }
-
-    public IngestClient deleteType() {
-        return deleteType(true, true);
-    }
-
-    public IngestClient deleteType(boolean enabled) {
-        return deleteType(enabled, true);
-    }
-
-    public IngestClient deleteType(boolean enabled, boolean ignoreException) {
-        if (!enabled) {
-            return this;
-        }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        try {
-            client.admin().indices().deleteMapping(new DeleteMappingRequest()
-                        .indices(new String[]{getIndex()})
-                        .type(getType()));
-        } catch (Exception e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.newMapping(type);
         return this;
     }
 
     @Override
-    public IngestClient startBulkMode() {
+    public IngestClient deleteMapping(String type) {
+        if (!enabled) {
+            return this;
+        }
+        super.deleteMapping(type);
+        return this;
+    }
+
+    @Override
+    public IngestClient startBulk() throws IOException {
         disableRefreshInterval();
+        updateReplicaLevel(0);
         return this;
     }
 
     @Override
-    public IngestClient stopBulkMode() {
+    public IngestClient stopBulk() {
         enableRefreshInterval();
         return this;
     }

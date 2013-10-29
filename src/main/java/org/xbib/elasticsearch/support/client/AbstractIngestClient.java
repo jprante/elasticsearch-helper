@@ -5,18 +5,24 @@ import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.admin.indices.status.ShardStatus;
+import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.URI;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -25,11 +31,6 @@ public abstract class AbstractIngestClient extends AbstractClient
         implements Ingest, ClientFactory {
 
     private final static ESLogger logger = Loggers.getLogger(AbstractIngestClient.class);
-
-    /**
-     * An optional mapping
-     */
-    private String mapping;
 
     private boolean dateDetection = false;
 
@@ -47,6 +48,13 @@ public abstract class AbstractIngestClient extends AbstractClient
      * The default type
      */
     private String type;
+
+    private ImmutableSettings.Builder settingsBuilder;
+
+    /**
+     * The mappings for the type
+     */
+    private String mapping;
 
     public AbstractIngestClient newClient() {
         super.newClient();
@@ -104,15 +112,14 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
+    @Override
     public int waitForRecovery() {
         if (getIndex() == null) {
             logger.warn("not waiting for recovery, index not set");
             return -1;
         }
         IndicesStatusResponse response = client.admin().indices()
-                .status(new IndicesStatusRequest(getIndex())
-                        .recovery(true)
-                ).actionGet();
+                .status(new IndicesStatusRequest(getIndex()).recovery(true)).actionGet();
         logger.info("indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
         for (ShardStatus status : response.getShards()) {
             logger.info("shard {} status {}", status.getShardId(), status.getState().name());
@@ -120,6 +127,7 @@ public abstract class AbstractIngestClient extends AbstractClient
         return response.getTotalShards();
     }
 
+    @Override
     public int updateReplicaLevel(int level) throws IOException {
         if (getIndex() == null) {
             logger.warn("no index name given");
@@ -130,21 +138,17 @@ public abstract class AbstractIngestClient extends AbstractClient
         return waitForRecovery();
     }
 
-
+    @Override
     public AbstractIngestClient shards(int shards) {
         return setting("index.number_of_shards", shards);
     }
 
+    @Override
     public AbstractIngestClient replica(int replica) {
         return setting("index.number_of_replicas", replica);
     }
 
-    /**
-     * Optional settings
-     */
-    private ImmutableSettings.Builder settingsBuilder;
-
-
+    @Override
     public AbstractIngestClient setting(String key, String value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
@@ -153,6 +157,7 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
+    @Override
     public AbstractIngestClient setting(String key, Boolean value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
@@ -161,6 +166,7 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
+    @Override
     public AbstractIngestClient setting(String key, Integer value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
@@ -171,6 +177,29 @@ public abstract class AbstractIngestClient extends AbstractClient
 
     public ImmutableSettings.Builder settings() {
         return settingsBuilder != null ? settingsBuilder : null;
+    }
+
+    @Override
+    public AbstractIngestClient setting(InputStream in) throws IOException {
+        this.settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);
+        return this;
+    }
+
+    @Override
+    public AbstractIngestClient mapping(InputStream in) throws IOException {
+        StringWriter sw = new StringWriter();
+        Streams.copy(new InputStreamReader(in), sw);
+        this.mapping = sw.toString();
+        return this;
+    }
+
+    public AbstractIngestClient mapping(String mapping) {
+        this.mapping = mapping;
+        return this;
+    }
+
+    public String mapping() {
+        return mapping;
     }
 
     public AbstractIngestClient dateDetection(boolean dateDetection) {
@@ -201,19 +230,9 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
-    public AbstractIngestClient mapping(String mapping) {
-        this.mapping = mapping;
-        return this;
-    }
-
-    public String mapping() {
-        return mapping;
-    }
-
     public String defaultMapping() {
         try {
-            XContentBuilder b =
-                    jsonBuilder()
+            XContentBuilder b = jsonBuilder()
                             .startObject()
                             .startObject("_default_")
                             .field("date_detection", dateDetection);
@@ -259,8 +278,8 @@ public abstract class AbstractIngestClient extends AbstractClient
                             .endObject()
                             .endObject();
             }
-                            b.endObject()
-                            .endObject();
+            b.endObject()
+                    .endObject();
             return b.string();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
@@ -278,17 +297,18 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
-    public synchronized AbstractIngestClient newIndex(boolean ignoreException) {
+    @Override
+    public synchronized AbstractIngestClient newIndex() {
         if (client == null) {
             logger.warn("no client");
             return this;
         }
         if (getIndex() == null) {
-            logger.warn("no index name given to create");
+            logger.warn("no index name given to create index");
             return this;
         }
         if (getType() == null) {
-            logger.warn("no type name given to create");
+            logger.warn("no type name given to create index");
             return this;
         }
         CreateIndexRequest request = new CreateIndexRequest(getIndex());
@@ -296,23 +316,91 @@ public abstract class AbstractIngestClient extends AbstractClient
             request.settings(settings());
         }
         if (mapping() == null) {
-            mapping(defaultMapping());
+            request.mapping(getType(), mapping());
         }
-        request.mapping(getType(), mapping());
         logger.info("creating index = {} type = {} settings = {} mapping = {}",
                 getIndex(),
                 getType(),
                 settings() != null ? settings().build().getAsMap() : "",
                 mapping());
         try {
-            client.admin().indices().create(request).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
+            client.admin().indices()
+                    .create(request)
+                    .actionGet();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
         return this;
     }
+
+    @Override
+    public synchronized AbstractIngestClient deleteIndex() {
+        if (client == null) {
+            logger.warn("no client for delete index");
+            return this;
+        }
+        if (getIndex() == null) {
+            logger.warn("no index name given to delete index");
+            return this;
+        }
+        try {
+            client.admin().indices()
+                    .delete(new DeleteIndexRequest(getIndex()))
+                    .actionGet();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return this;
+    }
+
+    @Override
+    public synchronized AbstractIngestClient newMapping(String type) {
+        if (client == null) {
+            logger.warn("no client for new mapping");
+            return this;
+        }
+        if (getIndex() == null) {
+            logger.warn("no index name for new mapping");
+            return this;
+        }
+        if (mapping() == null) {
+            mapping(defaultMapping());
+        }
+        try {
+            client.admin().indices()
+                    .putMapping(new PutMappingRequest()
+                            .indices(new String[]{getIndex()})
+                            .type(getType())
+                            .source(mapping()))
+                    .actionGet();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return this;
+    }
+
+    @Override
+    public synchronized AbstractIngestClient deleteMapping(String type) {
+        if (client == null) {
+            logger.warn("no client for delete mapping");
+            return this;
+        }
+        if (getIndex() == null) {
+            logger.warn("no index name given for delete mapping");
+            return this;
+        }
+        try {
+            client.admin().indices()
+                    .deleteMapping(new DeleteMappingRequest()
+                            .indices(new String[]{getIndex()})
+                            .type(type))
+                    .actionGet();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return this;
+    }
+
 
     protected void update(String key, Object value) {
         if (client == null) {

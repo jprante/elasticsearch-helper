@@ -11,7 +11,6 @@ import java.net.URI;
 /**
  * Mock client for Bulk API. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
- *
  */
 public class MockBulkClient extends BulkClient implements Ingest {
 
@@ -103,12 +102,12 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient startBulkMode() {
+    public MockBulkClient startBulk() throws IOException {
         return this;
     }
 
     @Override
-    public MockBulkClient stopBulkMode() {
+    public MockBulkClient stopBulk() throws IOException {
         return this;
     }
 
@@ -128,7 +127,7 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient newType() {
+    public MockBulkClient newMapping(String type) {
         return this;
     }
 

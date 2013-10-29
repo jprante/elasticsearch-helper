@@ -2,10 +2,6 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -19,7 +15,6 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -232,139 +227,48 @@ public class BulkClient extends AbstractIngestClient {
 
     @Override
     public BulkClient newIndex() {
-        return newIndex(true);
-    }
-
-    @Override
-    public synchronized BulkClient newIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        if (getType() == null) {
-            logger.warn("no type name given to create");
-            return this;
-        }
-        CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settings() != null) {
-            request.settings(settings());
-        }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
-        request.mapping(getType(), mapping());
-        logger.info("creating index = {} type = {} settings = {} mapping = {}",
-                getIndex(),
-                getType(),
-                settings() != null ? settings().build().getAsMap() : "",
-                mapping());
-        try {
-            client.admin().indices().create(request).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.newIndex();
         return this;
     }
 
+    @Override
     public BulkClient deleteIndex() {
-        return deleteIndex(true);
-    }
-
-    public BulkClient deleteIndex(boolean ignoreException) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        try {
-            client.admin().indices().delete(new DeleteIndexRequest(getIndex()));
-        } catch (Exception e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.deleteIndex();
         return this;
     }
 
     @Override
-    public BulkClient newType() {
+    public BulkClient newMapping(String type) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
-        client.admin().indices().putMapping(new PutMappingRequest()
-                .indices(new String[]{getIndex()})
-                .type(getType())
-                .source(mapping()))
-                .actionGet();
+        super.newMapping(type);
         return this;
     }
 
-    public BulkClient deleteType() {
-        return deleteType(true, true);
-    }
-
-    public BulkClient deleteType(boolean enabled) {
-        return deleteType(enabled, true);
-    }
-
-    public BulkClient deleteType(boolean enabled, boolean ignoreException) {
+    public BulkClient deleteMapping(String type) {
         if (!enabled) {
             return this;
         }
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        try {
-            client.admin().indices().deleteMapping(new DeleteMappingRequest()
-                        .indices(new String[]{getIndex()})
-                        .type(type));
-        } catch (Exception e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
-        }
+        super.deleteMapping(type);
         return this;
     }
 
     @Override
-    public BulkClient startBulkMode() {
+    public BulkClient startBulk() throws IOException {
         disableRefreshInterval();
+        updateReplicaLevel(0);
         return this;
     }
 
     @Override
-    public BulkClient stopBulkMode() {
+    public BulkClient stopBulk() throws IOException {
         enableRefreshInterval();
         return this;
     }

@@ -29,7 +29,7 @@ public class ReplicaLevelTests extends AbstractNodeTest {
                 .numberOfReplicas(0)
                 .dateDetection(false)
                 .timeStampFieldEnabled(false)
-                .newIndex(false);
+                .newIndex();
 
         try {
             for (int i = 0; i < 12345; i++) {
@@ -37,6 +37,7 @@ public class ReplicaLevelTests extends AbstractNodeTest {
             }
             es.flush();
             shardsAfterReplica = es.updateReplicaLevel(replicaLevel);
+            logger.info("shardsAfterReplica={}", shardsAfterReplica);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {

@@ -2,8 +2,6 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
@@ -114,12 +112,12 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient startBulkMode() {
+    public MockIngestClient startBulk() {
         return this;
     }
 
     @Override
-    public MockIngestClient stopBulkMode() {
+    public MockIngestClient stopBulk() {
         return this;
     }
 
@@ -139,7 +137,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient newType() {
+    public MockIngestClient newMapping(String type) {
         return this;
     }
 

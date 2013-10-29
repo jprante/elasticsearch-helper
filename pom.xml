@@ -7,7 +7,7 @@
 
     <groupId>org.xbib.elasticsearch</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>0.90.5.1</version>
+    <version>0.90.5.2</version>
 
     <packaging>jar</packaging>
 
@@ -54,6 +54,16 @@
     </distributionManagement>
 
     <repositories>
+        <repository>
+            <id>bintray-elasticsearch-plugins</id>
+            <url>http://dl.bintray.com/jprante/elasticsearch-plugins</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
         <repository>
             <id>xbib-releases</id>
             <name>xbib Maven Repository</name>
@@ -140,7 +150,6 @@
                     <skip>false</skip>
                     <forkMode>none</forkMode>
                     <systemPropertyVariables>
-                        <file.encoding>UTF-8</file.encoding>
                         <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         <java.net.preferIPv4Stack>true</java.net.preferIPv4Stack>
                     </systemPropertyVariables>
