@@ -1,5 +1,5 @@
 
-package org.elasticsearch.test;
+package org.xbib.elasticsearch.support;
 
 import org.xbib.elasticsearch.support.client.IngestClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;

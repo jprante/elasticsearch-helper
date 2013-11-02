@@ -1,5 +1,5 @@
 
-package org.elasticsearch.test;
+package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;

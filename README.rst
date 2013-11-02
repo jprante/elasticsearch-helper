@@ -20,7 +20,7 @@ Prerequisites::
 =============  ============  =================  ==========================================================
 ES version     Plugin        Release date       Command
 -------------  ------------  -----------------  ----------------------------------------------------------
-0.90.5         **0.90.5.4**  Nov 2, 2013       ./bin/plugin --install support --url http://bit.ly/17DGu1b
+0.90.5         **0.90.5.4**  Nov 2, 2013       ./bin/plugin --install support --url http://bit.ly/16vkDYZ
 =============  ============  =================  ==========================================================
 
 Do not forget to restart the node after installing.
