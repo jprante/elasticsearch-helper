@@ -9,7 +9,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 Installation
 ------------
 
-Current version of the plugin: **0.90.5.2** (Oct 29, 2013)
+Current version of the plugin: **0.90.5.4** (Nov 2, 2013)
 
 .. image:: https://travis-ci.org/jprante/elasticsearch-support.png
 
@@ -20,7 +20,7 @@ Prerequisites::
 =============  ============  =================  ==========================================================
 ES version     Plugin        Release date       Command
 -------------  ------------  -----------------  ----------------------------------------------------------
-0.90.5         **0.90.5.2**  Oct 29, 2013       ./bin/plugin --install support --url http://bit.ly/1iqNtvX
+0.90.5         **0.90.5.4**  Nov 2, 2013       ./bin/plugin --install support --url http://bit.ly/17DGu1b
 =============  ============  =================  ==========================================================
 
 Do not forget to restart the node after installing.

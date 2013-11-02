@@ -49,6 +49,9 @@ public abstract class AbstractIngestClient extends AbstractClient
      */
     private String type;
 
+    /**
+     * A builder for the settings
+     */
     private ImmutableSettings.Builder settingsBuilder;
 
     /**
@@ -300,28 +303,24 @@ public abstract class AbstractIngestClient extends AbstractClient
     @Override
     public synchronized AbstractIngestClient newIndex() {
         if (client == null) {
-            logger.warn("no client");
+            logger.warn("no client for create index");
             return this;
         }
         if (getIndex() == null) {
             logger.warn("no index name given to create index");
             return this;
         }
-        if (getType() == null) {
-            logger.warn("no type name given to create index");
-            return this;
-        }
         CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settings() != null) {
+        if (settings() != null && !settings().internalMap().isEmpty()) {
             request.settings(settings());
         }
-        if (mapping() == null) {
+        if (getType() != null && mapping() != null) {
             request.mapping(getType(), mapping());
         }
         logger.info("creating index = {} type = {} settings = {} mapping = {}",
                 getIndex(),
                 getType(),
-                settings() != null ? settings().build().getAsMap() : "",
+                settings() != null ? settings().build().getAsMap() : null,
                 mapping());
         try {
             client.admin().indices()
