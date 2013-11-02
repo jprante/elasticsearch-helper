@@ -6,6 +6,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
@@ -88,6 +89,36 @@ public class MockIngestClient extends IngestClient {
     @Override
     public MockIngestClient setType(String type) {
         super.setType(type);
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(String key, String value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(String key, Integer value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(String key, Boolean value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(InputStream in) throws IOException{
+        return this;
+    }
+
+    @Override
+    public MockIngestClient addMapping(String type, InputStream in) throws IOException {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient addMapping(String type, String mapping) {
         return this;
     }
 

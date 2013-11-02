@@ -6,6 +6,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
@@ -43,7 +44,6 @@ public class MockBulkClient extends BulkClient implements Ingest {
         return this;
     }
 
-
     @Override
     public MockBulkClient dateDetection(boolean dateDetection) {
         return this;
@@ -78,6 +78,36 @@ public class MockBulkClient extends BulkClient implements Ingest {
     @Override
     public MockBulkClient setType(String type) {
         super.setType(type);
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, String value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, Integer value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, Boolean value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(InputStream in) throws IOException{
+        return this;
+    }
+
+    @Override
+    public MockBulkClient addMapping(String type, InputStream in) throws IOException {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient addMapping(String type, String mapping) {
         return this;
     }
 

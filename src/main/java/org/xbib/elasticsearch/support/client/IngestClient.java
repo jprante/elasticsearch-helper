@@ -197,6 +197,11 @@ public class IngestClient extends AbstractIngestClient {
         return this;
     }
 
+    public IngestClient setting(InputStream in) throws IOException{
+        super.setting(in);
+        return this;
+    }
+
     public IngestClient shards(int value) {
         super.shards(value);
         return this;

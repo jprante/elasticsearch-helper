@@ -216,6 +216,11 @@ public class BulkClient extends AbstractIngestClient {
         return this;
     }
 
+    public BulkClient setting(InputStream in) throws IOException{
+        super.setting(in);
+        return this;
+    }
+
     public BulkClient shards(int value) {
         super.shards(value);
         return this;
