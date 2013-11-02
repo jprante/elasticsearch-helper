@@ -86,6 +86,10 @@ public interface Ingest extends DocumentIngest {
      */
     Ingest setting(InputStream in) throws IOException;
 
+    Ingest addMapping(String type, InputStream in) throws IOException;
+
+    Ingest addMapping(String type, String mapping);
+
     /**
      * Create a new index
      *
@@ -93,9 +97,7 @@ public interface Ingest extends DocumentIngest {
      */
     Ingest newIndex();
 
-    Ingest mapping(InputStream in) throws IOException;
-
-    Ingest newMapping(String type);
+    Ingest newMappings();
 
     /**
      * Delete index

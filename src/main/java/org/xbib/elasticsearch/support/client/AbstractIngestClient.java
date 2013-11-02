@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
@@ -54,10 +56,7 @@ public abstract class AbstractIngestClient extends AbstractClient
      */
     private ImmutableSettings.Builder settingsBuilder;
 
-    /**
-     * The mappings for the type
-     */
-    private String mapping;
+    private Map<String,String> mappings = new HashMap();
 
     public AbstractIngestClient newClient() {
         super.newClient();
@@ -189,20 +188,22 @@ public abstract class AbstractIngestClient extends AbstractClient
     }
 
     @Override
-    public AbstractIngestClient mapping(InputStream in) throws IOException {
+    public AbstractIngestClient addMapping(String type, InputStream in) throws IOException {
+        if (type == null) {
+            return this;
+        }
         StringWriter sw = new StringWriter();
         Streams.copy(new InputStreamReader(in), sw);
-        this.mapping = sw.toString();
+        mappings.put(type, sw.toString());
         return this;
     }
 
-    public AbstractIngestClient mapping(String mapping) {
-        this.mapping = mapping;
+    public AbstractIngestClient addMapping(String type, String mapping) {
+        if (type == null) {
+            return this;
+        }
+        this.mappings.put(type, mapping);
         return this;
-    }
-
-    public String mapping() {
-        return mapping;
     }
 
     public AbstractIngestClient dateDetection(boolean dateDetection) {
@@ -310,25 +311,27 @@ public abstract class AbstractIngestClient extends AbstractClient
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(getIndex());
+        CreateIndexRequest indexRequest = new CreateIndexRequest(getIndex());
         if (settings() != null && !settings().internalMap().isEmpty()) {
-            request.settings(settings());
+            indexRequest.settings(settings());
         }
-        if (getType() != null && mapping() != null) {
-            request.mapping(getType(), mapping());
+        if (!mappings.isEmpty()) {
+            for (Map.Entry<String,String> me : mappings.entrySet()) {
+                indexRequest.mapping(me.getKey(), me.getValue());
+            }
         }
-        logger.info("creating index = {} type = {} settings = {} mapping = {}",
+        logger.info("creating index = {} settings = {} mappings = {}",
                 getIndex(),
-                getType(),
                 settings() != null ? settings().build().getAsMap() : null,
-                mapping());
+                mappings);
         try {
             client.admin().indices()
-                    .create(request)
+                    .create(indexRequest)
                     .actionGet();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        mappings.clear();
         return this;
     }
 
@@ -353,7 +356,7 @@ public abstract class AbstractIngestClient extends AbstractClient
     }
 
     @Override
-    public synchronized AbstractIngestClient newMapping(String type) {
+    public synchronized AbstractIngestClient newMappings() {
         if (client == null) {
             logger.warn("no client for new mapping");
             return this;
@@ -362,19 +365,21 @@ public abstract class AbstractIngestClient extends AbstractClient
             logger.warn("no index name for new mapping");
             return this;
         }
-        if (mapping() == null) {
-            mapping(defaultMapping());
-        }
         try {
-            client.admin().indices()
-                    .putMapping(new PutMappingRequest()
-                            .indices(new String[]{getIndex()})
-                            .type(getType())
-                            .source(mapping()))
-                    .actionGet();
+            if (!mappings.isEmpty()) {
+                for (Map.Entry<String,String> me : mappings.entrySet()) {
+                    client.admin().indices()
+                        .putMapping(new PutMappingRequest()
+                                .indices(new String[]{getIndex()})
+                                .type(me.getKey())
+                                .source(me.getValue()))
+                        .actionGet();
+                }
+            }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        mappings.clear();
         return this;
     }
 

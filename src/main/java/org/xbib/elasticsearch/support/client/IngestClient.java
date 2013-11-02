@@ -2,6 +2,7 @@
 package org.xbib.elasticsearch.support.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -224,11 +225,23 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestClient newMapping(String type) {
+    public IngestClient addMapping(String type, InputStream in) throws IOException {
+        super.addMapping(type, in);
+        return this;
+    }
+
+    @Override
+    public IngestClient addMapping(String type, String mapping) {
+        super.addMapping(type, mapping);
+        return this;
+    }
+
+    @Override
+    public IngestClient newMappings() {
         if (!enabled) {
             return this;
         }
-        super.newMapping(type);
+        super.newMappings();
         return this;
     }
 

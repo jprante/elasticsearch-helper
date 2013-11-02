@@ -137,7 +137,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient newMapping(String type) {
+    public MockIngestClient newMappings() {
         return this;
     }
 

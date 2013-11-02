@@ -17,6 +17,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -244,11 +245,23 @@ public class BulkClient extends AbstractIngestClient {
     }
 
     @Override
-    public BulkClient newMapping(String type) {
+    public BulkClient addMapping(String type, InputStream in) throws IOException {
+        super.addMapping(type, in);
+        return this;
+    }
+
+    @Override
+    public BulkClient addMapping(String type, String mapping) {
+        super.addMapping(type, mapping);
+        return this;
+    }
+
+    @Override
+    public BulkClient newMappings() {
         if (!enabled) {
             return this;
         }
-        super.newMapping(type);
+        super.newMappings();
         return this;
     }
 

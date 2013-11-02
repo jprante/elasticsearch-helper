@@ -127,7 +127,7 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient newMapping(String type) {
+    public MockBulkClient newMappings() {
         return this;
     }
 
