@@ -7,7 +7,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -29,6 +29,8 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public abstract class AbstractNodeTest extends Assert {
 
+    private final static ESLogger logger = ESLoggerFactory.getLogger("test");
+
     public final String INDEX = "test-" + NetworkUtils.getLocalAddress().getHostName().toLowerCase();
 
     protected final String CLUSTER = "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
@@ -47,26 +49,25 @@ public abstract class AbstractNodeTest extends Assert {
     private Map<String, InetSocketTransportAddress> addresses = newHashMap();
 
     @BeforeMethod
-    public void createIndices() throws Exception {
+    public void createIndex() throws Exception {
+        logger.info("creating index {}", INDEX);
         startNode("1");
-
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
         NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
         InetSocketTransportAddress address = (InetSocketTransportAddress)response.iterator().next()
                         .getTransport().getAddress().publishAddress();
         PORT = address.address().getPort();
-
-        ADDRESS = URI.create("es://localhost:"+PORT+"?es.cluster.name=" + CLUSTER);
-
+        ADDRESS = URI.create("es://localhost:" + PORT + "?es.cluster.name=" + CLUSTER);
         addresses.put("1", address);
-
         client("1").admin().indices()
                 .create(new CreateIndexRequest(INDEX))
                 .actionGet();
+        logger.info("index {} created", INDEX);
     }
 
     @AfterMethod
     public void deleteIndices() {
+        logger.info("deleting index {}", INDEX);
         try {
             // clear test index
             client("1").admin().indices()
@@ -75,6 +76,7 @@ public abstract class AbstractNodeTest extends Assert {
         } catch (IndexMissingException e) {
             // ignore
         }
+        logger.info("index {} deleted", INDEX);
         closeNode("1");
         closeAllNodes();
     }

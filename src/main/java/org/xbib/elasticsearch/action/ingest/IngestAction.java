@@ -30,7 +30,7 @@ public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRe
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
                 .withType(TransportRequestOptions.Type.fromString(settings.get("action.ingest.transport.type",
-                        TransportRequestOptions.Type.LOW.toString())))
+                        TransportRequestOptions.Type.BULK.toString())))
                 .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }
 }

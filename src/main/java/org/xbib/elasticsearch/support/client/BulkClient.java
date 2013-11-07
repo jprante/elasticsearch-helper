@@ -11,7 +11,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class BulkClient extends AbstractIngestClient {
 
-    private final static ESLogger logger = Loggers.getLogger(BulkClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkClient.class.getSimpleName());
     /**
      * The default size of a ingestProcessor request
      */

@@ -4,8 +4,6 @@ package org.xbib.elasticsearch.action.ingest;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.create.TransportCreateIndexAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -23,7 +21,6 @@ import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BaseTransportRequestHandler;
 import org.elasticsearch.transport.TransportChannel;
@@ -32,7 +29,6 @@ import org.elasticsearch.transport.TransportService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,25 +38,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
 
-    private final boolean autoCreateIndex;
-
     private final boolean allowIdGeneration;
 
     private final ClusterService clusterService;
 
     private final TransportShardIngestAction shardBulkAction;
 
-    private final TransportCreateIndexAction createIndexAction;
-
     @Inject
     public TransportIngestAction(Settings settings, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                 TransportShardIngestAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
+                                 TransportShardIngestAction shardBulkAction) {
         super(settings, threadPool);
         this.clusterService = clusterService;
         this.shardBulkAction = shardBulkAction;
-        this.createIndexAction = createIndexAction;
 
-        this.autoCreateIndex = settings.getAsBoolean("action.auto_create_index", true);
         this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
 
         transportService.registerHandler(IngestAction.NAME, new IngestTransportHandler());
@@ -84,40 +74,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             }
         }
 
-        if (autoCreateIndex) {
-            final AtomicInteger counter = new AtomicInteger(indices.size());
-            final AtomicBoolean failed = new AtomicBoolean();
-            for (String index : indices) {
-                if (!clusterService.state().metaData().hasConcreteIndex(index)) {
-                    createIndexAction.execute(new CreateIndexRequest(index).cause("auto(bulk api)"), new ActionListener<CreateIndexResponse>() {
-                        @Override
-                        public void onResponse(CreateIndexResponse result) {
-                            if (counter.decrementAndGet() == 0) {
-                                executeBulk(ingestRequest, startTime, listener);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable e) {
-                            if (ExceptionsHelper.unwrapCause(e) instanceof IndexAlreadyExistsException) {
-                                // we have the index, do it
-                                if (counter.decrementAndGet() == 0) {
-                                    executeBulk(ingestRequest, startTime, listener);
-                                }
-                            } else if (failed.compareAndSet(false, true)) {
-                                listener.onFailure(e);
-                            }
-                        }
-                    });
-                } else {
-                    if (counter.decrementAndGet() == 0) {
-                        executeBulk(ingestRequest, startTime, listener);
-                    }
-                }
-            }
-        } else {
-            executeBulk(ingestRequest, startTime, listener);
-        }
+        executeBulk(ingestRequest, startTime, listener);
     }
 
     private void executeBulk(final IngestRequest ingestRequest, final long startTime, final ActionListener<IngestResponse> listener) {

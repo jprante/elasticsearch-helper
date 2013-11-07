@@ -18,22 +18,22 @@ public class IngestClientTests extends AbstractNodeTest {
     private final static ESLogger logger = Loggers.getLogger(IngestClientTests.class);
 
     @Test
-    public void testTransportClient() {
-
+    public void testnewIndex() {
         final IngestClient es = new IngestClient()
                 .newClient(ADDRESS)
                 .setIndex("test")
-                .setType("test");
+                .setType("test")
+                .newIndex();
         es.shutdown();
     }
 
     @Test
     public void testDeleteIndex() {
-
         final IngestClient es = new IngestClient()
                 .newClient(ADDRESS)
                 .setIndex("test")
-                .setType("test");
+                .setType("test")
+                .newIndex();
         logger.info("transport client up");
         try {
             es.deleteIndex()
@@ -49,11 +49,11 @@ public class IngestClientTests extends AbstractNodeTest {
 
     @Test
     public void testSingleDocIngest() {
-
         final IngestClient es = new IngestClient()
                 .newClient(ADDRESS)
                 .setIndex("test")
-                .setType("test");
+                .setType("test")
+                .newIndex();
         try {
             es.deleteIndex();
             es.newIndex();
@@ -71,10 +71,11 @@ public class IngestClientTests extends AbstractNodeTest {
 
     @Test
     public void testRandomIngest() {
-
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS);
-
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test")
+                .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
                 es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -88,9 +89,11 @@ public class IngestClientTests extends AbstractNodeTest {
 
     @Test
     public void testThreadedRandomIngest() throws Exception {
-
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS);
+                .newClient(ADDRESS)
+                .setIndex("test")
+                .setType("test")
+                .newIndex();
         try {
             int min = 0;
             int max = 4;

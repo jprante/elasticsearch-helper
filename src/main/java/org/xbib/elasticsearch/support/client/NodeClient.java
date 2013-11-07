@@ -12,7 +12,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class NodeClient implements DocumentIngest {
 
-    private final static ESLogger logger = Loggers.getLogger(NodeClient.class);
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
 
     private Client client;
 

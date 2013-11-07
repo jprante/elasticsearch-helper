@@ -10,12 +10,12 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
@@ -29,7 +29,7 @@ import org.xbib.elasticsearch.action.ingest.IngestResponse;
  */
 public class IngestClient extends AbstractIngestClient {
 
-    private final static ESLogger logger = Loggers.getLogger(IngestClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClient.class.getSimpleName());
     /**
      * The default size of a ingestProcessor request
      */

@@ -1,6 +1,7 @@
 
 package org.xbib.elasticsearch.support;
 
+import org.testng.annotations.Test;
 import org.xbib.elasticsearch.support.client.NodeClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -10,6 +11,7 @@ public class NodeClientTests extends AbstractNodeTest {
 
     private final static ESLogger logger = Loggers.getLogger(NodeClientTests.class);
 
+    @Test
     public void testNodeClient() throws Exception {
         NodeClient es = new NodeClient(client("1"),  INDEX, "test", 10, 10);
         try {
