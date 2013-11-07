@@ -14,7 +14,7 @@
 <FONT color="green">011</FONT>    import org.elasticsearch.client.Client;<a name="line.11"></a>
 <FONT color="green">012</FONT>    import org.elasticsearch.client.Requests;<a name="line.12"></a>
 <FONT color="green">013</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.13"></a>
-<FONT color="green">014</FONT>    import org.elasticsearch.common.logging.Loggers;<a name="line.14"></a>
+<FONT color="green">014</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.14"></a>
 <FONT color="green">015</FONT>    import org.elasticsearch.common.settings.ImmutableSettings;<a name="line.15"></a>
 <FONT color="green">016</FONT>    import org.elasticsearch.common.settings.Settings;<a name="line.16"></a>
 <FONT color="green">017</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.17"></a>
@@ -30,7 +30,7 @@
 <FONT color="green">027</FONT>     */<a name="line.27"></a>
 <FONT color="green">028</FONT>    public class BulkClient extends AbstractIngestClient {<a name="line.28"></a>
 <FONT color="green">029</FONT>    <a name="line.29"></a>
-<FONT color="green">030</FONT>        private final static ESLogger logger = Loggers.getLogger(BulkClient.class.getName());<a name="line.30"></a>
+<FONT color="green">030</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(BulkClient.class.getSimpleName());<a name="line.30"></a>
 <FONT color="green">031</FONT>        /**<a name="line.31"></a>
 <FONT color="green">032</FONT>         * The default size of a ingestProcessor request<a name="line.32"></a>
 <FONT color="green">033</FONT>         */<a name="line.33"></a>

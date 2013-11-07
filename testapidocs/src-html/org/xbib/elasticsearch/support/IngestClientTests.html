@@ -21,22 +21,22 @@
 <FONT color="green">018</FONT>        private final static ESLogger logger = Loggers.getLogger(IngestClientTests.class);<a name="line.18"></a>
 <FONT color="green">019</FONT>    <a name="line.19"></a>
 <FONT color="green">020</FONT>        @Test<a name="line.20"></a>
-<FONT color="green">021</FONT>        public void testTransportClient() {<a name="line.21"></a>
-<FONT color="green">022</FONT>    <a name="line.22"></a>
-<FONT color="green">023</FONT>            final IngestClient es = new IngestClient()<a name="line.23"></a>
-<FONT color="green">024</FONT>                    .newClient(ADDRESS)<a name="line.24"></a>
-<FONT color="green">025</FONT>                    .setIndex("test")<a name="line.25"></a>
-<FONT color="green">026</FONT>                    .setType("test");<a name="line.26"></a>
+<FONT color="green">021</FONT>        public void testnewIndex() {<a name="line.21"></a>
+<FONT color="green">022</FONT>            final IngestClient es = new IngestClient()<a name="line.22"></a>
+<FONT color="green">023</FONT>                    .newClient(ADDRESS)<a name="line.23"></a>
+<FONT color="green">024</FONT>                    .setIndex("test")<a name="line.24"></a>
+<FONT color="green">025</FONT>                    .setType("test")<a name="line.25"></a>
+<FONT color="green">026</FONT>                    .newIndex();<a name="line.26"></a>
 <FONT color="green">027</FONT>            es.shutdown();<a name="line.27"></a>
 <FONT color="green">028</FONT>        }<a name="line.28"></a>
 <FONT color="green">029</FONT>    <a name="line.29"></a>
 <FONT color="green">030</FONT>        @Test<a name="line.30"></a>
 <FONT color="green">031</FONT>        public void testDeleteIndex() {<a name="line.31"></a>
-<FONT color="green">032</FONT>    <a name="line.32"></a>
-<FONT color="green">033</FONT>            final IngestClient es = new IngestClient()<a name="line.33"></a>
-<FONT color="green">034</FONT>                    .newClient(ADDRESS)<a name="line.34"></a>
-<FONT color="green">035</FONT>                    .setIndex("test")<a name="line.35"></a>
-<FONT color="green">036</FONT>                    .setType("test");<a name="line.36"></a>
+<FONT color="green">032</FONT>            final IngestClient es = new IngestClient()<a name="line.32"></a>
+<FONT color="green">033</FONT>                    .newClient(ADDRESS)<a name="line.33"></a>
+<FONT color="green">034</FONT>                    .setIndex("test")<a name="line.34"></a>
+<FONT color="green">035</FONT>                    .setType("test")<a name="line.35"></a>
+<FONT color="green">036</FONT>                    .newIndex();<a name="line.36"></a>
 <FONT color="green">037</FONT>            logger.info("transport client up");<a name="line.37"></a>
 <FONT color="green">038</FONT>            try {<a name="line.38"></a>
 <FONT color="green">039</FONT>                es.deleteIndex()<a name="line.39"></a>
@@ -52,11 +52,11 @@
 <FONT color="green">049</FONT>    <a name="line.49"></a>
 <FONT color="green">050</FONT>        @Test<a name="line.50"></a>
 <FONT color="green">051</FONT>        public void testSingleDocIngest() {<a name="line.51"></a>
-<FONT color="green">052</FONT>    <a name="line.52"></a>
-<FONT color="green">053</FONT>            final IngestClient es = new IngestClient()<a name="line.53"></a>
-<FONT color="green">054</FONT>                    .newClient(ADDRESS)<a name="line.54"></a>
-<FONT color="green">055</FONT>                    .setIndex("test")<a name="line.55"></a>
-<FONT color="green">056</FONT>                    .setType("test");<a name="line.56"></a>
+<FONT color="green">052</FONT>            final IngestClient es = new IngestClient()<a name="line.52"></a>
+<FONT color="green">053</FONT>                    .newClient(ADDRESS)<a name="line.53"></a>
+<FONT color="green">054</FONT>                    .setIndex("test")<a name="line.54"></a>
+<FONT color="green">055</FONT>                    .setType("test")<a name="line.55"></a>
+<FONT color="green">056</FONT>                    .newIndex();<a name="line.56"></a>
 <FONT color="green">057</FONT>            try {<a name="line.57"></a>
 <FONT color="green">058</FONT>                es.deleteIndex();<a name="line.58"></a>
 <FONT color="green">059</FONT>                es.newIndex();<a name="line.59"></a>
@@ -74,56 +74,59 @@
 <FONT color="green">071</FONT>    <a name="line.71"></a>
 <FONT color="green">072</FONT>        @Test<a name="line.72"></a>
 <FONT color="green">073</FONT>        public void testRandomIngest() {<a name="line.73"></a>
-<FONT color="green">074</FONT>    <a name="line.74"></a>
-<FONT color="green">075</FONT>            final IngestClient es = new IngestClient()<a name="line.75"></a>
-<FONT color="green">076</FONT>                    .newClient(ADDRESS);<a name="line.76"></a>
-<FONT color="green">077</FONT>    <a name="line.77"></a>
-<FONT color="green">078</FONT>            try {<a name="line.78"></a>
-<FONT color="green">079</FONT>                for (int i = 0; i &lt; 12345; i++) {<a name="line.79"></a>
-<FONT color="green">080</FONT>                    es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.80"></a>
-<FONT color="green">081</FONT>                }<a name="line.81"></a>
-<FONT color="green">082</FONT>            } catch (NoNodeAvailableException e) {<a name="line.82"></a>
-<FONT color="green">083</FONT>                logger.warn("skipping, no node available");<a name="line.83"></a>
-<FONT color="green">084</FONT>            } finally {<a name="line.84"></a>
-<FONT color="green">085</FONT>                es.shutdown();<a name="line.85"></a>
-<FONT color="green">086</FONT>            }<a name="line.86"></a>
-<FONT color="green">087</FONT>        }<a name="line.87"></a>
-<FONT color="green">088</FONT>    <a name="line.88"></a>
-<FONT color="green">089</FONT>        @Test<a name="line.89"></a>
-<FONT color="green">090</FONT>        public void testThreadedRandomIngest() throws Exception {<a name="line.90"></a>
-<FONT color="green">091</FONT>    <a name="line.91"></a>
+<FONT color="green">074</FONT>            final IngestClient es = new IngestClient()<a name="line.74"></a>
+<FONT color="green">075</FONT>                    .newClient(ADDRESS)<a name="line.75"></a>
+<FONT color="green">076</FONT>                    .setIndex("test")<a name="line.76"></a>
+<FONT color="green">077</FONT>                    .setType("test")<a name="line.77"></a>
+<FONT color="green">078</FONT>                    .newIndex();<a name="line.78"></a>
+<FONT color="green">079</FONT>            try {<a name="line.79"></a>
+<FONT color="green">080</FONT>                for (int i = 0; i &lt; 12345; i++) {<a name="line.80"></a>
+<FONT color="green">081</FONT>                    es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.81"></a>
+<FONT color="green">082</FONT>                }<a name="line.82"></a>
+<FONT color="green">083</FONT>            } catch (NoNodeAvailableException e) {<a name="line.83"></a>
+<FONT color="green">084</FONT>                logger.warn("skipping, no node available");<a name="line.84"></a>
+<FONT color="green">085</FONT>            } finally {<a name="line.85"></a>
+<FONT color="green">086</FONT>                es.shutdown();<a name="line.86"></a>
+<FONT color="green">087</FONT>            }<a name="line.87"></a>
+<FONT color="green">088</FONT>        }<a name="line.88"></a>
+<FONT color="green">089</FONT>    <a name="line.89"></a>
+<FONT color="green">090</FONT>        @Test<a name="line.90"></a>
+<FONT color="green">091</FONT>        public void testThreadedRandomIngest() throws Exception {<a name="line.91"></a>
 <FONT color="green">092</FONT>            final IngestClient es = new IngestClient()<a name="line.92"></a>
-<FONT color="green">093</FONT>                    .newClient(ADDRESS);<a name="line.93"></a>
-<FONT color="green">094</FONT>            try {<a name="line.94"></a>
-<FONT color="green">095</FONT>                int min = 0;<a name="line.95"></a>
-<FONT color="green">096</FONT>                int max = 4;<a name="line.96"></a>
-<FONT color="green">097</FONT>                ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,<a name="line.97"></a>
-<FONT color="green">098</FONT>                        EsExecutors.daemonThreadFactory("ingest"));<a name="line.98"></a>
-<FONT color="green">099</FONT>                final CountDownLatch latch = new CountDownLatch(max);<a name="line.99"></a>
-<FONT color="green">100</FONT>                for (int i = 0; i &lt; max; i++) {<a name="line.100"></a>
-<FONT color="green">101</FONT>                    pool.execute(new Runnable() {<a name="line.101"></a>
-<FONT color="green">102</FONT>                        public void run() {<a name="line.102"></a>
-<FONT color="green">103</FONT>                                for (int i = 0; i &lt; 12345; i++) {<a name="line.103"></a>
-<FONT color="green">104</FONT>                                    es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.104"></a>
-<FONT color="green">105</FONT>                                }<a name="line.105"></a>
-<FONT color="green">106</FONT>                                logger.info("done");<a name="line.106"></a>
-<FONT color="green">107</FONT>                                latch.countDown();<a name="line.107"></a>
-<FONT color="green">108</FONT>                        }<a name="line.108"></a>
-<FONT color="green">109</FONT>                    });<a name="line.109"></a>
-<FONT color="green">110</FONT>                }<a name="line.110"></a>
-<FONT color="green">111</FONT>                logger.info("waiting for 30 seconds...");<a name="line.111"></a>
-<FONT color="green">112</FONT>                latch.await(30, TimeUnit.SECONDS);<a name="line.112"></a>
-<FONT color="green">113</FONT>                pool.shutdown();<a name="line.113"></a>
-<FONT color="green">114</FONT>                es.flush();<a name="line.114"></a>
-<FONT color="green">115</FONT>            } catch (NoNodeAvailableException e) {<a name="line.115"></a>
-<FONT color="green">116</FONT>                logger.warn("skipping, no node available");<a name="line.116"></a>
-<FONT color="green">117</FONT>            } finally {<a name="line.117"></a>
-<FONT color="green">118</FONT>                es.shutdown();<a name="line.118"></a>
-<FONT color="green">119</FONT>            }<a name="line.119"></a>
-<FONT color="green">120</FONT>    <a name="line.120"></a>
-<FONT color="green">121</FONT>        }<a name="line.121"></a>
-<FONT color="green">122</FONT>    <a name="line.122"></a>
-<FONT color="green">123</FONT>    }<a name="line.123"></a>
+<FONT color="green">093</FONT>                    .newClient(ADDRESS)<a name="line.93"></a>
+<FONT color="green">094</FONT>                    .setIndex("test")<a name="line.94"></a>
+<FONT color="green">095</FONT>                    .setType("test")<a name="line.95"></a>
+<FONT color="green">096</FONT>                    .newIndex();<a name="line.96"></a>
+<FONT color="green">097</FONT>            try {<a name="line.97"></a>
+<FONT color="green">098</FONT>                int min = 0;<a name="line.98"></a>
+<FONT color="green">099</FONT>                int max = 4;<a name="line.99"></a>
+<FONT color="green">100</FONT>                ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,<a name="line.100"></a>
+<FONT color="green">101</FONT>                        EsExecutors.daemonThreadFactory("ingest"));<a name="line.101"></a>
+<FONT color="green">102</FONT>                final CountDownLatch latch = new CountDownLatch(max);<a name="line.102"></a>
+<FONT color="green">103</FONT>                for (int i = 0; i &lt; max; i++) {<a name="line.103"></a>
+<FONT color="green">104</FONT>                    pool.execute(new Runnable() {<a name="line.104"></a>
+<FONT color="green">105</FONT>                        public void run() {<a name="line.105"></a>
+<FONT color="green">106</FONT>                                for (int i = 0; i &lt; 12345; i++) {<a name="line.106"></a>
+<FONT color="green">107</FONT>                                    es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.107"></a>
+<FONT color="green">108</FONT>                                }<a name="line.108"></a>
+<FONT color="green">109</FONT>                                logger.info("done");<a name="line.109"></a>
+<FONT color="green">110</FONT>                                latch.countDown();<a name="line.110"></a>
+<FONT color="green">111</FONT>                        }<a name="line.111"></a>
+<FONT color="green">112</FONT>                    });<a name="line.112"></a>
+<FONT color="green">113</FONT>                }<a name="line.113"></a>
+<FONT color="green">114</FONT>                logger.info("waiting for 30 seconds...");<a name="line.114"></a>
+<FONT color="green">115</FONT>                latch.await(30, TimeUnit.SECONDS);<a name="line.115"></a>
+<FONT color="green">116</FONT>                pool.shutdown();<a name="line.116"></a>
+<FONT color="green">117</FONT>                es.flush();<a name="line.117"></a>
+<FONT color="green">118</FONT>            } catch (NoNodeAvailableException e) {<a name="line.118"></a>
+<FONT color="green">119</FONT>                logger.warn("skipping, no node available");<a name="line.119"></a>
+<FONT color="green">120</FONT>            } finally {<a name="line.120"></a>
+<FONT color="green">121</FONT>                es.shutdown();<a name="line.121"></a>
+<FONT color="green">122</FONT>            }<a name="line.122"></a>
+<FONT color="green">123</FONT>    <a name="line.123"></a>
+<FONT color="green">124</FONT>        }<a name="line.124"></a>
+<FONT color="green">125</FONT>    <a name="line.125"></a>
+<FONT color="green">126</FONT>    }<a name="line.126"></a>
 
 
 

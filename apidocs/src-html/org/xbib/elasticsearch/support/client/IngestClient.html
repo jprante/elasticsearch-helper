@@ -13,12 +13,12 @@
 <FONT color="green">010</FONT>    import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;<a name="line.10"></a>
 <FONT color="green">011</FONT>    import org.elasticsearch.action.delete.DeleteRequest;<a name="line.11"></a>
 <FONT color="green">012</FONT>    import org.elasticsearch.action.index.IndexRequest;<a name="line.12"></a>
-<FONT color="green">013</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.13"></a>
-<FONT color="green">014</FONT>    <a name="line.14"></a>
-<FONT color="green">015</FONT>    import org.elasticsearch.client.Client;<a name="line.15"></a>
-<FONT color="green">016</FONT>    import org.elasticsearch.client.Requests;<a name="line.16"></a>
-<FONT color="green">017</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.17"></a>
-<FONT color="green">018</FONT>    import org.elasticsearch.common.logging.Loggers;<a name="line.18"></a>
+<FONT color="green">013</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.13"></a>
+<FONT color="green">014</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.14"></a>
+<FONT color="green">015</FONT>    <a name="line.15"></a>
+<FONT color="green">016</FONT>    import org.elasticsearch.client.Client;<a name="line.16"></a>
+<FONT color="green">017</FONT>    import org.elasticsearch.client.Requests;<a name="line.17"></a>
+<FONT color="green">018</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.18"></a>
 <FONT color="green">019</FONT>    import org.elasticsearch.common.settings.ImmutableSettings;<a name="line.19"></a>
 <FONT color="green">020</FONT>    import org.elasticsearch.common.settings.Settings;<a name="line.20"></a>
 <FONT color="green">021</FONT>    <a name="line.21"></a>
@@ -32,7 +32,7 @@
 <FONT color="green">029</FONT>     */<a name="line.29"></a>
 <FONT color="green">030</FONT>    public class IngestClient extends AbstractIngestClient {<a name="line.30"></a>
 <FONT color="green">031</FONT>    <a name="line.31"></a>
-<FONT color="green">032</FONT>        private final static ESLogger logger = Loggers.getLogger(IngestClient.class.getName());<a name="line.32"></a>
+<FONT color="green">032</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClient.class.getSimpleName());<a name="line.32"></a>
 <FONT color="green">033</FONT>        /**<a name="line.33"></a>
 <FONT color="green">034</FONT>         * The default size of a ingestProcessor request<a name="line.34"></a>
 <FONT color="green">035</FONT>         */<a name="line.35"></a>

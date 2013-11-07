@@ -15,7 +15,7 @@
 <FONT color="green">012</FONT>    import org.elasticsearch.client.Client;<a name="line.12"></a>
 <FONT color="green">013</FONT>    import org.elasticsearch.client.Requests;<a name="line.13"></a>
 <FONT color="green">014</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.14"></a>
-<FONT color="green">015</FONT>    import org.elasticsearch.common.logging.Loggers;<a name="line.15"></a>
+<FONT color="green">015</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.15"></a>
 <FONT color="green">016</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.16"></a>
 <FONT color="green">017</FONT>    <a name="line.17"></a>
 <FONT color="green">018</FONT>    import java.io.IOException;<a name="line.18"></a>
@@ -28,7 +28,7 @@
 <FONT color="green">025</FONT>     */<a name="line.25"></a>
 <FONT color="green">026</FONT>    public class NodeClient implements DocumentIngest {<a name="line.26"></a>
 <FONT color="green">027</FONT>    <a name="line.27"></a>
-<FONT color="green">028</FONT>        private final static ESLogger logger = Loggers.getLogger(NodeClient.class);<a name="line.28"></a>
+<FONT color="green">028</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());<a name="line.28"></a>
 <FONT color="green">029</FONT>    <a name="line.29"></a>
 <FONT color="green">030</FONT>        private Client client;<a name="line.30"></a>
 <FONT color="green">031</FONT>    <a name="line.31"></a>
