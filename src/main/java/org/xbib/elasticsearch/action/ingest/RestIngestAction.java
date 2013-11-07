@@ -103,7 +103,7 @@ public class RestIngestAction extends BaseRestHandler {
             public void afterBulk(long executionId, IngestResponse response) {
                 long l = outstandingRequests.decrementAndGet();
                 logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                        executionId, response.success().size(), response.failure().size(), response.took().millis());
+                        executionId, response.successSize(), response.failureSize(), response.took().millis());
                 if (!response.failure().isEmpty()) {
                     for (IngestItemFailure f: response.failure()) {
                         logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());

@@ -15,18 +15,17 @@ public class IngestShardResponse extends ActionResponse {
 
     private ShardId shardId;
 
-    private List<IngestItemSuccess> success;
+    private int successSize;
 
     private List<IngestItemFailure> failure;
 
     IngestShardResponse() {
-        this.success = Lists.newArrayList();
         this.failure = Lists.newArrayList();
     }
 
-    IngestShardResponse(ShardId shardId, List<IngestItemSuccess> success,  List<IngestItemFailure> failure) {
+    IngestShardResponse(ShardId shardId, int successSize, List<IngestItemFailure> failure) {
         this.shardId = shardId;
-        this.success = success;
+        this.successSize = successSize;
         this.failure = failure;
     }
 
@@ -34,8 +33,8 @@ public class IngestShardResponse extends ActionResponse {
         return shardId;
     }
 
-    public List<IngestItemSuccess> success() {
-        return success;
+    public int successSize() {
+        return successSize;
     }
 
     public List<IngestItemFailure> failure() {
@@ -45,10 +44,7 @@ public class IngestShardResponse extends ActionResponse {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         shardId = ShardId.readShardId(in);
-        success = Lists.newLinkedList();
-        for (int i = 0; i < in.readVInt(); i++) {
-            success.add(new IngestItemSuccess(in.readVInt()));
-        }
+        successSize = in.readVInt();
         failure = Lists.newLinkedList();
         for (int i = 0; i < in.readVInt(); i++) {
             failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
@@ -58,10 +54,7 @@ public class IngestShardResponse extends ActionResponse {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         shardId.writeTo(out);
-        out.writeVInt(success.size());
-        for (IngestItemSuccess s : success) {
-            out.writeVInt(s.id());
-        }
+        out.writeVInt(successSize);
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
             out.writeVInt(f.id());

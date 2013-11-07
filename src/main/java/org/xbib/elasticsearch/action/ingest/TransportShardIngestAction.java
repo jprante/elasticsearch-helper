@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.ShardIterator;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.collect.Tuple;
@@ -112,7 +111,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
 
         Set<Tuple<String, String>> mappingsToUpdate = null;
 
-        List<IngestItemSuccess> success = Lists.newLinkedList();
+        int successSize = 0;
         List<IngestItemFailure> failure = Lists.newLinkedList();
 
         int size = request.items().size();
@@ -159,15 +158,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                         mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                     }
 
-                    // if we are going to percolate, then we need to keep this op for the postPrimary operation
-                    if (Strings.hasLength(indexRequest.percolate())) {
-                        if (ops == null) {
-                            ops = new Engine.IndexingOperation[size];
-                        }
-                        ops[i] = op;
-                    }
+                    successSize++;
 
-                    success.add(new IngestItemSuccess(item.id()));
                 } catch (Exception e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
@@ -194,8 +186,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     // update the request with teh version so it will go to the replicas
                     deleteRequest.version(delete.version());
 
-                    // add the response
-                    success.add(new IngestItemSuccess(item.id()));
+                    successSize++;
                 } catch (Exception e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
@@ -223,7 +214,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             }
         }
 
-        IngestShardResponse response = new IngestShardResponse(new ShardId(request.index(), request.shardId()), success, failure);
+        IngestShardResponse response = new IngestShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
         return new PrimaryResponse<IngestShardResponse, IngestShardRequest>(shardRequest.request, response, ops);
     }
 

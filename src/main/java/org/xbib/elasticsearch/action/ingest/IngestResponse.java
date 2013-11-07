@@ -10,32 +10,30 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 import java.util.List;
 
-/**
- * A response of a bulk execution. Holding a response for each item responding (in order) of the
- * bulk requests. Each item holds the index/type/id is operated on, and if it failed or not (with the
- * failure message).
- */
 public class IngestResponse extends ActionResponse {
 
-    private List<IngestItemSuccess> success;
-
     private List<IngestItemFailure> failure;
+
+    private int successSize;
 
     private long tookInMillis;
 
     IngestResponse() {
-        this.success = Lists.newLinkedList();
         this.failure = Lists.newLinkedList();
     }
 
-    public IngestResponse(List<IngestItemSuccess> success, List<IngestItemFailure> failure, long tookInMillis) {
-        this.success = success;
+    public IngestResponse(int successSize, List<IngestItemFailure> failure, long tookInMillis) {
+        this.successSize = successSize;
         this.failure = failure;
         this.tookInMillis = tookInMillis;
     }
 
-    public List<IngestItemSuccess> success() {
-        return success;
+    public int successSize() {
+        return successSize;
+    }
+
+    public int failureSize() {
+        return failure.size();
     }
 
     public List<IngestItemFailure> failure() {
@@ -88,13 +86,9 @@ public class IngestResponse extends ActionResponse {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        success = Lists.newLinkedList();
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            success.add(new IngestItemSuccess(in.readVInt()));
-        }
+        successSize = in.readVInt();
         failure = Lists.newLinkedList();
-        size = in.readVInt();
+        int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
         }
@@ -103,10 +97,7 @@ public class IngestResponse extends ActionResponse {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeVInt(success.size());
-        for (IngestItemSuccess s : success) {
-            out.writeVInt(s.id());
-        }
+        out.writeVInt(successSize);
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
             out.writeVInt(f.id());

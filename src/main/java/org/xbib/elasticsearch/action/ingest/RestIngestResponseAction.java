@@ -44,11 +44,7 @@ public class RestIngestResponseAction extends BaseRestHandler {
                         IngestResponse response = (IngestResponse) me.getValue();
                         builder.startObject();
                         builder.field(Fields.TOOK, response.tookInMillis());
-                        builder.startArray(Fields.SUCCESS);
-                        for (IngestItemSuccess success : response.success()) {
-                            builder.field(Fields.ID, success.id());
-                        }
-                        builder.endArray();
+                        builder.field(Fields.SUCCESS, response.successSize());
                         builder.startArray(Fields.FAILURE);
                         for (IngestItemFailure failure : response.failure()) {
                             builder.field(Fields.ID, failure.id());

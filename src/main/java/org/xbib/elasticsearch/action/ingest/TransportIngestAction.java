@@ -184,11 +184,11 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             i++;
         }
 
-        final List<IngestItemSuccess> success = Lists.newLinkedList();
+        final AtomicInteger successSize = new AtomicInteger(0);
         final List<IngestItemFailure> failure = Lists.newLinkedList();
 
         if (requestsByShard.isEmpty()) {
-            listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
+            listener.onResponse(new IngestResponse(0, failure, System.currentTimeMillis() - startTime));
             return;
         }
 
@@ -202,9 +202,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestShardResponse>() {
                 @Override
                 public void onResponse(IngestShardResponse ingestShardResponse) {
-                    synchronized (success) {
-                        success.addAll(ingestShardResponse.success());
-                    }
+                    successSize.addAndGet(ingestShardResponse.successSize());
                     if (counter.decrementAndGet() == 0) {
                         finishHim();
                     }
@@ -225,7 +223,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                 }
 
                 private void finishHim() {
-                    listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
+                    listener.onResponse(new IngestResponse(successSize.get(), failure, System.currentTimeMillis() - startTime));
                 }
             });
         }

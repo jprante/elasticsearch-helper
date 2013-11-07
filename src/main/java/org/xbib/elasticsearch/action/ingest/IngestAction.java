@@ -6,14 +6,11 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.TransportRequestOptions;
 
-/**
- * Ingest action
- */
 public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
     public static final IngestAction INSTANCE = new IngestAction();
 
-    public static final String NAME = "ingest";
+    public static final String NAME = "org.xbib.elasticsearch.action.ingest";
 
     private IngestAction() {
         super(NAME);
@@ -32,7 +29,8 @@ public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRe
     @Override
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
-                .withType(TransportRequestOptions.Type.fromString(settings.get("action.ingest.transport.type", TransportRequestOptions.Type.LOW.toString())))
+                .withType(TransportRequestOptions.Type.fromString(settings.get("action.ingest.transport.type",
+                        TransportRequestOptions.Type.LOW.toString())))
                 .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }
 }
