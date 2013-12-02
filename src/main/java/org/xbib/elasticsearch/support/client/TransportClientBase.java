@@ -4,7 +4,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -31,43 +31,36 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public abstract class AbstractClient {
+public abstract class TransportClientBase {
 
-    private final static ESLogger logger = Loggers.getLogger(AbstractClient.class);
+    private final static ESLogger logger = ESLoggerFactory.getLogger(TransportClientBase.class.getSimpleName());
 
-    // the default cluster name
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
-    // the default connection specification
-    private final static URI DEFAULT_URI = URI.create("es://hostname:9300");
-    // the transport addresses
-    private final Set<InetSocketTransportAddress> addresses = new HashSet();
 
-    // singleton
+    private final static URI DEFAULT_URI = URI.create("es://hostname:9300");
+
+    private final Set<InetSocketTransportAddress> addresses = newHashSet();
+
     protected TransportClient client;
-    // the settings
+
     protected Settings settings;
 
-    protected abstract Settings initialSettings(URI uri, int poolsize);
+    protected abstract Settings initialSettings(URI uri);
 
-    public AbstractClient newClient() {
+    public TransportClientBase newClient() {
         return newClient(findURI());
     }
 
-    public AbstractClient newClient(URI uri) {
-        return newClient(uri, Runtime.getRuntime().availableProcessors() * 4);
-    }
-
-    public synchronized AbstractClient newClient(URI uri, int poolsize) {
+    public synchronized TransportClientBase newClient(URI uri) {
         if (client != null) {
-            // disconnect
             client.close();
-            // release thread pool
             client.threadPool().shutdown();
             client = null;
         }
-        this.settings = initialSettings(uri, poolsize);
+        this.settings = initialSettings(uri);
         logger.info("settings={}", settings.getAsMap());
         this.client = new TransportClient(settings);
         try {
@@ -96,9 +89,7 @@ public abstract class AbstractClient {
 
     public synchronized void shutdown() {
         if (client != null) {
-            // close() sends a disconnect to the server by using the threadpool
             client.close();
-            // threadpool can be closed now
             client.threadPool().shutdown();
             client = null;
         }
@@ -136,7 +127,6 @@ public abstract class AbstractClient {
     protected String findClusterName(URI uri) {
         String clustername;
         try {
-            // look for URI parameters
             Map<String, String> map = parseQueryString(uri, "UTF-8");
             clustername = map.get("es.cluster.name");
             if (clustername != null) {
@@ -262,7 +252,7 @@ public abstract class AbstractClient {
         if (uri.getRawQuery() == null) {
             return m;
         }
-        // use getRawQuery because we do our decoding by ourselves
+        // getRawQuery() because we do our decoding by ourselves
         StringTokenizer st = new StringTokenizer(uri.getRawQuery(), "&");
         while (st.hasMoreTokens()) {
             String pair = st.nextToken();

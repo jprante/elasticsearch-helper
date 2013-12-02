@@ -7,7 +7,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>0.90.6.1</version>
+    <version>0.90.7.1</version>
 
     <packaging>jar</packaging>
 
@@ -79,7 +79,7 @@
     <properties>
         <github.global.server>github</github.global.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <elasticsearch.version>0.90.6</elasticsearch.version>
+        <elasticsearch.version>0.90.7</elasticsearch.version>
     </properties>
 
     <dependencies>
@@ -159,7 +159,7 @@
                     <properties>
                         <property>
                             <name>listener</name>
-                            <value>org.xbib.elasticsearch.support.TestListener</value>
+                            <value>org.xbib.elasticsearch.support.Listener</value>
                         </property>
                     </properties>
                 </configuration>

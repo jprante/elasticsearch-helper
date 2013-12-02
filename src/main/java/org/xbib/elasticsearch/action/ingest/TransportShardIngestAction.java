@@ -17,8 +17,6 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.ShardIterator;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -38,6 +36,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
+import static org.elasticsearch.common.collect.Sets.newHashSet;
+
 
 public class TransportShardIngestAction extends TransportShardReplicationOperationAction<IngestShardRequest, IngestShardRequest, IngestShardResponse> {
 
@@ -53,7 +54,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
 
     @Override
     protected String executor() {
-        return ThreadPool.Names.INDEX;
+        return ThreadPool.Names.BULK;
     }
 
     @Override
@@ -83,7 +84,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
 
     @Override
     protected String transportAction() {
-        return IngestAction.NAME + "/shard";
+        return IngestAction.NAME + ".shard";
     }
 
     @Override
@@ -109,7 +110,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
         Set<Tuple<String, String>> mappingsToUpdate = null;
 
         int successSize = 0;
-        List<IngestItemFailure> failure = Lists.newLinkedList();
+        List<IngestItemFailure> failure = newLinkedList();
         int size = request.items().size();
         long[] versions = new long[size];
         for (int i = 0; i < size; i++) {
@@ -148,7 +149,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
                     if (op.parsedDoc().mappingsModified()) {
                         if (mappingsToUpdate == null) {
-                            mappingsToUpdate = Sets.newHashSet();
+                            mappingsToUpdate = newHashSet();
                         }
                         mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                     }

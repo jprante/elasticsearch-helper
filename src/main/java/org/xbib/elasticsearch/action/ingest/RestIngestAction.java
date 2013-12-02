@@ -44,17 +44,9 @@ public class RestIngestAction extends BaseRestHandler {
 
     private final static ESLogger logger = Loggers.getLogger(RestIngestAction.class);
     /**
-     * The outstanding requests
-     */
-    public final static AtomicLong outstandingRequests = new AtomicLong();
-    /**
      * Count the volume
      */
     public final static AtomicLong volumeCounter = new AtomicLong();
-    /**
-     * The responses
-     */
-    public final static Map<Long,Object> responses = new LRUHashMap(1000);
     /**
      * The IngestProcessor
      */
@@ -71,15 +63,11 @@ public class RestIngestAction extends BaseRestHandler {
         controller.registerHandler(POST, "/{index}/{type}/_ingest", this);
         controller.registerHandler(PUT, "/{index}/{type}/_ingest", this);
 
-        int actions = settings.getAsInt("action.ingest.maxactions", 100);
+        int actions = settings.getAsInt("action.ingest.maxactions", 1000);
         int concurrency = settings.getAsInt("action.ingest.maxconcurrency", 30);
         ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("5m"));
 
-        this.ingestProcessor = IngestProcessor.builder(client)
-                .actions(actions)
-                .concurrency(concurrency)
-                .maxVolume(volume)
-                .build();
+        this.ingestProcessor = new IngestProcessor(client, concurrency, actions, volume);
     }
 
     @Override
@@ -90,18 +78,16 @@ public class RestIngestAction extends BaseRestHandler {
 
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, IngestRequest ingestRequest) {
-                long l = outstandingRequests.getAndIncrement();
+            public void beforeBulk(long executionId, int concurrency, IngestRequest ingestRequest) {
                 long v = volumeCounter.addAndGet(ingestRequest.estimatedSizeInBytes());
                 logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, ingestRequest.numberOfActions(), v, l);
+                        executionId, ingestRequest.numberOfActions(), v, concurrency);
                 idHolder.executionId(executionId);
                 latch.countDown();
             }
 
             @Override
-            public void afterBulk(long executionId, IngestResponse response) {
-                long l = outstandingRequests.decrementAndGet();
+            public void afterBulk(long executionId, int concurrency, IngestResponse response) {
                 logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
                         executionId, response.successSize(), response.failureSize(), response.took().millis());
                 if (!response.failure().isEmpty()) {
@@ -112,12 +98,8 @@ public class RestIngestAction extends BaseRestHandler {
             }
 
             @Override
-            public void afterBulk(long executionId, Throwable failure) {
-                long l = outstandingRequests.decrementAndGet();
+            public void afterBulk(long executionId, int concurrency, Throwable failure) {
                 logger.error("bulk [{}] error", executionId, failure);
-                synchronized (responses) {
-                    responses.put(executionId, failure);
-                }
             }
         };
 
@@ -131,8 +113,11 @@ public class RestIngestAction extends BaseRestHandler {
         }
         try {
             long t0 = System.currentTimeMillis();
-            ingestProcessor.add(request.content(), request.contentUnsafe(),
-                    request.param("index"), request.param("type"), listener);
+            ingestProcessor.add(request.content(),
+                    request.contentUnsafe(),
+                    request.param("index"),
+                    request.param("type"),
+                    listener);
             // estimation, should be enough time to wait for an ID
             boolean b = latch.await(100, TimeUnit.MILLISECONDS);
             long t1 = System.currentTimeMillis();

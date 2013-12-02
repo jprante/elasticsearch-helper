@@ -40,16 +40,15 @@ public class IngestRequest extends ActionRequest {
 
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
 
-
-    protected Queue<ActionRequest> newQueue() {
+    public Queue<ActionRequest> newQueue() {
         return Queues.newConcurrentLinkedQueue();
     }
 
-    protected Queue<ActionRequest> requests() {
+    public Queue<ActionRequest> requests() {
         return requests;
     }
 
-    protected IngestRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
+    public IngestRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
         this.requests.addAll(requests);
         this.sizeInBytes.set(sizeInBytes);
         return this;
@@ -187,7 +186,6 @@ public class IngestRequest extends ActionRequest {
                 String opType = null;
                 long version = 0;
                 VersionType versionType = VersionType.INTERNAL;
-                String percolate = null;
 
                 // at this stage, next token can either be END_OBJECT (and use default index and type, with auto generated id)
                 // or START_OBJECT which will have another set of parameters
@@ -221,8 +219,6 @@ public class IngestRequest extends ActionRequest {
                             version = parser.longValue();
                         } else if ("_version_type".equals(currentFieldName) || "_versionType".equals(currentFieldName) || "version_type".equals(currentFieldName) || "versionType".equals(currentFieldName)) {
                             versionType = VersionType.fromString(parser.text());
-                        } else if ("percolate".equals(currentFieldName) || "_percolate".equals(currentFieldName)) {
-                            percolate = parser.textOrNull();
                         }
                     }
                 }
@@ -240,19 +236,16 @@ public class IngestRequest extends ActionRequest {
                     if ("index".equals(action)) {
                         if (opType == null) {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                    .percolate(percolate));
+                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
                         } else {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                     .create("create".equals(opType))
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                    .percolate(percolate));
+                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
                         }
                     } else if ("create".equals(action)) {
                         internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                 .create(true)
-                                .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                .percolate(percolate));
+                                .source(data.slice(from, nextMarker - from), contentUnsafe));
                     }
                     // move pointers
                     from = nextMarker + 1;
@@ -302,7 +295,7 @@ public class IngestRequest extends ActionRequest {
     /**
      * Take a number of requests out of this bulk request and put them
      * into an array list.
-     * <p/>
+     *
      * This method is thread safe.
      *
      * @param numRequests number of requests

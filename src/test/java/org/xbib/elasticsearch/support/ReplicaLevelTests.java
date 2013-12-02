@@ -1,34 +1,36 @@
 
 package org.xbib.elasticsearch.support;
 
-import org.xbib.elasticsearch.support.client.AbstractIngestClient;
-import org.xbib.elasticsearch.support.client.IngestClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.testng.annotations.Test;
+
+import org.xbib.elasticsearch.support.client.IngestClient;
 
 import java.io.IOException;
 
-public class ReplicaLevelTests extends AbstractNodeTest {
+public class ReplicaLevelTests extends AbstractNodeRandomTest {
 
-    private final static ESLogger logger = Loggers.getLogger(ReplicaLevelTests.class);
+    private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTests.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws IOException {
 
-        int numberOfShards = 5;
-        int replicaLevel = 4;
-        int shardsAfterReplica = 0;
+        // we need 3 nodes for replica level 3
+        startNode("2");
+        startNode("3");
 
-        final AbstractIngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+        int numberOfShards = 2;
+        int replicaLevel = 3;
+        int shardsAfterReplica;
+
+        final IngestClient es = new IngestClient()
+                .newClient(getAddress())
                 .setIndex("replicatest")
                 .setType("replicatest")
                 .numberOfShards(numberOfShards)
                 .numberOfReplicas(0)
-                .dateDetection(false)
-                .timeStampFieldEnabled(false)
                 .newIndex();
 
         try {
@@ -37,13 +39,19 @@ public class ReplicaLevelTests extends AbstractNodeTest {
             }
             es.flush();
             shardsAfterReplica = es.updateReplicaLevel(replicaLevel);
-            logger.info("shardsAfterReplica={}", shardsAfterReplica);
+            assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            //assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));
             es.shutdown();
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
+
+        stopNode("3");
+        stopNode("2");
     }
 
 }

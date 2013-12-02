@@ -4,7 +4,7 @@ package org.xbib.elasticsearch.support;
 import org.xbib.elasticsearch.support.client.IngestClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
@@ -13,28 +13,31 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class IngestClientTests extends AbstractNodeTest {
+public class IngestClientTests extends AbstractNodeRandomTest {
 
-    private final static ESLogger logger = Loggers.getLogger(IngestClientTests.class);
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClientTests.class.getSimpleName());
 
     @Test
-    public void testnewIndex() {
+    public void testNewIndexIngest() {
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+                .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
         es.shutdown();
+        if (es.hasErrors()) {
+            logger.error("error", es.getThrowable());
+        }
+        assertFalse(es.hasErrors());
     }
 
     @Test
-    public void testDeleteIndex() {
+    public void testDeleteIndexIngestClient() {
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+                .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
-        logger.info("transport client up");
         try {
             es.deleteIndex()
               .newIndex()
@@ -43,14 +46,17 @@ public class IngestClientTests extends AbstractNodeTest {
             logger.error("no node available");
         } finally {
             es.shutdown();
-            logger.info("transport client down");
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
     }
 
     @Test
-    public void testSingleDocIngest() {
+    public void testSingleDocIngestClient() {
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+                .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
@@ -66,13 +72,19 @@ public class IngestClientTests extends AbstractNodeTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
+            logger.info("bulk counter = {}", es.getBulkCounter());
+            assertEquals(es.getBulkCounter(), 1);
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
     }
 
     @Test
-    public void testRandomIngest() {
+    public void testRandomDocsIngestClient() {
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+                .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
@@ -84,21 +96,28 @@ public class IngestClientTests extends AbstractNodeTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
+            logger.info("bulk counter = {}", es.getBulkCounter());
+            assertEquals(es.getBulkCounter(), 13);
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
     }
 
     @Test
-    public void testThreadedRandomIngest() throws Exception {
+    public void testThreadedRandomDocsIngestClient() throws Exception {
         final IngestClient es = new IngestClient()
-                .newClient(ADDRESS)
+                .maxBulkActions(10000)
+                .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
         try {
             int min = 0;
-            int max = 4;
+            int max = 8;
             ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,
-                    EsExecutors.daemonThreadFactory("ingest"));
+                    EsExecutors.daemonThreadFactory("ingest-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
@@ -118,7 +137,14 @@ public class IngestClientTests extends AbstractNodeTest {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
+            logger.info("stats={}", es.stats());
             es.shutdown();
+            logger.info("bulk counter = {}", es.getBulkCounter());
+            assertEquals(es.getBulkCounter(), 10);
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
 
     }

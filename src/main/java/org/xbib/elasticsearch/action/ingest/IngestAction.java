@@ -12,8 +12,12 @@ public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRe
 
     public static final String NAME = "org.xbib.elasticsearch.action.ingest";
 
-    private IngestAction() {
+    public IngestAction() {
         super(NAME);
+    }
+
+    public IngestAction(String name) {
+        super(name);
     }
 
     @Override

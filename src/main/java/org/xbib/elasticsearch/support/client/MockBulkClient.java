@@ -4,6 +4,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,21 @@ import java.net.URI;
  */
 public class MockBulkClient extends BulkClient implements Ingest {
 
+    @Override
+    public MockBulkClient maxBulkActions(int maxBulkActions) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient maxVolume(ByteSizeValue maxVolume) {
+        return this;
+    }
+
     public Client client() {
         return null;
     }
@@ -22,11 +38,11 @@ public class MockBulkClient extends BulkClient implements Ingest {
     /**
      * No special initial settings except cluster name
      *
-     * @param uri
+     * @param uri the URI
      * @return initial settings
      */
     @Override
-    protected Settings initialSettings(URI uri, int n) {
+    protected Settings initialSettings(URI uri) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build();
@@ -46,16 +62,6 @@ public class MockBulkClient extends BulkClient implements Ingest {
 
     @Override
     public MockBulkClient dateDetection(boolean dateDetection) {
-        return this;
-    }
-
-    @Override
-    public MockBulkClient maxBulkActions(int maxBulkActions) {
-        return this;
-    }
-
-    @Override
-    public MockBulkClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
@@ -102,12 +108,12 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient addMapping(String type, InputStream in) throws IOException {
+    public MockBulkClient mapping(String type, InputStream in) throws IOException {
         return this;
     }
 
     @Override
-    public MockBulkClient addMapping(String type, String mapping) {
+    public MockBulkClient mapping(String type, String mapping) {
         return this;
     }
 
@@ -157,7 +163,7 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient newMappings() {
+    public MockBulkClient putMapping(String index) {
         return this;
     }
 

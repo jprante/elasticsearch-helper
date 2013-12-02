@@ -1,26 +1,55 @@
 
 package org.xbib.elasticsearch.support;
 
-import org.testng.annotations.Test;
-import org.xbib.elasticsearch.support.client.NodeClient;
-import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.unit.TimeValue;
+import org.testng.annotations.Test;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 
-public class NodeClientTests extends AbstractNodeTest {
+import org.xbib.elasticsearch.support.client.NodeClient;
 
-    private final static ESLogger logger = Loggers.getLogger(NodeClientTests.class);
+public class NodeClientTests extends AbstractNodeRandomTest {
+
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClientTests.class.getSimpleName());
 
     @Test
-    public void testNodeClient() throws Exception {
-        NodeClient es = new NodeClient(client("1"),  INDEX, "test", 10, 10);
+    public void testNewIndexBulkClient() throws Exception {
+        final NodeClient es = new NodeClient()
+                .flushInterval(TimeValue.timeValueSeconds(5))
+                .newClient(client("1"))
+                .setIndex(INDEX)
+                .setType("test")
+                .newIndex();
+        es.shutdown();
+        if (es.hasErrors()) {
+            logger.error("error", es.getThrowable());
+        }
+        assertFalse(es.hasErrors());
+    }
+
+    @Test
+    public void testRandomDocsNodeClient() throws Exception {
+        final NodeClient es = new NodeClient()
+                .maxBulkActions(10)
+                .maxConcurrentBulkRequests(10)
+                .flushInterval(TimeValue.timeValueSeconds(5))
+                .newClient(client("1"))
+                .setIndex(INDEX)
+                .setType("test");
+
         try {
             for (int i = 0; i < 12345; i++) {
                 es.indexDocument(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
+        } finally {
+            es.shutdown();
+            if (es.hasErrors()) {
+                logger.error("error", es.getThrowable());
+            }
+            assertFalse(es.hasErrors());
         }
     }
 

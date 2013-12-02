@@ -11,6 +11,8 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
 import org.elasticsearch.client.Client;
@@ -30,33 +32,25 @@ import org.xbib.elasticsearch.action.ingest.IngestResponse;
 public class IngestClient extends AbstractIngestClient {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClient.class.getSimpleName());
-    /**
-     * The default size of a ingestProcessor request
-     */
-    private int maxBulkActions = 100;
-    /**
-     * The default number of maximum concurrent ingestProcessor requests
-     */
-    private int maxConcurrentBulkRequests = 30;
-    /**
-     * The outstanding ingestProcessor requests
-     */
-    private final AtomicLong outstandingRequests = new AtomicLong();
-    /**
-     * Count the ingestProcessor volume
-     */
-    private final AtomicLong volumeCounter = new AtomicLong();
-    /**
-     * Is this ingesting enabled or not?
-     */
-    private boolean enabled = true;
-    /**
-     * The IngestProcessor
-     */
+
+    private int maxBulkActions = 1000;
+
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 8;
+
+    private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
+
+    private final AtomicLong bulkCounter = new AtomicLong(0L);
+
+    private final AtomicLong volumeCounter = new AtomicLong(0L);
+
+    private volatile boolean enabled = true;
+
     private IngestProcessor ingestProcessor;
 
+    private Throwable throwable;
+
     /**
-     * Enable or disable this indxer
+     * Enable or disable this client
      *
      * @param enabled true for enable, false for disable
      * @return this indexer
@@ -67,7 +61,7 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     /**
-     * Is this indexer enabled?
+     * Is this client enabled?
      *
      * @return true if enabled, false if disabled
      */
@@ -75,8 +69,26 @@ public class IngestClient extends AbstractIngestClient {
         return enabled;
     }
 
+    @Override
+    public IngestClient maxBulkActions(int maxBulkActions) {
+        this.maxBulkActions = maxBulkActions;
+        return this;
+    }
+
+    @Override
+    public IngestClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
+        this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
+        return this;
+    }
+
+    @Override
+    public IngestClient maxVolume(ByteSizeValue maxVolume) {
+        this.maxVolume = maxVolume;
+        return this;
+    }
+
     /**
-     * Create a new client for this indexer
+     * Create a new client
      *
      * @return this indexer
      */
@@ -86,8 +98,8 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     /**
-     * Create new client with concurrent ingestProcessor processor.
-     * <p/>
+     * Create new client
+     *
      * The URI describes host and port of the node the client should connect to,
      * with the parameter <tt>es.cluster.name</tt> for the cluster name.
      *
@@ -99,37 +111,38 @@ public class IngestClient extends AbstractIngestClient {
         super.newClient(uri);
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, IngestRequest request) {
-                long l = outstandingRequests.getAndIncrement();
+            public void beforeBulk(long executionId, int concurrency, IngestRequest request) {
                 long v = volumeCounter.addAndGet(request.estimatedSizeInBytes());
-                logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, request.numberOfActions(), v, l);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
+                        executionId, request.numberOfActions(), v, concurrency);
+                }
             }
 
             @Override
-            public void afterBulk(long executionId, IngestResponse response) {
-                long l = outstandingRequests.decrementAndGet();
-                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                        executionId, response.successSize(), response.failure().size(), response.took().millis());
+            public void afterBulk(long executionId, int concurrency, IngestResponse response) {
+                bulkCounter.incrementAndGet();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
+                            executionId, response.successSize(), response.failure().size(), response.took().millis());
+                }
                 if (!response.failure().isEmpty()) {
+                    enabled = false;
                     for (IngestItemFailure f: response.failure()) {
-                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                        logger.error("after bulk [{}] [{}] failure, reason: {}", executionId, f.id(), f.message());
                     }
                 }
             }
 
             @Override
-            public void afterBulk(long executionId, Throwable failure) {
-                long l = outstandingRequests.decrementAndGet();
-                logger.error("bulk ["+executionId+"] error", failure);
+            public void afterBulk(long executionId, int concurrency, Throwable failure) {
+                logger.error("after bulk ["+executionId+"] failure", failure);
                 enabled = false;
+                throwable = failure;
             }
         };
-        this.ingestProcessor = IngestProcessor.builder(client)
-                .listener(listener)
-                .actions(maxBulkActions)
-                .concurrency(maxConcurrentBulkRequests)
-                .build();
+        this.ingestProcessor = new IngestProcessor(client,  maxConcurrentBulkRequests, maxBulkActions, maxVolume)
+                .listener(listener);
         this.enabled = true;
         return this;
     }
@@ -140,21 +153,18 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     /**
-     * Initial settings tailored for index/ingestProcessor client use. Transport
-     * sniffing, only thread pool is for ingestProcessor/indexing, other thread pools are
-     * minimal, 4 * cpucore Netty connections in parallel.
+     * Initial settings
      *
      * @param uri the cluster name URI
-     * @param n the client thread pool size
      * @return the initial settings
      */
     @Override
-    protected Settings initialSettings(URI uri, int n) {
+    protected Settings initialSettings(URI uri) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
-                .put("client.transport.sniff", false) // sniff would join us into any cluster ... bug?
+                .put("client.transport.sniff", false)
                 .build();
     }
 
@@ -167,18 +177,6 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public IngestClient setType(String type) {
         super.setType(type);
-        return this;
-    }
-
-    @Override
-    public IngestClient maxBulkActions(int maxBulkActions) {
-        this.maxBulkActions = maxBulkActions;
-        return this;
-    }
-
-    @Override
-    public IngestClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
-        this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
@@ -221,7 +219,7 @@ public class IngestClient extends AbstractIngestClient {
         return this;
     }
 
-    public IngestClient deleteIndex(String name) {
+    public IngestClient deleteIndex() {
         if (!enabled) {
             return this;
         }
@@ -230,32 +228,32 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestClient addMapping(String type, InputStream in) throws IOException {
-        super.addMapping(type, in);
+    public IngestClient mapping(String type, InputStream in) throws IOException {
+        super.mapping(type, in);
         return this;
     }
 
     @Override
-    public IngestClient addMapping(String type, String mapping) {
-        super.addMapping(type, mapping);
+    public IngestClient mapping(String type, String mapping) {
+        super.mapping(type, mapping);
         return this;
     }
 
     @Override
-    public IngestClient newMappings() {
+    public IngestClient putMapping(String index) {
         if (!enabled) {
             return this;
         }
-        super.newMappings();
+        super.putMapping(index);
         return this;
     }
 
     @Override
-    public IngestClient deleteMapping(String type) {
+    public IngestClient deleteMapping(String index, String type) {
         if (!enabled) {
             return this;
         }
-        super.deleteMapping(type);
+        super.deleteMapping(index, type);
         return this;
     }
 
@@ -298,6 +296,7 @@ public class IngestClient extends AbstractIngestClient {
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
+            this.throwable = e;
             logger.error("bulk add of create failed: " + e.getMessage(), e);
             enabled = false;
         }
@@ -316,6 +315,7 @@ public class IngestClient extends AbstractIngestClient {
         try {
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
+            this.throwable = e;
             logger.error("bulk add of index failed: " + e.getMessage(), e);
             enabled = false;
         }
@@ -334,6 +334,7 @@ public class IngestClient extends AbstractIngestClient {
         try {
             ingestProcessor.add(deleteRequest);
         } catch (Exception e) {
+            this.throwable = e;
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
             enabled = false;
         }
@@ -414,6 +415,18 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public long getVolumeInBytes() {
         return volumeCounter.get();
+    }
+
+    public long getBulkCounter() {
+        return bulkCounter.get();
+    }
+
+    public boolean hasErrors() {
+        return throwable != null;
+    }
+
+    public Throwable getThrowable() {
+        return throwable;
     }
 
 }

@@ -6,41 +6,25 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.admin.indices.status.ShardStatus;
-import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-
-public abstract class AbstractIngestClient extends AbstractClient
+public abstract class AbstractIngestClient extends TransportClientBase
         implements Ingest, ClientFactory {
 
-    private final static ESLogger logger = Loggers.getLogger(AbstractIngestClient.class);
-
-    private boolean dateDetection = false;
-
-    private boolean timeStampFieldEnabled = false;
-
-    private boolean kibanaEnabled = false;
-
-    private String timeStampField = "@timestamp";
+    private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractIngestClient.class.getSimpleName());
 
     /**
      * The default index
@@ -51,12 +35,8 @@ public abstract class AbstractIngestClient extends AbstractClient
      */
     private String type;
 
-    /**
-     * A builder for the settings
-     */
-    private ImmutableSettings.Builder settingsBuilder;
+    private ConfigHelper configHelper = new ConfigHelper();
 
-    private Map<String,String> mappings = new HashMap();
 
     public AbstractIngestClient newClient() {
         super.newClient();
@@ -120,11 +100,13 @@ public abstract class AbstractIngestClient extends AbstractClient
             logger.warn("not waiting for recovery, index not set");
             return -1;
         }
+        logger.info("waiting for recovery");
         IndicesStatusResponse response = client.admin().indices()
                 .status(new IndicesStatusRequest(getIndex()).recovery(true)).actionGet();
-        logger.info("indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
+        logger.info("waiting for recovery: indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
+        // not all shards are in getShards()
         for (ShardStatus status : response.getShards()) {
-            logger.info("shard {} status {}", status.getShardId(), status.getState().name());
+            logger.info("recovery: shard {} status {}", status.getShardId(), status.getState().name());
         }
         return response.getTotalShards();
     }
@@ -150,145 +132,74 @@ public abstract class AbstractIngestClient extends AbstractClient
         return setting("index.number_of_replicas", replica);
     }
 
-    @Override
     public AbstractIngestClient setting(String key, String value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
-    @Override
     public AbstractIngestClient setting(String key, Boolean value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
-    @Override
     public AbstractIngestClient setting(String key, Integer value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
-    public ImmutableSettings.Builder settings() {
-        return settingsBuilder != null ? settingsBuilder : null;
-    }
-
-    @Override
     public AbstractIngestClient setting(InputStream in) throws IOException {
-        this.settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);
+        configHelper.setting(in);
         return this;
     }
 
-    @Override
-    public AbstractIngestClient addMapping(String type, InputStream in) throws IOException {
-        if (type == null) {
-            return this;
-        }
-        StringWriter sw = new StringWriter();
-        Streams.copy(new InputStreamReader(in), sw);
-        mappings.put(type, sw.toString());
+    public Settings settings() {
+        return configHelper.settings();
+    }
+
+    public AbstractIngestClient mapping(String type, InputStream in) throws IOException {
+        configHelper.mapping(type, in);
         return this;
     }
 
-    public AbstractIngestClient addMapping(String type, String mapping) {
-        if (type == null) {
-            return this;
-        }
-        this.mappings.put(type, mapping);
+    public AbstractIngestClient mapping(String type, String mapping) {
+        configHelper.mapping(type, mapping);
         return this;
     }
 
     public AbstractIngestClient dateDetection(boolean dateDetection) {
-        this.dateDetection = dateDetection;
+        configHelper.dateDetection(dateDetection);
         return this;
     }
 
     public boolean dateDetection() {
-        return dateDetection;
+        return configHelper.dateDetection();
     }
 
     public AbstractIngestClient timeStampField(String timeStampField) {
-        this.timeStampField = timeStampField;
+        configHelper.timeStampField(timeStampField);
         return this;
     }
 
     public String timeStampField() {
-        return timeStampField;
+        return configHelper.timeStampField();
     }
 
     public AbstractIngestClient timeStampFieldEnabled(boolean enable) {
-        this.timeStampFieldEnabled = enable;
+        configHelper.timeStampFieldEnabled(enable);
         return this;
     }
 
     public AbstractIngestClient kibanaEnabled(boolean enable) {
-        this.kibanaEnabled = enable;
+        configHelper.kibanaEnabled(enable);
         return this;
     }
 
-    public String defaultMapping() {
-        try {
-            XContentBuilder b = jsonBuilder()
-                            .startObject()
-                            .startObject("_default_")
-                            .field("date_detection", dateDetection);
-            if (timeStampFieldEnabled) {
-                            b.startObject("_timestamp")
-                            .field("enabled", timeStampFieldEnabled)
-                            .field("path", timeStampField)
-                            .endObject();
-            }
-            if (kibanaEnabled) {
-                            b.startObject("properties")
-                            .startObject("@fields")
-                            .field("type", "object")
-                            .field("dynamic", true)
-                            .field("path", "full")
-                            .endObject()
-                            .startObject("@message")
-                            .field("type", "string")
-                            .field("index", "analyzed")
-                            .endObject()
-                            .startObject("@source")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@source_host")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@source_path")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@tags")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@timestamp")
-                            .field("type", "date")
-                            .endObject()
-                            .startObject("@type")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .endObject();
-            }
-            b.endObject()
-                    .endObject();
-            return b.string();
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
+    public String defaultMapping() throws IOException {
+        return configHelper.defaultMapping();
+    }
+
+    public Map<String,String> mappings() {
+        return configHelper.mappings();
     }
 
     protected AbstractIngestClient enableRefreshInterval() {
@@ -302,7 +213,7 @@ public abstract class AbstractIngestClient extends AbstractClient
     }
 
     @Override
-    public synchronized AbstractIngestClient newIndex() {
+    public AbstractIngestClient newIndex() {
         if (client == null) {
             logger.warn("no client for create index");
             return this;
@@ -311,27 +222,22 @@ public abstract class AbstractIngestClient extends AbstractClient
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest indexRequest = new CreateIndexRequest(getIndex());
-        if (settings() != null && !settings().internalMap().isEmpty()) {
-            indexRequest.settings(settings());
+        CreateIndexRequest request = new CreateIndexRequest(getIndex());
+        if (settings() != null) {
+            request.settings(settings());
         }
-        if (!mappings.isEmpty()) {
-            for (Map.Entry<String,String> me : mappings.entrySet()) {
-                indexRequest.mapping(me.getKey(), me.getValue());
+        if (mappings() != null) {
+            for (Map.Entry<String,String> me : mappings().entrySet()) {
+                request.mapping(me.getKey(), me.getValue());
             }
         }
-        logger.info("creating index = {} settings = {} mappings = {}",
-                getIndex(),
-                settings() != null ? settings().build().getAsMap() : null,
-                mappings);
+        logger.info("creating index {} with settings = {}, mappings = {}",
+                getIndex(), settings(), mappings());
         try {
-            client.admin().indices()
-                    .create(indexRequest)
-                    .actionGet();
+            client.admin().indices().create(request).actionGet();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        mappings.clear();
         return this;
     }
 
@@ -346,62 +252,28 @@ public abstract class AbstractIngestClient extends AbstractClient
             return this;
         }
         try {
-            client.admin().indices()
-                    .delete(new DeleteIndexRequest(getIndex()))
-                    .actionGet();
+            client.admin().indices().delete(new DeleteIndexRequest(getIndex())).actionGet();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
         return this;
     }
 
-    @Override
-    public synchronized AbstractIngestClient newMappings() {
+    public AbstractIngestClient putMapping(String index) {
         if (client == null) {
-            logger.warn("no client for new mapping");
+            logger.warn("no client for put mapping");
             return this;
         }
-        if (getIndex() == null) {
-            logger.warn("no index name for new mapping");
-            return this;
-        }
-        try {
-            if (!mappings.isEmpty()) {
-                for (Map.Entry<String,String> me : mappings.entrySet()) {
-                    client.admin().indices()
-                        .putMapping(new PutMappingRequest()
-                                .indices(new String[]{getIndex()})
-                                .type(me.getKey())
-                                .source(me.getValue()))
-                        .actionGet();
-                }
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        mappings.clear();
+        configHelper.putMapping(client, index);
         return this;
     }
 
-    @Override
-    public synchronized AbstractIngestClient deleteMapping(String type) {
+    public AbstractIngestClient deleteMapping(String index, String type) {
         if (client == null) {
             logger.warn("no client for delete mapping");
             return this;
         }
-        if (getIndex() == null) {
-            logger.warn("no index name given for delete mapping");
-            return this;
-        }
-        try {
-            client.admin().indices()
-                    .deleteMapping(new DeleteMappingRequest()
-                            .indices(new String[]{getIndex()})
-                            .type(type))
-                    .actionGet();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+        configHelper.deleteMapping(client, index, type);
         return this;
     }
 

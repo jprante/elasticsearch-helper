@@ -10,7 +10,6 @@ import org.elasticsearch.index.shard.ShardId;
 import java.io.IOException;
 import java.util.List;
 
-
 public class IngestShardResponse extends ActionResponse {
 
     private ShardId shardId;
@@ -19,11 +18,11 @@ public class IngestShardResponse extends ActionResponse {
 
     private List<IngestItemFailure> failure;
 
-    IngestShardResponse() {
+    public IngestShardResponse() {
         this.failure = Lists.newArrayList();
     }
 
-    IngestShardResponse(ShardId shardId, int successSize, List<IngestItemFailure> failure) {
+    public IngestShardResponse(ShardId shardId, int successSize, List<IngestItemFailure> failure) {
         this.shardId = shardId;
         this.successSize = successSize;
         this.failure = failure;

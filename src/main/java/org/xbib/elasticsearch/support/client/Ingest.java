@@ -2,11 +2,10 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 
 /**
  * Interface for providing convenient ingest methods.
@@ -16,8 +15,8 @@ public interface Ingest extends DocumentIngest {
     /**
      * Wait for healthy cluster
      *
-     * @return this TransportClientIndexer
-     * @throws java.io.IOException
+     * @return this ingest
+     * @throws IOException
      */
     Ingest waitForCluster() throws IOException;
 
@@ -26,15 +25,15 @@ public interface Ingest extends DocumentIngest {
     int waitForRecovery();
 
     /**
-     * Set maximum number of bulk actions
+     * Set the maximum number of bulk actions
      *
      * @param bulkActions maximum number of bulk actions
-     * @return this TransportClientIndexer
+     * @return this ingest
      */
     Ingest maxBulkActions(int bulkActions);
 
     /**
-     * Set maximum concurent bulk requests
+     * Set the  maximum concurent bulk requests
      *
      * @param maxConcurentBulkRequests maximum number of concurrent bulk requests
      * @return this Ingest
@@ -42,9 +41,16 @@ public interface Ingest extends DocumentIngest {
     Ingest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
     /**
+     * Set the maximum volume for bulk request before flush
+     * @param maxVolume maximum volume
+     * @return this ingest
+     */
+    Ingest maxVolume(ByteSizeValue maxVolume);
+
+    /**
      * Start bulk mode
      *
-     * @return this Ingest
+     * @return this ingest
      */
     Ingest startBulk() throws IOException;
 
@@ -56,62 +62,23 @@ public interface Ingest extends DocumentIngest {
     Ingest stopBulk() throws IOException;
 
     /**
-     * Settings for the index
-     * @param key the settings key
-     * @param value the settings value
-     * @return this Ingest
-     */
-    Ingest setting(String key, String value);
-
-    /**
-     * Settings for the index
-     * @param key the settings key
-     * @param value the settings value
-     * @return this Ingest
-     */
-    Ingest setting(String key, Integer value);
-
-    /**
-     * Settings for the index
-     * @param key the settings key
-     * @param value the settings value
-     * @return this Ingest
-     */
-    Ingest setting(String key, Boolean value);
-
-    /**
-     * Settings for the index
-     * @param in the input stream to read the settings from
-     * @return this Ingest
-     */
-    Ingest setting(InputStream in) throws IOException;
-
-    Ingest addMapping(String type, InputStream in) throws IOException;
-
-    Ingest addMapping(String type, String mapping);
-
-    /**
      * Create a new index
      *
-     * @return this Ingest
+     * @return this ingest
      */
     Ingest newIndex();
-
-    Ingest newMappings();
 
     /**
      * Delete index
      *
-     * @return this Ingest
+     * @return this ingest
      */
     Ingest deleteIndex();
-
-    Ingest deleteMapping(String type);
 
     /**
      * Refresh the index.
      *
-     * @return
+     * @return this ingest
      */
     Ingest refresh();
 
@@ -133,7 +100,5 @@ public interface Ingest extends DocumentIngest {
     Ingest shards(int shards);
 
     Ingest replica(int replica);
-
-
 
 }

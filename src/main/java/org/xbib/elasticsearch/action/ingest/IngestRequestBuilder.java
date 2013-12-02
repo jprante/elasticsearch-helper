@@ -22,10 +22,16 @@ import org.elasticsearch.common.Nullable;
  */
 public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
-    protected IngestRequestBuilder(Client client) {
-        super((InternalClient) client, new IngestRequest());
+
+    public IngestRequestBuilder(Client client) {
+        this(client, new IngestRequest());
     }
 
+    public IngestRequestBuilder(Client client, IngestRequest request) {
+        super((InternalClient) client, request);
+    }
+
+    @Override
     public IngestRequest request() {
         return this.request;
     }

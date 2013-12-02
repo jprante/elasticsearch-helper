@@ -12,7 +12,7 @@ import org.xbib.elasticsearch.action.search.support.BasicRequest;
 /**
  * Search client support
  */
-public class SearchClient extends AbstractClient implements Search {
+public class SearchClient extends TransportClientBase implements Search {
 
     protected Settings settings;
 
@@ -60,10 +60,9 @@ public class SearchClient extends AbstractClient implements Search {
      * Create settings
      *
      * @param uri
-     * @param n the client thread pool size
      * @return the settings
      */
-    protected Settings initialSettings(URI uri, int n) {
+    protected Settings initialSettings(URI uri) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)

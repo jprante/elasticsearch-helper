@@ -12,18 +12,11 @@ import java.net.URI;
 /**
  * Mock ingest client. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
- *
  */
 public class MockIngestClient extends IngestClient {
 
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri
-     * @return initial settings
-     */
     @Override
-    protected Settings initialSettings(URI uri, int n) {
+    protected Settings initialSettings(URI uri) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build();
@@ -113,12 +106,12 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient addMapping(String type, InputStream in) throws IOException {
+    public MockIngestClient mapping(String type, InputStream in) throws IOException {
         return this;
     }
 
     @Override
-    public MockIngestClient addMapping(String type, String mapping) {
+    public MockIngestClient mapping(String type, String mapping) {
         return this;
     }
 
@@ -168,7 +161,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient newMappings() {
+    public MockIngestClient putMapping(String index) {
         return this;
     }
 

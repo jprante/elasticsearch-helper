@@ -25,28 +25,27 @@ public class IngestProcessor {
 
     private final int actions;
 
-    private final int maxVolume;
+    private final ByteSizeValue maxVolume;
 
     private final Semaphore semaphore;
 
-    private final AtomicLong executionIdGen = new AtomicLong();
+    private final AtomicLong executionIdGen;
 
-    private final IngestRequest ingestRequest = new IngestRequest();
+    private final IngestRequest ingestRequest;
 
     private Listener listener;
 
     private volatile boolean closed = false;
 
-    public static Builder builder(Client client) {
-        return new Builder(client);
-    }
-
-    IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
+    public IngestProcessor(Client client, Integer concurrency, Integer actions, ByteSizeValue maxVolume) {
         this.client = client;
-        this.concurrency = concurrency;
-        this.actions = actions;
-        this.maxVolume = maxVolume.bytesAsInt();
-        this.semaphore = new Semaphore(concurrency);
+        this.concurrency = concurrency != null ? concurrency > 0 ? concurrency : -concurrency :
+            Runtime.getRuntime().availableProcessors() * 8;
+        this.actions = actions != null ? actions : 1000;
+        this.maxVolume = maxVolume != null ? maxVolume : new ByteSizeValue(5, ByteSizeUnit.MB);
+        this.semaphore = new Semaphore(this.concurrency);
+        this.executionIdGen = new AtomicLong(0L);
+        this.ingestRequest = new IngestRequest();
     }
 
     public IngestProcessor listener(Listener listener) {
@@ -91,6 +90,16 @@ public class IngestProcessor {
         return this;
     }
 
+    /**
+     * For REST API
+     * @param data the REST body data
+     * @param contentUnsafe if content is unsafe
+     * @param defaultIndex default index
+     * @param defaultType default type
+     * @param listener the listener
+     * @return this processor
+     * @throws Exception
+     */
     public IngestProcessor add(BytesReference data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                Listener listener) throws Exception {
@@ -136,7 +145,7 @@ public class IngestProcessor {
             throw new ElasticSearchIllegalStateException("ingest processor already closed");
         }
         synchronized (ingestRequest) {
-            if (maxVolume > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume) {
+            if (maxVolume.bytesAsInt() > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume.bytesAsInt()) {
                 process(ingestRequest.takeAll(), listener);
             } else {
                 if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
@@ -164,45 +173,36 @@ public class IngestProcessor {
 
         final long executionId = executionIdGen.incrementAndGet();
 
-        if (concurrency <= 0) {
-            // execute in a blocking fashion...
-            try {
-                listener.beforeBulk(executionId, request);
-                listener.afterBulk(executionId, client.execute(IngestAction.INSTANCE, request).actionGet());
-            } catch (Exception e) {
-                listener.afterBulk(executionId, e);
-            }
-        } else {
-            listener.beforeBulk(executionId, request);
+        listener.beforeBulk(executionId, concurrency - semaphore.availablePermits(), request);
 
-            // concurrency control
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                listener.afterBulk(executionId, e);
-                return;
-            }
-
-            client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
-                @Override
-                public void onResponse(IngestResponse response) {
-                    try {
-                        listener.afterBulk(executionId, response);
-                    } finally {
-                        semaphore.release();
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-                    try {
-                        listener.afterBulk(executionId, e);
-                    } finally {
-                        semaphore.release();
-                    }
-                }
-            });
+        // concurrency control
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+            return;
         }
+
+        client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
+            @Override
+            public void onResponse(IngestResponse response) {
+                try {
+                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), response);
+                } finally {
+                    semaphore.release();
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable e) {
+                try {
+                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+                } finally {
+                    semaphore.release();
+                }
+            }
+        });
+
     }
 
     /**
@@ -229,84 +229,17 @@ public class IngestProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, IngestRequest request);
+        void beforeBulk(long executionId, int concurrency, IngestRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
          */
-        void afterBulk(long executionId, IngestResponse response);
+        void afterBulk(long executionId, int concurrency, IngestResponse response);
 
         /**
          * Callback after a failed execution of bulk request.
          */
-        void afterBulk(long executionId, Throwable failure);
+        void afterBulk(long executionId, int concurrency, Throwable failure);
     }
 
-    /**
-     * A builder used to create a build an instance of a bulk processor.
-     */
-    public static class Builder {
-
-        private final Client client;
-        private Listener listener;
-        private int concurrency = 30;
-        private int actions = 100;
-        private ByteSizeValue volume = new ByteSizeValue(5, ByteSizeUnit.MB);
-
-        /**
-         * Creates a builder of bulk processor with the client to use
-         */
-        public Builder(Client client) {
-            this.client = client;
-        }
-
-        /**
-         *  Set the listener that will be used to be notified on the completion of bulk requests.
-         * @param listener the listener
-         * @return the builder
-         */
-        public Builder listener(Listener listener) {
-            this.listener = listener;
-            return this;
-        }
-
-        /**
-         * Sets the number of concurrent requests allowed to be executed. A
-         * value of 0 means that only a single request will be allowed to be
-         * executed. A value of 1 means 1 concurrent request is allowed to be
-         * executed while accumulating new bulk requests. Defaults to
-         * <tt>1</tt>.
-         */
-        public Builder concurrency(int concurrency) {
-            this.concurrency = concurrency;
-            return this;
-        }
-
-        /**
-         * Sets when to flush a new bulk request based on the number of actions
-         * currently added. Defaults to <tt>1000</tt>. Can be set to <tt>-1</tt>
-         * to disable it.
-         */
-        public Builder actions(int actions) {
-            this.actions = actions;
-            return this;
-        }
-
-        /**
-         * When to flush a new bulk request based on the byte volume of actions
-         * currently added. Defaults to <tt>5mb</tt>. Can be set to <tt>-1</tt>
-         * to disable it.
-         */
-        public Builder maxVolume(ByteSizeValue volume) {
-            this.volume = volume;
-            return this;
-        }
-
-        /**
-         * Builds a new bulk processor.
-         */
-        public IngestProcessor build() {
-            return new IngestProcessor(client, concurrency, actions, volume).listener(listener);
-        }
-    }
 }

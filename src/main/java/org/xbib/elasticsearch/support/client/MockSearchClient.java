@@ -16,8 +16,9 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Set;
+
+import static org.elasticsearch.common.collect.Sets.newHashSet;
 
 /**
  * Search client mock. Do not perform actions on a real cluster.
@@ -26,7 +27,7 @@ public class MockSearchClient extends SearchClient {
 
     private final ESLogger logger = ESLoggerFactory.getLogger(MockSearchClient.class.getName());
 
-    private final Set<InetSocketTransportAddress> addresses = new HashSet();
+    private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     /**
      * No special initial settings except cluster name
@@ -35,7 +36,7 @@ public class MockSearchClient extends SearchClient {
      * @return initial settings
      */
     @Override
-    protected Settings initialSettings(URI uri, int n) {
+    protected Settings initialSettings(URI uri) {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build();
@@ -46,7 +47,7 @@ public class MockSearchClient extends SearchClient {
     }
 
     public MockSearchClient newClient(URI uri) {
-        settings = initialSettings(uri, 0);
+        settings = initialSettings(uri);
         return this;
     }
 

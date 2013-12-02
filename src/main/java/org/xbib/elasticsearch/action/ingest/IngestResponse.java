@@ -10,6 +10,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 import java.util.List;
 
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
+
 public class IngestResponse extends ActionResponse {
 
     private List<IngestItemFailure> failure;
@@ -18,8 +20,8 @@ public class IngestResponse extends ActionResponse {
 
     private long tookInMillis;
 
-    IngestResponse() {
-        this.failure = Lists.newLinkedList();
+    public IngestResponse() {
+        this.failure = newLinkedList();
     }
 
     public IngestResponse(int successSize, List<IngestItemFailure> failure, long tookInMillis) {
@@ -87,7 +89,7 @@ public class IngestResponse extends ActionResponse {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         successSize = in.readVInt();
-        failure = Lists.newLinkedList();
+        failure = newLinkedList();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
