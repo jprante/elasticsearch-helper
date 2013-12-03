@@ -434,63 +434,58 @@
 <span class="sourceLineNo">426</span>            logger.warn("no client");<a name="line.426"></a>
 <span class="sourceLineNo">427</span>            return this;<a name="line.427"></a>
 <span class="sourceLineNo">428</span>        }<a name="line.428"></a>
-<span class="sourceLineNo">429</span>        // we simply wait long enough for BulkProcessor flush<a name="line.429"></a>
+<span class="sourceLineNo">429</span>        // we simply wait long enough for BulkProcessor flush plus one second<a name="line.429"></a>
 <span class="sourceLineNo">430</span>        try {<a name="line.430"></a>
-<span class="sourceLineNo">431</span>            Thread.sleep(flushInterval.getMillis());<a name="line.431"></a>
-<span class="sourceLineNo">432</span>        } catch (InterruptedException e) {<a name="line.432"></a>
-<span class="sourceLineNo">433</span>            logger.error("interrupted", e);<a name="line.433"></a>
-<span class="sourceLineNo">434</span>        }<a name="line.434"></a>
-<span class="sourceLineNo">435</span>        return this;<a name="line.435"></a>
-<span class="sourceLineNo">436</span>    }<a name="line.436"></a>
-<span class="sourceLineNo">437</span><a name="line.437"></a>
-<span class="sourceLineNo">438</span>    @Override<a name="line.438"></a>
-<span class="sourceLineNo">439</span>    public synchronized void shutdown() {<a name="line.439"></a>
-<span class="sourceLineNo">440</span>        if (!enabled) {<a name="line.440"></a>
-<span class="sourceLineNo">441</span>            super.shutdown();<a name="line.441"></a>
-<span class="sourceLineNo">442</span>            return;<a name="line.442"></a>
-<span class="sourceLineNo">443</span>        }<a name="line.443"></a>
-<span class="sourceLineNo">444</span>        if (client == null) {<a name="line.444"></a>
-<span class="sourceLineNo">445</span>            logger.warn("no client");<a name="line.445"></a>
-<span class="sourceLineNo">446</span>            return;<a name="line.446"></a>
-<span class="sourceLineNo">447</span>        }<a name="line.447"></a>
-<span class="sourceLineNo">448</span>        try {<a name="line.448"></a>
-<span class="sourceLineNo">449</span>            if (bulkProcessor != null) {<a name="line.449"></a>
-<span class="sourceLineNo">450</span>                logger.info("closing bulk processor plus forced wait of {} seconds...", flushInterval.seconds());<a name="line.450"></a>
-<span class="sourceLineNo">451</span>                // we simply wait long enough for BulkProcessor flush<a name="line.451"></a>
-<span class="sourceLineNo">452</span>                try {<a name="line.452"></a>
-<span class="sourceLineNo">453</span>                    Thread.sleep(flushInterval.getMillis());<a name="line.453"></a>
-<span class="sourceLineNo">454</span>                } catch (InterruptedException e) {<a name="line.454"></a>
-<span class="sourceLineNo">455</span>                    logger.error("interrupted", e);<a name="line.455"></a>
-<span class="sourceLineNo">456</span>                }<a name="line.456"></a>
-<span class="sourceLineNo">457</span>                bulkProcessor.close();<a name="line.457"></a>
-<span class="sourceLineNo">458</span>            }<a name="line.458"></a>
-<span class="sourceLineNo">459</span>            logger.info("enabling refresh interval...");<a name="line.459"></a>
-<span class="sourceLineNo">460</span>            enableRefreshInterval();<a name="line.460"></a>
-<span class="sourceLineNo">461</span>            logger.info("shutting down...");<a name="line.461"></a>
-<span class="sourceLineNo">462</span>            super.shutdown();<a name="line.462"></a>
-<span class="sourceLineNo">463</span>            logger.info("shutting down completed");<a name="line.463"></a>
-<span class="sourceLineNo">464</span>        } catch (Exception e) {<a name="line.464"></a>
-<span class="sourceLineNo">465</span>            logger.error(e.getMessage(), e);<a name="line.465"></a>
-<span class="sourceLineNo">466</span>        }<a name="line.466"></a>
+<span class="sourceLineNo">431</span>            logger.info("flushing bulk processor (forced wait of {} seconds...)", flushInterval.seconds() + 1);<a name="line.431"></a>
+<span class="sourceLineNo">432</span>            Thread.sleep(flushInterval.getMillis() + 1000L);<a name="line.432"></a>
+<span class="sourceLineNo">433</span>        } catch (InterruptedException e) {<a name="line.433"></a>
+<span class="sourceLineNo">434</span>            logger.error("interrupted", e);<a name="line.434"></a>
+<span class="sourceLineNo">435</span>        }<a name="line.435"></a>
+<span class="sourceLineNo">436</span>        return this;<a name="line.436"></a>
+<span class="sourceLineNo">437</span>    }<a name="line.437"></a>
+<span class="sourceLineNo">438</span><a name="line.438"></a>
+<span class="sourceLineNo">439</span>    @Override<a name="line.439"></a>
+<span class="sourceLineNo">440</span>    public synchronized void shutdown() {<a name="line.440"></a>
+<span class="sourceLineNo">441</span>        if (!enabled) {<a name="line.441"></a>
+<span class="sourceLineNo">442</span>            super.shutdown();<a name="line.442"></a>
+<span class="sourceLineNo">443</span>            return;<a name="line.443"></a>
+<span class="sourceLineNo">444</span>        }<a name="line.444"></a>
+<span class="sourceLineNo">445</span>        if (client == null) {<a name="line.445"></a>
+<span class="sourceLineNo">446</span>            logger.warn("no client");<a name="line.446"></a>
+<span class="sourceLineNo">447</span>            return;<a name="line.447"></a>
+<span class="sourceLineNo">448</span>        }<a name="line.448"></a>
+<span class="sourceLineNo">449</span>        try {<a name="line.449"></a>
+<span class="sourceLineNo">450</span>            if (bulkProcessor != null) {<a name="line.450"></a>
+<span class="sourceLineNo">451</span>                flush();<a name="line.451"></a>
+<span class="sourceLineNo">452</span>                bulkProcessor.close();<a name="line.452"></a>
+<span class="sourceLineNo">453</span>            }<a name="line.453"></a>
+<span class="sourceLineNo">454</span>            logger.info("enabling refresh interval...");<a name="line.454"></a>
+<span class="sourceLineNo">455</span>            enableRefreshInterval();<a name="line.455"></a>
+<span class="sourceLineNo">456</span>            logger.info("shutting down...");<a name="line.456"></a>
+<span class="sourceLineNo">457</span>            super.shutdown();<a name="line.457"></a>
+<span class="sourceLineNo">458</span>            logger.info("shutting down completed");<a name="line.458"></a>
+<span class="sourceLineNo">459</span>        } catch (Exception e) {<a name="line.459"></a>
+<span class="sourceLineNo">460</span>            logger.error(e.getMessage(), e);<a name="line.460"></a>
+<span class="sourceLineNo">461</span>        }<a name="line.461"></a>
+<span class="sourceLineNo">462</span>    }<a name="line.462"></a>
+<span class="sourceLineNo">463</span><a name="line.463"></a>
+<span class="sourceLineNo">464</span>    @Override<a name="line.464"></a>
+<span class="sourceLineNo">465</span>    public long getVolumeInBytes() {<a name="line.465"></a>
+<span class="sourceLineNo">466</span>        return volumeCounter.get();<a name="line.466"></a>
 <span class="sourceLineNo">467</span>    }<a name="line.467"></a>
 <span class="sourceLineNo">468</span><a name="line.468"></a>
-<span class="sourceLineNo">469</span>    @Override<a name="line.469"></a>
-<span class="sourceLineNo">470</span>    public long getVolumeInBytes() {<a name="line.470"></a>
-<span class="sourceLineNo">471</span>        return volumeCounter.get();<a name="line.471"></a>
-<span class="sourceLineNo">472</span>    }<a name="line.472"></a>
-<span class="sourceLineNo">473</span><a name="line.473"></a>
-<span class="sourceLineNo">474</span>    public long getBulkCounter() {<a name="line.474"></a>
-<span class="sourceLineNo">475</span>        return bulkCounter.get();<a name="line.475"></a>
-<span class="sourceLineNo">476</span>    }<a name="line.476"></a>
-<span class="sourceLineNo">477</span><a name="line.477"></a>
-<span class="sourceLineNo">478</span>    public boolean hasErrors() {<a name="line.478"></a>
-<span class="sourceLineNo">479</span>        return throwable != null;<a name="line.479"></a>
-<span class="sourceLineNo">480</span>    }<a name="line.480"></a>
-<span class="sourceLineNo">481</span><a name="line.481"></a>
-<span class="sourceLineNo">482</span>    public Throwable getThrowable() {<a name="line.482"></a>
-<span class="sourceLineNo">483</span>        return throwable;<a name="line.483"></a>
-<span class="sourceLineNo">484</span>    }<a name="line.484"></a>
-<span class="sourceLineNo">485</span>}<a name="line.485"></a>
+<span class="sourceLineNo">469</span>    public long getBulkCounter() {<a name="line.469"></a>
+<span class="sourceLineNo">470</span>        return bulkCounter.get();<a name="line.470"></a>
+<span class="sourceLineNo">471</span>    }<a name="line.471"></a>
+<span class="sourceLineNo">472</span><a name="line.472"></a>
+<span class="sourceLineNo">473</span>    public boolean hasErrors() {<a name="line.473"></a>
+<span class="sourceLineNo">474</span>        return throwable != null;<a name="line.474"></a>
+<span class="sourceLineNo">475</span>    }<a name="line.475"></a>
+<span class="sourceLineNo">476</span><a name="line.476"></a>
+<span class="sourceLineNo">477</span>    public Throwable getThrowable() {<a name="line.477"></a>
+<span class="sourceLineNo">478</span>        return throwable;<a name="line.478"></a>
+<span class="sourceLineNo">479</span>    }<a name="line.479"></a>
+<span class="sourceLineNo">480</span>}<a name="line.480"></a>
 
 
 
