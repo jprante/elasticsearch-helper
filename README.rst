@@ -17,14 +17,15 @@ Prerequisites::
 
   Elasticsearch 0.90.x
 
-=============  ============  =================  ==========================================================
-ES version     Plugin        Release date       Command
--------------  ------------  -----------------  ----------------------------------------------------------
-0.90.5         **0.90.5.4**  Nov 2, 2013        ./bin/plugin --install support --url http://bit.ly/16vkDYZ
-0.90.5         **0.90.5.5**  Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/HBEBbz
-0.90.6         **0.90.6.1**  Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/1bdSNQY
-0.90.7         **0.90.7.1**  Dec 3, 2013        ./bin/plugin --install support --url http://bit.ly/1arMpDf
-=============  ============  =================  ==========================================================
+=============  ==============  =================  ==========================================================
+ES version     Plugin          Release date       Command
+-------------  --------------  -----------------  ----------------------------------------------------------
+0.90.5         0.90.5.4        Nov 2, 2013        ./bin/plugin --install support --url http://bit.ly/16vkDYZ
+0.90.5         0.90.5.5        Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/HBEBbz
+0.90.6         0.90.6.1        Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/1bdSNQY
+0.90.7         0.90.7.1        Dec 3, 2013        ./bin/plugin --install support --url http://bit.ly/1arMpDf
+1.0.0.Beta2    1.0.0.Beta2.1   Dec 3, 2013        ./bin/plugin --install support --url http://bit.ly/Iq0pHz
+=============  ==============  =================  ==========================================================
 
 Do not forget to restart the node after installing.
 

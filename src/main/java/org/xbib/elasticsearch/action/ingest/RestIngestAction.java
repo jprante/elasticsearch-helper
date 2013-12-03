@@ -9,6 +9,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -18,8 +19,6 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.XContentRestResponse;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -64,45 +63,49 @@ public class RestIngestAction extends BaseRestHandler {
         controller.registerHandler(PUT, "/{index}/{type}/_ingest", this);
 
         int actions = settings.getAsInt("action.ingest.maxactions", 1000);
-        int concurrency = settings.getAsInt("action.ingest.maxconcurrency", 30);
-        ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("5m"));
+        int concurrency = settings.getAsInt("action.ingest.maxconcurrency", Runtime.getRuntime().availableProcessors() * 4);
+        ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("10m"));
+        TimeValue waitingTime = settings.getAsTime("action.ingest.waitingtime", TimeValue.timeValueSeconds(60));
 
-        this.ingestProcessor = new IngestProcessor(client, concurrency, actions, volume);
+        this.ingestProcessor = new IngestProcessor(client, concurrency, actions, volume, waitingTime);
     }
 
     @Override
     public void handleRequest(final RestRequest request, final RestChannel channel) {
 
-        final ExecutionIdHolder idHolder = new ExecutionIdHolder();
+        final BulkIdHolder idHolder = new BulkIdHolder();
         final CountDownLatch latch = new CountDownLatch(1);
 
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
-            public void beforeBulk(long executionId, int concurrency, IngestRequest ingestRequest) {
+            public void beforeBulk(long bulkId, int concurrency, IngestRequest ingestRequest) {
                 long v = volumeCounter.addAndGet(ingestRequest.estimatedSizeInBytes());
-                logger.info("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, ingestRequest.numberOfActions(), v, concurrency);
-                idHolder.executionId(executionId);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
+                        bulkId, ingestRequest.numberOfActions(), v, concurrency);
+                }
+                idHolder.bulkId(bulkId);
                 latch.countDown();
             }
 
             @Override
-            public void afterBulk(long executionId, int concurrency, IngestResponse response) {
-                logger.info("bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                        executionId, response.successSize(), response.failureSize(), response.took().millis());
+            public void afterBulk(long bulkId, int concurrency, IngestResponse response) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
+                            bulkId, response.successSize(), response.failureSize(), response.took().millis());
+                }
                 if (!response.failure().isEmpty()) {
                     for (IngestItemFailure f: response.failure()) {
-                        logger.error("bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                        logger.error("bulk [{}] [{} failure reason: {}", bulkId, f.id(), f.message());
                     }
                 }
             }
 
             @Override
-            public void afterBulk(long executionId, int concurrency, Throwable failure) {
-                logger.error("bulk [{}] error", executionId, failure);
+            public void afterBulk(long bulkId, int concurrency, Throwable failure) {
+                logger.error("bulk [{}] error", bulkId, failure);
             }
         };
-
         String replicationType = request.param("replication");
         if (replicationType != null) {
             ingestProcessor.replicationType(ReplicationType.fromString(replicationType));
@@ -124,11 +127,10 @@ public class RestIngestAction extends BaseRestHandler {
 
             XContentBuilder builder = restContentBuilder(request);
             builder.startObject();
-            builder.field(Fields.OK, true);
             builder.field(Fields.TOOK, t1 - t0);
             // got ID?
             if (b) {
-                builder.field(Fields.ID, idHolder.executionId());
+                builder.field(Fields.ID, idHolder.bulkId());
             }
             builder.endObject();
             channel.sendResponse(new XContentRestResponse(request, OK, builder));
@@ -143,49 +145,17 @@ public class RestIngestAction extends BaseRestHandler {
     }
 
     static final class Fields {
-        static final XContentBuilderString OK = new XContentBuilderString("ok");
         static final XContentBuilderString TOOK = new XContentBuilderString("took");
         static final XContentBuilderString ID = new XContentBuilderString("id");
     }
 
-    static final class ExecutionIdHolder {
-        private long executionId;
-        public void executionId(long executionId) {
-            this.executionId = executionId;
+    static final class BulkIdHolder {
+        private long bulkId;
+        public void bulkId(long bulkId) {
+            this.bulkId = bulkId;
         }
-        public long executionId() {
-            return executionId;
-        }
-    }
-
-    static final class LRUHashMap<K, V> extends LinkedHashMap<K, V> {
-
-        private final int maxSize;
-
-        /**
-         * Constructor.
-         *
-         * @param initialSize initial cache size.
-         * @param maxSize maximum cache size.
-         */
-        public LRUHashMap(final int initialSize, final int maxSize) {
-            super(initialSize);
-            this.maxSize = maxSize;
-        }
-
-        /**
-         * Constructor.
-         * Equivalent to calling LRUHashMap(size, size);
-         *
-         * @param size initial and maximum cache size.
-         */
-        public LRUHashMap(final int size) {
-            this(size, size);
-        }
-
-        @Override
-        protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-            return size() >= this.maxSize;
+        public long bulkId() {
+            return bulkId;
         }
     }
 

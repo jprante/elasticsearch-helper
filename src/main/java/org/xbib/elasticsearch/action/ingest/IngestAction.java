@@ -16,10 +16,6 @@ public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRe
         super(NAME);
     }
 
-    public IngestAction(String name) {
-        super(name);
-    }
-
     @Override
     public IngestResponse newResponse() {
         return new IngestResponse();

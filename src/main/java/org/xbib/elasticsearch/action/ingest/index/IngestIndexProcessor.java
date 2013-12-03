@@ -10,9 +10,11 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestIndexProcessor {
@@ -25,9 +27,11 @@ public class IngestIndexProcessor {
 
     private final ByteSizeValue maxVolume;
 
+    private final TimeValue waitForResponses;
+
     private final Semaphore semaphore;
 
-    private final AtomicLong executionIdGen;
+    private final AtomicLong bulkId;
 
     private final IngestIndexRequest ingestRequest;
 
@@ -35,16 +39,18 @@ public class IngestIndexProcessor {
 
     private volatile boolean closed = false;
 
-    public IngestIndexProcessor(Client client, Integer concurrency, Integer actions, ByteSizeValue maxVolume) {
+    public IngestIndexProcessor(Client client, Integer concurrency, Integer actions,
+                                ByteSizeValue maxVolume, TimeValue waitForResponses) {
         this.client = client;
-        this.concurrency = concurrency != null ? concurrency > 0 ? concurrency : -concurrency :
-                Runtime.getRuntime().availableProcessors() * 8;
-        this.actions = actions != null ? actions : 1000;
+        this.concurrency = concurrency != null ?
+                concurrency > 0 ? Math.min(concurrency, 256) : Math.min(-concurrency, 256) :
+                Runtime.getRuntime().availableProcessors() * 4;
+        this.actions = actions != null ? Math.min(actions, 32768) : 1000;
         this.maxVolume = maxVolume != null ? maxVolume : new ByteSizeValue(10, ByteSizeUnit.MB);
+        this.waitForResponses = waitForResponses != null ? waitForResponses : new TimeValue(60, TimeUnit.SECONDS);
         this.semaphore = new Semaphore(this.concurrency);
-        this.executionIdGen = new AtomicLong(0L);
+        this.bulkId = new AtomicLong(0L);
         this.ingestRequest = new IngestIndexRequest();
-
     }
 
     public IngestIndexProcessor listener(Listener listener) {
@@ -73,13 +79,13 @@ public class IngestIndexProcessor {
      */
     public IngestIndexProcessor add(IndexRequest request) {
         ingestRequest.add(request);
-        flushIfNeeded();
+        flushIfNeeded(listener);
         return this;
     }
 
     /**
-     * Closes the processor. If flushing by time is enabled, then it is shut down.
-     * Any remaining bulk actions are flushed, and for the bulk responses is being waited.
+     * Closes the processor.
+     * Any remaining actions are flushed, and for the bulk responses is being waited.
      */
     public synchronized void close() throws InterruptedException {
         if (closed) {
@@ -87,11 +93,11 @@ public class IngestIndexProcessor {
         }
         closed = true;
         flush();
-        waitForAllResponses();
+        waitForResponses(waitForResponses.seconds());
     }
 
     /**
-     * Flush this bulk processor, write all requests
+     * Flush this processor, write all requests.
      */
     public void flush() {
         synchronized (ingestRequest) {
@@ -101,13 +107,9 @@ public class IngestIndexProcessor {
         }
     }
 
-    private void flushIfNeeded() {
-        flushIfNeeded(listener);
-    }
-
     /**
      * Critical phase, check if flushing condition is met and
-     * push the part of the bulk requests that is required to push
+     * push the part of the bulk requests that is required to process
      */
     private void flushIfNeeded(Listener listener) {
         if (closed) {
@@ -123,9 +125,7 @@ public class IngestIndexProcessor {
     }
 
     /**
-     * A thread can flush a partial ConcurrentBulkRequest here.
-     * Check for concurrency limit and wait for outstanding requests by the help
-     * of a semaphore.
+     * Process the ingest index request.
      *
      * @param request the ingest request
      * @param listener the listener
@@ -134,23 +134,22 @@ public class IngestIndexProcessor {
         if (request.numberOfActions() == 0) {
             return;
         }
-        // only works with a listener
         if (listener == null) {
             return;
         }
-        final long executionId = executionIdGen.incrementAndGet();
-        listener.beforeBulk(executionId, concurrency - semaphore.availablePermits(), request);
+        final long id = bulkId.incrementAndGet();
+        listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
-            listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
             return;
         }
         client.execute(IngestIndexAction.INSTANCE, request, new ActionListener<IngestResponse>() {
             @Override
             public void onResponse(IngestResponse response) {
                 try {
-                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), response);
+                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
                 } finally {
                     semaphore.release();
                 }
@@ -159,7 +158,7 @@ public class IngestIndexProcessor {
             @Override
             public void onFailure(Throwable e) {
                 try {
-                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
                 } finally {
                     semaphore.release();
                 }
@@ -168,17 +167,15 @@ public class IngestIndexProcessor {
     }
 
     /**
-     * Wait for all outstanding bulk requests.
-     * At maximum, the waiting time is 60 seconds.
+     * Wait for responses of outstanding requests.
      *
-     * @return true if there are no outstanding bulk requests, false otherwise
+     * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForAllResponses() throws InterruptedException {
-        int n = 60;
-        while (semaphore.availablePermits() < concurrency && n > 0) {
+    public synchronized boolean waitForResponses(long secs) throws InterruptedException {
+        while (semaphore.availablePermits() < concurrency && secs > 0) {
             Thread.sleep(1000L);
-            n--;
+            secs--;
         }
         return semaphore.availablePermits() == concurrency;
     }
@@ -191,17 +188,17 @@ public class IngestIndexProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, int concurrency, IngestIndexRequest request);
+        void beforeBulk(long bulkId, int concurrency, IngestIndexRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
          */
-        void afterBulk(long executionId, int concurrency, IngestResponse response);
+        void afterBulk(long bulkId, int concurrency, IngestResponse response);
 
         /**
          * Callback after a failed execution of bulk request.
          */
-        void afterBulk(long executionId, int concurrency, Throwable failure);
+        void afterBulk(long bulkId, int concurrency, Throwable failure);
     }
 
 }

@@ -4,6 +4,7 @@ package org.xbib.elasticsearch.support.client;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -35,9 +36,14 @@ public class IngestClient extends AbstractIngestClient {
 
     private int maxBulkActions = 1000;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 8;
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 4;
 
     private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
+
+    /**
+     * The maximum wait time for responses when shutting down
+     */
+    private TimeValue maxWaitTime = new TimeValue(60, TimeUnit.SECONDS);
 
     private final AtomicLong bulkCounter = new AtomicLong(0L);
 
@@ -141,7 +147,7 @@ public class IngestClient extends AbstractIngestClient {
                 throwable = failure;
             }
         };
-        this.ingestProcessor = new IngestProcessor(client,  maxConcurrentBulkRequests, maxBulkActions, maxVolume)
+        this.ingestProcessor = new IngestProcessor(client,  maxConcurrentBulkRequests, maxBulkActions, maxVolume, maxWaitTime)
                 .listener(listener);
         this.enabled = true;
         return this;

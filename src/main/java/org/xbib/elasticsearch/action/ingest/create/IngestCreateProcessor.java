@@ -10,9 +10,11 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestCreateProcessor {
@@ -25,9 +27,11 @@ public class IngestCreateProcessor {
 
     private final ByteSizeValue maxVolume;
 
+    private final TimeValue waitForResponses;
+
     private final Semaphore semaphore;
 
-    private final AtomicLong executionIdGen;
+    private final AtomicLong bulkId;
 
     private final IngestCreateRequest ingestRequest;
 
@@ -35,14 +39,17 @@ public class IngestCreateProcessor {
 
     private volatile boolean closed = false;
 
-    public IngestCreateProcessor(Client client, Integer concurrency, Integer actions, ByteSizeValue maxVolume) {
+    public IngestCreateProcessor(Client client, Integer concurrency, Integer actions,
+                                 ByteSizeValue maxVolume, TimeValue waitForResponses) {
         this.client = client;
-        this.concurrency = concurrency != null ? concurrency > 0 ? concurrency : -concurrency :
-                Runtime.getRuntime().availableProcessors() * 8;
-        this.actions = actions != null ? actions : 1000;
+        this.concurrency = concurrency != null ?
+                concurrency > 0 ? Math.min(concurrency, 256) : Math.min(-concurrency, 256) :
+                Runtime.getRuntime().availableProcessors() * 4;
+        this.actions = actions != null ? Math.min(actions, 32768) : 1000;
         this.maxVolume = maxVolume != null ? maxVolume : new ByteSizeValue(10, ByteSizeUnit.MB);
+        this.waitForResponses = waitForResponses != null ? waitForResponses : new TimeValue(60, TimeUnit.SECONDS);
         this.semaphore = new Semaphore(this.concurrency);
-        this.executionIdGen = new AtomicLong(0L);
+        this.bulkId = new AtomicLong(0L);
         this.ingestRequest = new IngestCreateRequest();
     }
 
@@ -72,7 +79,7 @@ public class IngestCreateProcessor {
      */
     public IngestCreateProcessor add(IndexRequest request) {
         ingestRequest.add(request);
-        flushIfNeeded();
+        flushIfNeeded(listener);
         return this;
     }
 
@@ -86,7 +93,7 @@ public class IngestCreateProcessor {
         }
         closed = true;
         flush();
-        waitForAllResponses();
+        waitForResponses(waitForResponses.seconds());
     }
 
     /**
@@ -100,10 +107,6 @@ public class IngestCreateProcessor {
         }
     }
 
-    private void flushIfNeeded() {
-        flushIfNeeded(listener);
-    }
-
     /**
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to push
@@ -113,12 +116,10 @@ public class IngestCreateProcessor {
             throw new ElasticSearchIllegalStateException("ingest processor already closed");
         }
         synchronized (ingestRequest) {
-            synchronized (ingestRequest) {
-                if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
-                    process(ingestRequest.take(actions), listener);
-                } else if (maxVolume.bytesAsInt() > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume.bytesAsInt()) {
-                    process(ingestRequest.takeAll(), listener);
-                }
+            if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
+                process(ingestRequest.take(actions), listener);
+            } else if (maxVolume.bytesAsInt() > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume.bytesAsInt()) {
+                process(ingestRequest.takeAll(), listener);
             }
         }
     }
@@ -138,20 +139,20 @@ public class IngestCreateProcessor {
         if (listener == null) {
             return;
         }
-        final long executionId = executionIdGen.incrementAndGet();
-        listener.beforeBulk(executionId, concurrency - semaphore.availablePermits(), request);
+        final long id = bulkId.incrementAndGet();
+        listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
         // concurrency control
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
-            listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
             return;
         }
         client.execute(IngestCreateAction.INSTANCE, request, new ActionListener<IngestResponse>() {
             @Override
             public void onResponse(IngestResponse response) {
                 try {
-                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), response);
+                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
                 } finally {
                     semaphore.release();
                 }
@@ -160,7 +161,7 @@ public class IngestCreateProcessor {
             @Override
             public void onFailure(Throwable e) {
                 try {
-                    listener.afterBulk(executionId, concurrency - semaphore.availablePermits(), e);
+                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
                 } finally {
                     semaphore.release();
                 }
@@ -170,17 +171,15 @@ public class IngestCreateProcessor {
     }
 
     /**
-     * Wait for all outstanding bulk requests.
-     * At maximum, the waiting time is 60 seconds.
+     * Wait for responses of outstanding requests.
      *
-     * @return true if there are no outstanding bulk requests, false otherwise
+     * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForAllResponses() throws InterruptedException {
-        int n = 60;
-        while (semaphore.availablePermits() < concurrency && n > 0) {
+    public synchronized boolean waitForResponses(long secs) throws InterruptedException {
+        while (semaphore.availablePermits() < concurrency && secs > 0) {
             Thread.sleep(1000L);
-            n--;
+            secs--;
         }
         return semaphore.availablePermits() == concurrency;
     }
@@ -193,17 +192,17 @@ public class IngestCreateProcessor {
         /**
          * Callback before the bulk is executed.
          */
-        void beforeBulk(long executionId, int concurrency, IngestCreateRequest request);
+        void beforeBulk(long bulkId, int concurrency, IngestCreateRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
          */
-        void afterBulk(long executionId, int concurrency, IngestResponse response);
+        void afterBulk(long bulkId, int concurrency, IngestResponse response);
 
         /**
          * Callback after a failed execution of bulk request.
          */
-        void afterBulk(long executionId, int concurrency, Throwable failure);
+        void afterBulk(long bulkId, int concurrency, Throwable failure);
     }
 
 }

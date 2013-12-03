@@ -426,9 +426,10 @@ public class BulkClient extends AbstractIngestClient {
             logger.warn("no client");
             return this;
         }
-        // we simply wait long enough for BulkProcessor flush
+        // we simply wait long enough for BulkProcessor flush plus one second
         try {
-            Thread.sleep(flushInterval.getMillis());
+            logger.info("flushing bulk processor (forced wait of {} seconds...)", flushInterval.seconds() + 1);
+            Thread.sleep(flushInterval.getMillis() + 1000L);
         } catch (InterruptedException e) {
             logger.error("interrupted", e);
         }
@@ -447,13 +448,7 @@ public class BulkClient extends AbstractIngestClient {
         }
         try {
             if (bulkProcessor != null) {
-                logger.info("closing bulk processor plus forced wait of {} seconds...", flushInterval.seconds());
-                // we simply wait long enough for BulkProcessor flush
-                try {
-                    Thread.sleep(flushInterval.getMillis());
-                } catch (InterruptedException e) {
-                    logger.error("interrupted", e);
-                }
+                flush();
                 bulkProcessor.close();
             }
             logger.info("enabling refresh interval...");

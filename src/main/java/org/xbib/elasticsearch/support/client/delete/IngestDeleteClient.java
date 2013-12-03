@@ -23,6 +23,7 @@ import org.xbib.elasticsearch.support.client.AbstractIngestClient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -34,9 +35,14 @@ public class IngestDeleteClient extends AbstractIngestClient {
 
     private int maxBulkActions = 1000;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 8;
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 4;
 
     private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
+
+    /**
+     * The maximum wait time for responses when shutting down
+     */
+    private TimeValue maxWaitTime = new TimeValue(60, TimeUnit.SECONDS);
 
     private final AtomicLong bulkCounter = new AtomicLong(0L);
 
@@ -139,7 +145,7 @@ public class IngestDeleteClient extends AbstractIngestClient {
                 throwable = failure;
             }
         };
-        this.ingestProcessor = new IngestDeleteProcessor(client, maxConcurrentBulkRequests, maxBulkActions, maxVolume)
+        this.ingestProcessor = new IngestDeleteProcessor(client, maxConcurrentBulkRequests, maxBulkActions, maxVolume, maxWaitTime)
                 .listener(listener);
         this.enabled = true;
         return this;
