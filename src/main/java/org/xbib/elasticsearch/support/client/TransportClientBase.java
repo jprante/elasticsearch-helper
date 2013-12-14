@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -46,23 +45,19 @@ public abstract class TransportClientBase {
 
     protected TransportClient client;
 
-    protected Settings settings;
-
-    protected abstract Settings initialSettings(URI uri);
-
-    public TransportClientBase newClient() {
-        return newClient(findURI());
-    }
-
-    public synchronized TransportClientBase newClient(URI uri) {
+    public TransportClientBase newClient(URI uri, Settings settings) {
         if (client != null) {
             client.close();
             client.threadPool().shutdown();
             client = null;
         }
-        this.settings = initialSettings(uri);
-        logger.info("settings={}", settings.getAsMap());
-        this.client = new TransportClient(settings);
+        if (settings != null) {
+            logger.info("creating new client, effective settings = {}", settings.getAsMap());
+            this.client = new TransportClient(settings);
+        } else {
+            logger.info("creating new client,no settings, using default");
+            this.client = new TransportClient();
+        }
         try {
             connect(uri);
         } catch (UnknownHostException e) {

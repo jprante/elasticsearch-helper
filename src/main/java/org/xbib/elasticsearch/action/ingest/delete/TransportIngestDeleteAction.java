@@ -109,6 +109,7 @@ public class TransportIngestDeleteAction extends TransportAction<IngestDeleteReq
             IngestDeleteShardRequest ingestShardRequest = new IngestDeleteShardRequest(shardId.index().name(), shardId.id(), requests);
             ingestShardRequest.replicationType(ingestRequest.replicationType());
             ingestShardRequest.consistencyLevel(ingestRequest.consistencyLevel());
+            ingestShardRequest.timeout(ingestRequest.timeout());
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestDeleteShardResponse>() {
                 @Override
                 public void onResponse(IngestDeleteShardResponse ingestShardResponse) {

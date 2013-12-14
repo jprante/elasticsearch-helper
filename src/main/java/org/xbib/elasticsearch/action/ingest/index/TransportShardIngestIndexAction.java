@@ -123,28 +123,32 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                         throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
                     }
                 }
-
                 SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                         .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
-
                 long version;
-                Engine.Index index = indexShard.prepareIndex(sourceToParse).version(indexRequest.version()).versionType(indexRequest.versionType()).origin(Engine.Operation.Origin.PRIMARY);
-                indexShard.index(index);
-                version = index.version();
+                Engine.IndexingOperation op;
+                if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
+                    Engine.Index index = indexShard.prepareIndex(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
+                    indexShard.index(index);
+                    version = index.version();
+                    op = index;
+                } else {
+                    Engine.Create create = indexShard.prepareCreate(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
+                    indexShard.create(create);
+                    version = create.version();
+                    op = create;
+                }
                 versions[i] = indexRequest.version();
                 // update the version on request so it will happen on the replicas
                 indexRequest.version(version);
-
                 // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
-                if (index.parsedDoc().mappingsModified()) {
+                if (op.parsedDoc().mappingsModified()) {
                     if (mappingsToUpdate == null) {
                         mappingsToUpdate = Sets.newHashSet();
                     }
                     mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                 }
-
                 successSize++;
-
             } catch (Exception e) {
                 // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                 if (retryPrimaryException(e)) {

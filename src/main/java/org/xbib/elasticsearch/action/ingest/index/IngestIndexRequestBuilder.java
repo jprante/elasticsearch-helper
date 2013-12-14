@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 /**
@@ -83,6 +84,14 @@ public class IngestIndexRequestBuilder extends ActionRequestBuilder<IngestIndexR
      */
     public IngestIndexRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
+        return this;
+    }
+
+    /**
+     * Sets the timeout. Defaults to {@link org.xbib.elasticsearch.action.ingest.IngestShardRequest#DEFAULT_TIMEOUT}.
+     */
+    public IngestIndexRequestBuilder setTimeout(TimeValue timeout) {
+        request.timeout(timeout);
         return this;
     }
 

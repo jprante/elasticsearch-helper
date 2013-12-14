@@ -105,6 +105,7 @@ public class TransportIngestIndexAction extends TransportAction<IngestIndexReque
             IngestIndexShardRequest ingestShardRequest = new IngestIndexShardRequest(shardId.index().name(), shardId.id(), requests);
             ingestShardRequest.replicationType(ingestRequest.replicationType());
             ingestShardRequest.consistencyLevel(ingestRequest.consistencyLevel());
+            ingestShardRequest.timeout(ingestRequest.timeout());
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestIndexShardResponse>() {
                 @Override
                 public void onResponse(IngestIndexShardResponse ingestShardResponse) {

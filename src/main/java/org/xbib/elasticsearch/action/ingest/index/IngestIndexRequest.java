@@ -8,14 +8,13 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Lists.newArrayListWithCapacity;
 import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestIndexRequest extends ActionRequest {
@@ -29,6 +28,8 @@ public class IngestIndexRequest extends ActionRequest {
     private ReplicationType replicationType = ReplicationType.DEFAULT;
 
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
+
+    private TimeValue timeout = IngestIndexShardRequest.DEFAULT_TIMEOUT;
 
     private String defaultIndex;
 
@@ -58,12 +59,6 @@ public class IngestIndexRequest extends ActionRequest {
 
     public Queue<IndexRequest> requests() {
         return requests;
-    }
-
-    public IngestIndexRequest add(Collection<IndexRequest> requests, long sizeInBytes) {
-        this.requests.addAll(requests);
-        this.sizeInBytes.set(sizeInBytes);
-        return this;
     }
 
     public IngestIndexRequest add(IndexRequest... requests) {
@@ -140,13 +135,32 @@ public class IngestIndexRequest extends ActionRequest {
     }
 
     /**
+     * Set the timeout for this operation.
+     */
+    public IngestIndexRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return this.timeout;
+    }
+
+    /**
      * Take all requests out of this bulk request.
      * This method is thread safe.
      *
      * @return another bulk request
      */
     public IngestIndexRequest takeAll() {
-        return take(requests.size());
+        IngestIndexRequest request = new IngestIndexRequest();
+        while (!requests.isEmpty()) {
+            IndexRequest indexRequest = requests.poll();
+            if (indexRequest != null) {
+                request.add(indexRequest);
+            }
+        }
+        return request;
     }
 
     /**
@@ -159,18 +173,14 @@ public class IngestIndexRequest extends ActionRequest {
      * @return a partial bulk request
      */
     public IngestIndexRequest take(int numRequests) {
-        Collection<IndexRequest> partRequest = newArrayListWithCapacity(numRequests);
-        long size = 0L;
+        IngestIndexRequest request = new IngestIndexRequest();
         for (int i = 0; i < numRequests; i++) {
-            IndexRequest request = requests.poll();
-            if (request != null) {
-                long l = request.source().length() + REQUEST_OVERHEAD;
-                sizeInBytes.addAndGet(-l);
-                size += l;
-                partRequest.add(request);
+            IndexRequest indexRequest = requests.poll();
+            if (indexRequest != null) {
+                request.add(indexRequest);
             }
         }
-        return new IngestIndexRequest().add(partRequest, size);
+        return request;
     }
 
     @Override
@@ -195,6 +205,7 @@ public class IngestIndexRequest extends ActionRequest {
     public void readFrom(StreamInput in) throws IOException {
         replicationType = ReplicationType.fromId(in.readByte());
         consistencyLevel = WriteConsistencyLevel.fromId(in.readByte());
+        timeout = TimeValue.readTimeValue(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             IndexRequest request = new IndexRequest();
@@ -207,6 +218,7 @@ public class IngestIndexRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeByte(replicationType.id());
         out.writeByte(consistencyLevel.id());
+        timeout.writeTo(out);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
             request.writeTo(out);

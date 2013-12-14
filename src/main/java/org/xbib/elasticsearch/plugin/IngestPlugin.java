@@ -8,8 +8,6 @@ import org.elasticsearch.rest.RestModule;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.TransportIngestAction;
 import org.xbib.elasticsearch.action.ingest.RestIngestAction;
-import org.xbib.elasticsearch.action.ingest.create.IngestCreateAction;
-import org.xbib.elasticsearch.action.ingest.create.TransportIngestCreateAction;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteAction;
 import org.xbib.elasticsearch.action.ingest.delete.TransportIngestDeleteAction;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexAction;
@@ -35,8 +33,6 @@ public class IngestPlugin extends AbstractPlugin {
 
     public void onModule(ActionModule module) {
         module.registerAction(IngestAction.INSTANCE, TransportIngestAction.class);
-
-        module.registerAction(IngestCreateAction.INSTANCE, TransportIngestCreateAction.class);
         module.registerAction(IngestDeleteAction.INSTANCE, TransportIngestDeleteAction.class);
         module.registerAction(IngestIndexAction.INSTANCE, TransportIngestIndexAction.class);
     }

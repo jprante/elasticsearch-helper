@@ -2,7 +2,6 @@
 package org.xbib.elasticsearch.action.ingest.delete;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
-import org.elasticsearch.action.Action;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -10,8 +9,8 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-
 import org.elasticsearch.common.unit.TimeValue;
+
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.util.concurrent.Semaphore;
@@ -94,7 +93,7 @@ public class IngestDeleteProcessor {
         }
         closed = true;
         flush();
-        waitForResponses(waitForResponses.seconds());
+        waitForResponses(waitForResponses);
     }
 
     /**
@@ -119,7 +118,9 @@ public class IngestDeleteProcessor {
         synchronized (ingestRequest) {
             if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
                 process(ingestRequest.take(actions), listener);
-            } else if (maxVolume.bytesAsInt() > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume.bytesAsInt()) {
+            } else if (ingestRequest.numberOfActions() > 0
+                    && maxVolume.bytesAsInt() > 0
+                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
                 process(ingestRequest.takeAll(), listener);
             }
         }
@@ -140,33 +141,39 @@ public class IngestDeleteProcessor {
             return;
         }
         final long id = bulkId.incrementAndGet();
-        listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
+        boolean done = false;
         try {
             semaphore.acquire();
+            listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
+            client.execute(IngestDeleteAction.INSTANCE, request, new ActionListener<IngestResponse>() {
+                @Override
+                public void onResponse(IngestResponse response) {
+                    try {
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
+                    } finally {
+                        semaphore.release();
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable e) {
+                    try {
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+                    } finally {
+                        semaphore.release();
+                    }
+                }
+            });
+            done = true;
         } catch (InterruptedException e) {
+            // semaphore not acquired
+            Thread.currentThread().interrupt();
             listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
-            return;
+        } finally {
+            if (!done) {
+                semaphore.release();
+            }
         }
-        client.execute(IngestDeleteAction.INSTANCE, request, new ActionListener<IngestResponse>() {
-            @Override
-            public void onResponse(IngestResponse response) {
-                try {
-                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
-                } finally {
-                    semaphore.release();
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable e) {
-                try {
-                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
-                } finally {
-                    semaphore.release();
-                }
-            }
-        });
-
     }
 
     /**
@@ -175,11 +182,12 @@ public class IngestDeleteProcessor {
      * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForResponses(long secs) throws InterruptedException {
-        while (semaphore.availablePermits() < concurrency && secs > 0) {
-            Thread.sleep(1000L);
-            secs--;
-        }
+    public synchronized boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
+        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
+        //while (semaphore.availablePermits() < concurrency && secs > 0) {
+        //    Thread.sleep(1000L);
+        //    secs--;
+        //}
         return semaphore.availablePermits() == concurrency;
     }
 

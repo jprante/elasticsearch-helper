@@ -25,15 +25,15 @@ public interface Ingest extends DocumentIngest {
     int waitForRecovery();
 
     /**
-     * Set the maximum number of bulk actions
+     * Set the maximum number of actions per bulk request
      *
-     * @param bulkActions maximum number of bulk actions
+     * @param maxActions maximum number of bulk actions
      * @return this ingest
      */
-    Ingest maxBulkActions(int bulkActions);
+    Ingest maxActionsPerBulkRequest(int maxActions);
 
     /**
-     * Set the  maximum concurent bulk requests
+     * Set the maximum concurent bulk requests
      *
      * @param maxConcurentBulkRequests maximum number of concurrent bulk requests
      * @return this Ingest
@@ -45,7 +45,7 @@ public interface Ingest extends DocumentIngest {
      * @param maxVolume maximum volume
      * @return this ingest
      */
-    Ingest maxVolume(ByteSizeValue maxVolume);
+    Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
 
     /**
      * Start bulk mode
@@ -90,15 +90,25 @@ public interface Ingest extends DocumentIngest {
      */
     int updateReplicaLevel(int level) throws IOException;
 
-    /**
-     * Get the ingested data volume so far.
-     *
-     * @return the volume in bytes
-     */
-    long getVolumeInBytes();
 
     Ingest shards(int shards);
 
     Ingest replica(int replica);
 
+    long getTotalBulkRequests();
+
+    long getTotalBulkRequestTime();
+
+    long getTotalDocuments();
+
+    /**
+     * Get the total ingested data size in bytes so far.
+     *
+     * @return the total size in bytes
+     */
+    long getTotalSizeInBytes();
+
+    boolean hasErrors();
+
+    Throwable getThrowable();
 }

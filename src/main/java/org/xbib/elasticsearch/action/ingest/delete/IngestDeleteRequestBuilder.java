@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 /**
@@ -60,7 +61,7 @@ public class IngestDeleteRequestBuilder extends ActionRequestBuilder<IngestDelet
      * Set the replication type for this operation.
      */
     public IngestDeleteRequestBuilder setReplicationType(ReplicationType replicationType) {
-        this.request.replicationType(replicationType);
+        request.replicationType(replicationType);
         return this;
     }
 
@@ -69,6 +70,14 @@ public class IngestDeleteRequestBuilder extends ActionRequestBuilder<IngestDelet
      */
     public IngestDeleteRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
+        return this;
+    }
+
+    /**
+     * Sets the timeout. Defaults to {@link org.xbib.elasticsearch.action.ingest.delete.IngestDeleteShardRequest#DEFAULT_TIMEOUT}.
+     */
+    public IngestDeleteRequestBuilder setTimeout(TimeValue timeout) {
+        request.timeout(timeout);
         return this;
     }
 

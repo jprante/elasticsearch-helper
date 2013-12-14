@@ -4,6 +4,7 @@ package org.xbib.elasticsearch.action.ingest.delete;
 import org.elasticsearch.action.Action;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.transport.TransportRequestOptions;
 
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
@@ -31,8 +32,8 @@ public class IngestDeleteAction extends Action<IngestDeleteRequest, IngestRespon
     @Override
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
-                .withType(TransportRequestOptions.Type.fromString(settings.get("action.ingest.transport.type",
-                        TransportRequestOptions.Type.BULK.toString())))
+                .withType(TransportRequestOptions.Type.BULK)
+                .withTimeout(settings.getAsTime("action.ingest.timeout", TimeValue.timeValueMinutes(1)))
                 .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }
 }

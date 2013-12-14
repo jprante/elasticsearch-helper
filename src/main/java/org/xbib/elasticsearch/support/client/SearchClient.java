@@ -42,33 +42,28 @@ public class SearchClient extends TransportClientBase implements Search {
 
     @Override
     public SearchClient newClient() {
-        super.newClient();
+        this.newClient(findURI(), settings);
         return this;
     }
 
     @Override
     public SearchClient newClient(URI uri) {
-        super.newClient(uri);
+        this.newClient(findURI(), ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .put("network.server", false)
+                .put("node.client", true) // node client
+                .put("client.transport.sniff", false) // sniff would join us into any cluster ...?
+                .build());
+        return this;
+    }
+
+    public SearchClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         return this;
     }
 
     public Client client() {
         return super.client();
-    }
-
-    /**
-     * Create settings
-     *
-     * @param uri
-     * @return the settings
-     */
-    protected Settings initialSettings(URI uri) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("network.server", false)
-                .put("node.client", true) // node client
-                .put("client.transport.sniff", false) // sniff would join us into any cluster ...?
-                .build();
     }
 
     @Override

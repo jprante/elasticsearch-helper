@@ -5,7 +5,6 @@ import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import java.io.IOException;
@@ -29,25 +28,14 @@ public class MockSearchClient extends SearchClient {
 
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri
-     * @return initial settings
-     */
-    @Override
-    protected Settings initialSettings(URI uri) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
-    }
-
     public MockSearchClient newClient() {
         return newClient(AbstractIngestClient.findURI());
     }
 
     public MockSearchClient newClient(URI uri) {
-        settings = initialSettings(uri);
+        super.newClient(uri, ImmutableSettings.settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .build());
         return this;
     }
 

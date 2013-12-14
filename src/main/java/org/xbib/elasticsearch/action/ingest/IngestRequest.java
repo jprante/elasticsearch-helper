@@ -11,8 +11,6 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Queues;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -22,11 +20,11 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.VersionType;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
+import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestRequest extends ActionRequest {
 
@@ -40,18 +38,14 @@ public class IngestRequest extends ActionRequest {
 
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
 
+    private TimeValue timeout = IngestShardRequest.DEFAULT_TIMEOUT;
+
     public Queue<ActionRequest> newQueue() {
-        return Queues.newConcurrentLinkedQueue();
+        return newConcurrentLinkedQueue();
     }
 
     public Queue<ActionRequest> requests() {
         return requests;
-    }
-
-    public IngestRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
-        this.requests.addAll(requests);
-        this.sizeInBytes.set(sizeInBytes);
-        return this;
     }
 
     /**
@@ -102,8 +96,9 @@ public class IngestRequest extends ActionRequest {
     }
 
     IngestRequest internalAdd(IndexRequest request) {
-        requests.add(request);
-        sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
+        requests.offer(request);
+        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+        sizeInBytes.addAndGet(length);
         return this;
     }
 
@@ -111,7 +106,7 @@ public class IngestRequest extends ActionRequest {
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
     public IngestRequest add(DeleteRequest request) {
-        requests.add(request);
+        requests.offer(request);
         sizeInBytes.addAndGet(REQUEST_OVERHEAD);
         return this;
     }
@@ -283,43 +278,50 @@ public class IngestRequest extends ActionRequest {
     }
 
     /**
-     * Take all requests out of this bulk request.
-     * This method is thread safe.
-     *
-     * @return another bulk request
+     * Set the timeout for this operation.
      */
-    public synchronized IngestRequest takeAll() {
-        return take(requests.size());
+    public IngestRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return this.timeout;
     }
 
     /**
-     * Take a number of requests out of this bulk request and put them
-     * into an array list.
+     * Take all requests from queue. This method is thread safe.
+     *
+     * @return a bulk request
+     */
+    public IngestRequest takeAll() {
+        IngestRequest request = new IngestRequest();
+        while (!requests.isEmpty()) {
+            ActionRequest actionRequest = requests.poll();
+            if (actionRequest != null) {
+                request.add(actionRequest);
+            }
+        }
+        return request;
+    }
+
+    /**
+     * Take a number of requests from the bulk request queue.
      *
      * This method is thread safe.
      *
      * @param numRequests number of requests
      * @return a partial bulk request
      */
-    public synchronized IngestRequest take(int numRequests) {
-        Collection<ActionRequest> partRequest = Lists.newArrayListWithCapacity(numRequests);
-        long size = 0L;
+    public IngestRequest take(int numRequests) {
+        IngestRequest request = new IngestRequest();
         for (int i = 0; i < numRequests; i++) {
-            ActionRequest request = requests.poll();
-            if (request != null) {
-                // some nasty overhead to calculate the decreased byte size
-                if (request instanceof IndexRequest) {
-                    long l = ((IndexRequest) request).source().length() + REQUEST_OVERHEAD;
-                    sizeInBytes.addAndGet(-l);
-                    size += l;
-                } else if (request instanceof DeleteRequest) {
-                    sizeInBytes.addAndGet(-REQUEST_OVERHEAD);
-                    size += REQUEST_OVERHEAD;
-                }
-                partRequest.add(request);
+            ActionRequest actionRequest = requests.poll();
+            if (actionRequest != null) {
+                request.add(actionRequest);
             }
         }
-        return new IngestRequest().requests(partRequest, size);
+        return request;
     }
 
     private int findNextMarker(byte marker, int from, BytesReference data, int length) {
@@ -354,6 +356,7 @@ public class IngestRequest extends ActionRequest {
     public void readFrom(StreamInput in) throws IOException {
         replicationType = ReplicationType.fromId(in.readByte());
         consistencyLevel = WriteConsistencyLevel.fromId(in.readByte());
+        timeout = TimeValue.readTimeValue(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             byte type = in.readByte();
@@ -373,6 +376,7 @@ public class IngestRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeByte(replicationType.id());
         out.writeByte(consistencyLevel.id());
+        timeout.writeTo(out);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {

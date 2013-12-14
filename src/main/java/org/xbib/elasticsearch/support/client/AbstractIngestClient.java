@@ -37,17 +37,6 @@ public abstract class AbstractIngestClient extends TransportClientBase
 
     private ConfigHelper configHelper = new ConfigHelper();
 
-
-    public AbstractIngestClient newClient() {
-        super.newClient();
-        return this;
-    }
-
-    public AbstractIngestClient newClient(URI uri) {
-        super.newClient(uri);
-        return this;
-    }
-
     @Override
     public AbstractIngestClient setIndex(String index) {
         this.index = index;
@@ -152,6 +141,10 @@ public abstract class AbstractIngestClient extends TransportClientBase
         return this;
     }
 
+    public ImmutableSettings.Builder settingsBuilder() {
+        return configHelper.settingsBuilder();
+    }
+
     public Settings settings() {
         return configHelper.settings();
     }
@@ -232,7 +225,7 @@ public abstract class AbstractIngestClient extends TransportClientBase
             }
         }
         logger.info("creating index {} with settings = {}, mappings = {}",
-                getIndex(), settings(), mappings());
+                getIndex(), settings() != null ? settings().getAsMap() : null, mappings());
         try {
             client.admin().indices().create(request).actionGet();
         } catch (Exception e) {

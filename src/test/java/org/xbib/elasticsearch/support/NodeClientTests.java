@@ -31,7 +31,7 @@ public class NodeClientTests extends AbstractNodeRandomTest {
     @Test
     public void testRandomDocsNodeClient() throws Exception {
         final NodeClient es = new NodeClient()
-                .maxBulkActions(10)
+                .maxActionsPerBulkRequest(1000)
                 .maxConcurrentBulkRequests(10)
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
@@ -46,6 +46,7 @@ public class NodeClientTests extends AbstractNodeRandomTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
+            assertEquals(es.getTotalBulkRequests(), 13);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }

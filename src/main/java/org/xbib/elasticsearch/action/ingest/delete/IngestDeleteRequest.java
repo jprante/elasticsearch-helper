@@ -8,14 +8,14 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.action.ingest.index.IngestIndexShardRequest;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Lists.newArrayListWithCapacity;
 import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestDeleteRequest extends ActionRequest {
@@ -29,6 +29,8 @@ public class IngestDeleteRequest extends ActionRequest {
     private ReplicationType replicationType = ReplicationType.DEFAULT;
 
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
+
+    private TimeValue timeout = IngestIndexShardRequest.DEFAULT_TIMEOUT;
 
     private String defaultIndex;
 
@@ -58,12 +60,6 @@ public class IngestDeleteRequest extends ActionRequest {
 
     public Queue<DeleteRequest> requests() {
         return requests;
-    }
-
-    public IngestDeleteRequest add(Collection<DeleteRequest> requests, long sizeInBytes) {
-        this.requests.addAll(requests);
-        this.sizeInBytes.set(sizeInBytes);
-        return this;
     }
 
     /**
@@ -143,13 +139,32 @@ public class IngestDeleteRequest extends ActionRequest {
     }
 
     /**
+     * Set the timeout for this operation.
+     */
+    public IngestDeleteRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return this.timeout;
+    }
+
+    /**
      * Take all requests out of this bulk request.
      * This method is thread safe.
      *
      * @return another bulk request
      */
     public IngestDeleteRequest takeAll() {
-        return take(requests.size());
+        IngestDeleteRequest request = new IngestDeleteRequest();
+        while (!requests.isEmpty()) {
+            DeleteRequest deleteRequest = requests.poll();
+            if (deleteRequest != null) {
+                request.add(deleteRequest);
+            }
+        }
+        return request;
     }
 
     /**
@@ -162,17 +177,14 @@ public class IngestDeleteRequest extends ActionRequest {
      * @return a partial bulk request
      */
     public IngestDeleteRequest take(int numRequests) {
-        Collection<DeleteRequest> partRequest = newArrayListWithCapacity(numRequests);
-        long size = 0L;
+        IngestDeleteRequest request = new IngestDeleteRequest();
         for (int i = 0; i < numRequests; i++) {
-            DeleteRequest request = requests.poll();
-            if (request != null) {
-                sizeInBytes.addAndGet(-REQUEST_OVERHEAD);
-                size += REQUEST_OVERHEAD;
-                partRequest.add(request);
+            DeleteRequest deleteRequest = requests.poll();
+            if (deleteRequest != null) {
+                request.add(deleteRequest);
             }
         }
-        return new IngestDeleteRequest().add(partRequest, size);
+        return request;
     }
 
     @Override

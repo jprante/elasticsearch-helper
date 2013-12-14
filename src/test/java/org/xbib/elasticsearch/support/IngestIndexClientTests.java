@@ -73,8 +73,8 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 1);
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 1);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }
@@ -85,6 +85,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
     @Test
     public void testRandomIngestClient() {
         final IngestIndexClient es = new IngestIndexClient()
+                .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
@@ -97,8 +98,8 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 13);
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 13);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }
@@ -109,7 +110,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
     @Test
     public void testThreadedRandomIngestClient() throws Exception {
         final IngestIndexClient es = new IngestIndexClient()
-                .maxBulkActions(10000)
+                .maxActionsPerBulkRequest(10000)
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
@@ -135,14 +136,13 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
             logger.info("waiting for 30 seconds...");
             latch.await(30, TimeUnit.SECONDS);
             pool.shutdown();
-            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
             logger.info("stats={}", es.stats());
             es.stopBulk().shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 10);
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 10);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }

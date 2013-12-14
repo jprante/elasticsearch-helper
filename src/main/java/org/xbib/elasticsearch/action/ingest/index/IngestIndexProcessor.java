@@ -9,8 +9,8 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.ByteSizeUnit;
-
 import org.elasticsearch.common.unit.TimeValue;
+
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.util.concurrent.Semaphore;
@@ -87,23 +87,21 @@ public class IngestIndexProcessor {
      * Closes the processor.
      * Any remaining actions are flushed, and for the bulk responses is being waited.
      */
-    public synchronized void close() throws InterruptedException {
+    public void close() throws InterruptedException {
         if (closed) {
-            return;
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
         closed = true;
         flush();
-        waitForResponses(waitForResponses.seconds());
+        waitForResponses(waitForResponses);
     }
 
     /**
      * Flush this processor, write all requests.
      */
-    public void flush() {
-        synchronized (ingestRequest) {
-            if (ingestRequest.numberOfActions() > 0) {
-                process(ingestRequest.takeAll(), listener);
-            }
+    public synchronized void flush() {
+        if (ingestRequest.numberOfActions() > 0) {
+            process(ingestRequest.takeAll(), listener);
         }
     }
 
@@ -111,16 +109,17 @@ public class IngestIndexProcessor {
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to process
      */
-    private void flushIfNeeded(Listener listener) {
+    private synchronized void flushIfNeeded(Listener listener) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("ingest processor already closed");
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
-        synchronized (ingestRequest) {
-            if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
-                process(ingestRequest.take(actions), listener);
-            } else if (maxVolume.bytesAsInt() > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume.bytesAsInt()) {
-                process(ingestRequest.takeAll(), listener);
-            }
+        while (actions > 0 && ingestRequest.numberOfActions() >= actions) {
+            process(ingestRequest.take(actions), listener);
+        }
+        while (ingestRequest.numberOfActions() > 0
+                && maxVolume.bytesAsInt() > 0
+                && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
+            process(ingestRequest.takeAll(), listener);
         }
     }
 
@@ -138,32 +137,39 @@ public class IngestIndexProcessor {
             return;
         }
         final long id = bulkId.incrementAndGet();
-        listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
+        boolean done = false;
         try {
             semaphore.acquire();
-        } catch (InterruptedException e) {
-            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
-            return;
-        }
-        client.execute(IngestIndexAction.INSTANCE, request, new ActionListener<IngestResponse>() {
-            @Override
-            public void onResponse(IngestResponse response) {
-                try {
-                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
-                } finally {
-                    semaphore.release();
+            listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
+            client.execute(IngestIndexAction.INSTANCE, request, new ActionListener<IngestResponse>() {
+                @Override
+                public void onResponse(IngestResponse response) {
+                    try {
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
+                    } finally {
+                        semaphore.release();
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Throwable e) {
-                try {
-                    listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
-                } finally {
-                    semaphore.release();
+                @Override
+                public void onFailure(Throwable e) {
+                    try {
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+                    } finally {
+                        semaphore.release();
+                    }
                 }
+            });
+            done = true;
+        } catch (InterruptedException e) {
+            // semaphore not acquired
+            Thread.currentThread().interrupt();
+            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+        } finally {
+            if (!done) {
+               semaphore.release();
             }
-        });
+        }
     }
 
     /**
@@ -172,11 +178,8 @@ public class IngestIndexProcessor {
      * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForResponses(long secs) throws InterruptedException {
-        while (semaphore.availablePermits() < concurrency && secs > 0) {
-            Thread.sleep(1000L);
-            secs--;
-        }
+    public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
+        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
         return semaphore.availablePermits() == concurrency;
     }
 

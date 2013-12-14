@@ -11,6 +11,10 @@ import java.net.URI;
  */
 public interface Search {
 
+    /**
+     * Return the Elasticsearch client
+     * @return the client
+     */
     Client client();
 
     /**

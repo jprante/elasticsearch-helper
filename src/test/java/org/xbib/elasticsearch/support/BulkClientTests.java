@@ -59,6 +59,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
     @Test
     public void testSingleDocBulkClient() {
         final BulkClient es = new BulkClient()
+                .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(getAddress())
                 .setIndex("test")
@@ -76,8 +77,8 @@ public class BulkClientTests extends AbstractNodeRandomTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 1);
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 1);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }
@@ -88,6 +89,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
     @Test
     public void testRandomDocsBulkClient() {
         final BulkClient es = new BulkClient()
+                .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(10))
                 .newClient(getAddress())
                 .setIndex("test")
@@ -101,8 +103,8 @@ public class BulkClientTests extends AbstractNodeRandomTest {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 13);
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 13);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }
@@ -113,12 +115,13 @@ public class BulkClientTests extends AbstractNodeRandomTest {
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
         final BulkClient es = new BulkClient()
-                .flushInterval(TimeValue.timeValueSeconds(10))
-                .maxBulkActions(10000)
+                .flushInterval(TimeValue.timeValueSeconds(30))
+                .maxActionsPerBulkRequest(10000)
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
-                .newIndex();
+                .newIndex()
+                .startBulk();
         try {
             int min = 0;
             int max = 8;
@@ -140,13 +143,12 @@ public class BulkClientTests extends AbstractNodeRandomTest {
             logger.info("waiting for 30 seconds...");
             latch.await(30, TimeUnit.SECONDS);
             pool.shutdown();
-            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            es.shutdown();
-            logger.info("bulk counter = {}", es.getBulkCounter());
-            assertEquals(es.getBulkCounter(), 10);
+            es.stopBulk().shutdown();
+            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            assertEquals(es.getTotalBulkRequests(), 10);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }

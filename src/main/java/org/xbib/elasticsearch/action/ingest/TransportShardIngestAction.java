@@ -255,7 +255,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                 }
             }
         }
-
     }
 
     private void updateMappingOnMaster(final String index, final String type) {

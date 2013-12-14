@@ -64,7 +64,7 @@ public class ConfigHelper {
     }
 
     public ImmutableSettings.Builder settingsBuilder() {
-        return settingsBuilder != null ? settingsBuilder : null;
+        return settingsBuilder != null ? settingsBuilder : ImmutableSettings.settingsBuilder();
     }
 
     public Settings settings() {

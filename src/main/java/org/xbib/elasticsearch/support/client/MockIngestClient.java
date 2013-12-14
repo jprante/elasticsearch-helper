@@ -2,8 +2,6 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,13 +12,6 @@ import java.net.URI;
  * Useful for testing or dry runs.
  */
 public class MockIngestClient extends IngestClient {
-
-    @Override
-    protected Settings initialSettings(URI uri) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
-    }
 
     @Override
     public MockIngestClient newClient() {
@@ -54,7 +45,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient maxBulkActions(int maxBulkActions) {
+    public MockIngestClient maxActionsPerBulkRequest(int maxBulkActions) {
         return this;
     }
 
@@ -143,11 +134,6 @@ public class MockIngestClient extends IngestClient {
     @Override
     public MockIngestClient stopBulk() {
         return this;
-    }
-
-    @Override
-    public long getVolumeInBytes() {
-        return 0L;
     }
 
     @Override

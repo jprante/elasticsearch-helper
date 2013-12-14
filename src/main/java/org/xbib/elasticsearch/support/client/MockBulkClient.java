@@ -2,8 +2,6 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
@@ -17,7 +15,7 @@ import java.net.URI;
 public class MockBulkClient extends BulkClient implements Ingest {
 
     @Override
-    public MockBulkClient maxBulkActions(int maxBulkActions) {
+    public MockBulkClient maxActionsPerBulkRequest(int maxBulkActions) {
         return this;
     }
 
@@ -27,25 +25,12 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient maxVolume(ByteSizeValue maxVolume) {
+    public MockBulkClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
         return this;
     }
 
     public Client client() {
         return null;
-    }
-
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri the URI
-     * @return initial settings
-     */
-    @Override
-    protected Settings initialSettings(URI uri) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
     }
 
     @Override
@@ -73,6 +58,21 @@ public class MockBulkClient extends BulkClient implements Ingest {
     @Override
     public int updateReplicaLevel(int level) throws IOException {
         return -1;
+    }
+
+    @Override
+    public long getTotalBulkRequests() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalBulkRequestTime() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalSizeInBytes() {
+        return 0;
     }
 
     @Override
@@ -145,11 +145,6 @@ public class MockBulkClient extends BulkClient implements Ingest {
     @Override
     public MockBulkClient stopBulk() throws IOException {
         return this;
-    }
-
-    @Override
-    public long getVolumeInBytes() {
-        return 0L;
     }
 
     @Override
