@@ -4,8 +4,6 @@ package org.xbib.elasticsearch.support.client;
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import java.io.IOException;
@@ -16,8 +14,10 @@ import java.net.NetworkInterface;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Set;
+
+import static org.elasticsearch.common.collect.Sets.newHashSet;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 
 /**
  * Search client mock. Do not perform actions on a real cluster.
@@ -26,27 +26,16 @@ public class MockSearchClient extends SearchClient {
 
     private final ESLogger logger = ESLoggerFactory.getLogger(MockSearchClient.class.getName());
 
-    private final Set<InetSocketTransportAddress> addresses = new HashSet();
-
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri
-     * @return initial settings
-     */
-    @Override
-    protected Settings initialSettings(URI uri, int n) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
-    }
+    private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     public MockSearchClient newClient() {
-        return newClient(AbstractIngestClient.findURI());
+        return newClient(findURI());
     }
 
     public MockSearchClient newClient(URI uri) {
-        settings = initialSettings(uri, 0);
+        super.newClient(uri, settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .build());
         return this;
     }
 

@@ -2,33 +2,16 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
  * Mock ingest client. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
- *
  */
 public class MockIngestClient extends IngestClient {
-
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri
-     * @return initial settings
-     */
-    @Override
-    protected Settings initialSettings(URI uri, int n) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
-    }
 
     @Override
     public MockIngestClient newClient() {
@@ -62,7 +45,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient maxBulkActions(int maxBulkActions) {
+    public MockIngestClient maxActionsPerBulkRequest(int maxBulkActions) {
         return this;
     }
 
@@ -94,6 +77,36 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
+    public MockIngestClient setting(String key, String value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(String key, Integer value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(String key, Boolean value) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient setting(InputStream in) throws IOException{
+        return this;
+    }
+
+    @Override
+    public MockIngestClient mapping(String type, InputStream in) throws IOException {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient mapping(String type, String mapping) {
+        return this;
+    }
+
+    @Override
     public MockIngestClient createDocument(String index, String type, String id, String source) {
         return this;
     }
@@ -114,18 +127,13 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient startBulkMode() {
+    public MockIngestClient startBulk() {
         return this;
     }
 
     @Override
-    public MockIngestClient stopBulkMode() {
+    public MockIngestClient stopBulk() {
         return this;
-    }
-
-    @Override
-    public long getVolumeInBytes() {
-        return 0L;
     }
 
     @Override
@@ -139,7 +147,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient newType() {
+    public MockIngestClient putMapping(String index) {
         return this;
     }
 

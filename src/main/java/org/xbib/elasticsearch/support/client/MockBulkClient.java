@@ -2,34 +2,35 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 
 /**
  * Mock client for Bulk API. Do not perform actions on a real cluster.
  * Useful for testing or dry runs.
- *
  */
 public class MockBulkClient extends BulkClient implements Ingest {
 
-    public Client client() {
-        return null;
+    @Override
+    public MockBulkClient maxActionsPerBulkRequest(int maxBulkActions) {
+        return this;
     }
 
-    /**
-     * No special initial settings except cluster name
-     *
-     * @param uri
-     * @return initial settings
-     */
     @Override
-    protected Settings initialSettings(URI uri, int n) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .build();
+    public MockBulkClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
+        return this;
+    }
+
+    public Client client() {
+        return null;
     }
 
     @Override
@@ -44,19 +45,8 @@ public class MockBulkClient extends BulkClient implements Ingest {
         return this;
     }
 
-
     @Override
     public MockBulkClient dateDetection(boolean dateDetection) {
-        return this;
-    }
-
-    @Override
-    public MockBulkClient maxBulkActions(int maxBulkActions) {
-        return this;
-    }
-
-    @Override
-    public MockBulkClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
@@ -71,6 +61,21 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
+    public long getTotalBulkRequests() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalBulkRequestTime() {
+        return 0;
+    }
+
+    @Override
+    public long getTotalSizeInBytes() {
+        return 0;
+    }
+
+    @Override
     public MockBulkClient setIndex(String index) {
         super.setIndex(index);
         return this;
@@ -79,6 +84,36 @@ public class MockBulkClient extends BulkClient implements Ingest {
     @Override
     public MockBulkClient setType(String type) {
         super.setType(type);
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, String value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, Integer value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(String key, Boolean value) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient setting(InputStream in) throws IOException{
+        return this;
+    }
+
+    @Override
+    public MockBulkClient mapping(String type, InputStream in) throws IOException {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient mapping(String type, String mapping) {
         return this;
     }
 
@@ -103,18 +138,13 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient startBulkMode() {
+    public MockBulkClient startBulk() throws IOException {
         return this;
     }
 
     @Override
-    public MockBulkClient stopBulkMode() {
+    public MockBulkClient stopBulk() throws IOException {
         return this;
-    }
-
-    @Override
-    public long getVolumeInBytes() {
-        return 0L;
     }
 
     @Override
@@ -128,7 +158,7 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient newType() {
+    public MockBulkClient putMapping(String index) {
         return this;
     }
 

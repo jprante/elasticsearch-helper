@@ -14,6 +14,7 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.unit.TimeValue;
 
 /**
  * A bulk request holds an ordered {@link org.elasticsearch.action.index.IndexRequest}s
@@ -22,10 +23,15 @@ import org.elasticsearch.common.Nullable;
  */
 public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
-    protected IngestRequestBuilder(Client client) {
-        super((InternalClient) client, new IngestRequest());
+    public IngestRequestBuilder(Client client) {
+        this(client, new IngestRequest());
     }
 
+    public IngestRequestBuilder(Client client, IngestRequest request) {
+        super((InternalClient) client, request);
+    }
+
+    @Override
     public IngestRequest request() {
         return this.request;
     }
@@ -105,6 +111,11 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
      */
     public IngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
+        return this;
+    }
+
+    public IngestRequestBuilder setTimeout(TimeValue timeout) {
+        request.timeout(timeout);
         return this;
     }
 

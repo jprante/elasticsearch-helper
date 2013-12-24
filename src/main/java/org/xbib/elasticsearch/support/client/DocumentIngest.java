@@ -4,7 +4,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.client.Client;
 
 /**
- * Minimal API for document ingesting. Useful for river implementations.
+ * Minimal API for document ingesting
  */
 public interface DocumentIngest {
 
@@ -14,7 +14,7 @@ public interface DocumentIngest {
      * Set the default index
      *
      * @param index the index
-     * @return this TransportClientIndexer
+     * @return this document ingest
      */
     DocumentIngest setIndex(String index);
 
@@ -29,7 +29,7 @@ public interface DocumentIngest {
      * Set the default type
      *
      * @param type the type
-     * @return this TransportClientIndexer
+     * @return this document ingest
      */
     DocumentIngest setType(String type);
 
@@ -47,7 +47,7 @@ public interface DocumentIngest {
      * @param type
      * @param id
      * @param source
-     * @return this ClientIngest
+     * @return this document ingest
      */
     DocumentIngest createDocument(String index, String type, String id, String source);
 
@@ -58,7 +58,7 @@ public interface DocumentIngest {
      * @param type
      * @param id
      * @param source
-     * @return this ClientIngest
+     * @return this document ingest
      */
     DocumentIngest indexDocument(String index, String type, String id, String source);
 
@@ -68,14 +68,14 @@ public interface DocumentIngest {
      * @param index
      * @param type
      * @param id
-     * @return this ClientIngest
+     * @return this document ingest
      */
     DocumentIngest deleteDocument(String index, String type, String id);
 
     /**
      * Ensure that all documents arrive.
      *
-     * @return this ClientIngest
+     * @return this document ingest
      */
     DocumentIngest flush();
 

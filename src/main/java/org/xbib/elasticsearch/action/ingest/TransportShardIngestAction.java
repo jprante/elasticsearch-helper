@@ -14,11 +14,9 @@ import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.ShardIterator;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -34,13 +32,21 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
+import javax.management.Notification;
+import javax.management.NotificationEmitter;
+import javax.management.NotificationListener;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryUsage;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Performs the index operation.
- */
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
+import static org.elasticsearch.common.collect.Sets.newHashSet;
+
+
 public class TransportShardIngestAction extends TransportShardReplicationOperationAction<IngestShardRequest, IngestShardRequest, IngestShardResponse> {
 
     private final MappingUpdatedAction mappingUpdatedAction;
@@ -51,7 +57,38 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                                       MappingUpdatedAction mappingUpdatedAction) {
         super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.mappingUpdatedAction = mappingUpdatedAction;
+        long threshold = settings.getAsLong("watchdog.memory.threshold", 99L);
+        //enableMemoryWatchdog(threshold);
     }
+
+    /*private void enableMemoryWatchdog(final long threshold) {
+        final MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
+        final NotificationEmitter ne = (NotificationEmitter) memBean;
+        ne.addNotificationListener(memoryWatcher, null, null);
+        final List<MemoryPoolMXBean> memPools = ManagementFactory.getMemoryPoolMXBeans();
+        for (final MemoryPoolMXBean mp : memPools) {
+            if (mp.isUsageThresholdSupported()) {
+                final MemoryUsage mu = mp.getUsage();
+                final long max = mu.getMax();
+                final long alert = (max * threshold) / 100;
+                mp.setUsageThreshold(alert);
+            }
+        }
+    }
+
+    private final MemoryWatcher memoryWatcher = new MemoryWatcher();
+
+    private class MemoryWatcher implements NotificationListener {
+        @Override
+        public void handleNotification(Notification notification, Object o) {
+            logger.warn("memory notification: seq = {} type = {} message = {} user data = {}",
+                    notification.getSequenceNumber(),
+                    notification.getType(), // java.management.memory.threshold.exceeded
+                    notification.getMessage(), // Memory usage exceeds usage threshold
+                    notification.getUserData()
+            );
+        }
+    }*/
 
     @Override
     protected String executor() {
@@ -85,7 +122,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
 
     @Override
     protected String transportAction() {
-        return IngestAction.NAME + "/shard";
+        return IngestAction.NAME + ".shard";
     }
 
     @Override
@@ -107,14 +144,10 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
     protected PrimaryResponse<IngestShardResponse, IngestShardRequest> shardOperationOnPrimary(ClusterState clusterState, PrimaryOperationRequest shardRequest) {
         final IngestShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
-
-        Engine.IndexingOperation[] ops = null;
-
         Set<Tuple<String, String>> mappingsToUpdate = null;
 
-        List<IngestItemSuccess> success = Lists.newLinkedList();
-        List<IngestItemFailure> failure = Lists.newLinkedList();
-
+        int successSize = 0;
+        List<IngestItemFailure> failure = newLinkedList();
         int size = request.items().size();
         long[] versions = new long[size];
         for (int i = 0; i < size; i++) {
@@ -122,7 +155,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             if (item.request() instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) item.request();
                 try {
-
                     // validate, if routing is required, that we got routing
                     MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
                     if (mappingMd != null && mappingMd.routing().required()) {
@@ -131,7 +163,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                         }
                     }
 
-                    SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
+                    SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
 
                     long version;
@@ -154,20 +186,13 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
                     if (op.parsedDoc().mappingsModified()) {
                         if (mappingsToUpdate == null) {
-                            mappingsToUpdate = Sets.newHashSet();
+                            mappingsToUpdate = newHashSet();
                         }
                         mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                     }
 
-                    // if we are going to percolate, then we need to keep this op for the postPrimary operation
-                    if (Strings.hasLength(indexRequest.percolate())) {
-                        if (ops == null) {
-                            ops = new Engine.IndexingOperation[size];
-                        }
-                        ops[i] = op;
-                    }
+                    successSize++;
 
-                    success.add(new IngestItemSuccess(item.id()));
                 } catch (Exception e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
@@ -194,8 +219,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     // update the request with teh version so it will go to the replicas
                     deleteRequest.version(delete.version());
 
-                    // add the response
-                    success.add(new IngestItemSuccess(item.id()));
+                    successSize++;
                 } catch (Exception e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
@@ -223,20 +247,16 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             }
         }
 
-        IngestShardResponse response = new IngestShardResponse(new ShardId(request.index(), request.shardId()), success, failure);
-        return new PrimaryResponse<IngestShardResponse, IngestShardRequest>(shardRequest.request, response, ops);
-    }
-
-    @Override
-    protected void postPrimaryOperation(IngestShardRequest request, PrimaryResponse<IngestShardResponse, IngestShardRequest> response) {
-        // percolate removed ...
+        IngestShardResponse response = new IngestShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
+        return new PrimaryResponse<IngestShardResponse, IngestShardRequest>(shardRequest.request, response, null);
     }
 
     @Override
     protected void shardOperationOnReplica(ReplicaOperationRequest shardRequest) {
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
         final IngestShardRequest request = shardRequest.request;
-        for (int i = 0; i < request.items().size(); i++) {
+        int size = request.items().size();
+        for (int i = 0; i < size; i++) {
             IngestItemRequest item = request.items().get(i);
             if (item == null) {
                 continue;
@@ -244,7 +264,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             if (item.request() instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) item.request();
                 try {
-                    SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
+                    SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.REPLICA, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
 
                     if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
@@ -267,7 +287,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                 }
             }
         }
-
     }
 
     private void updateMappingOnMaster(final String index, final String type) {
@@ -279,7 +298,10 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             }
             documentMapper.refreshSource();
 
-            mappingUpdatedAction.execute(new MappingUpdatedAction.MappingUpdatedRequest(index, type, documentMapper.mappingSource()), new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
+            IndexMetaData metaData = clusterService.state().metaData().index(index);
+
+            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource());
+            mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override
                 public void onResponse(MappingUpdatedAction.MappingUpdatedResponse mappingUpdatedResponse) {
                     // all is well
@@ -300,15 +322,10 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
     }
 
     private void applyVersion(IngestItemRequest item, long version) {
-        if (item == null) {
-            return;
-        }
         if (item.request() instanceof IndexRequest) {
             ((IndexRequest) item.request()).version(version);
         } else if (item.request() instanceof DeleteRequest) {
             ((DeleteRequest) item.request()).version(version);
-        } else {
-            // log?
         }
     }
 }

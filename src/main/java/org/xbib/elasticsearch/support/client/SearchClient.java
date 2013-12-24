@@ -4,17 +4,15 @@ package org.xbib.elasticsearch.support.client;
 import java.net.URI;
 
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
+
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 
 /**
  * Search client support
  */
-public class SearchClient extends AbstractClient implements Search {
-
-    protected Settings settings;
+public class SearchClient extends TransportClientBase implements Search {
 
     private String index;
 
@@ -42,34 +40,26 @@ public class SearchClient extends AbstractClient implements Search {
 
     @Override
     public SearchClient newClient() {
-        super.newClient();
+        this.newClient(findURI());
         return this;
     }
 
     @Override
     public SearchClient newClient(URI uri) {
-        super.newClient(uri);
+        this.newClient(uri, settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .put("network.server", false)
+                .put("node.client", true)
+                .put("client.transport.sniff", false)
+                .put("client.transport.ignore_cluster_name", false)
+                .put("client.transport.ping_timeout", "30s")
+                .put("client.transport.nodes_sampler_interval", "30s")
+                .build());
         return this;
     }
 
     public Client client() {
         return super.client();
-    }
-
-    /**
-     * Create settings
-     *
-     * @param uri
-     * @param n the client thread pool size
-     * @return the settings
-     */
-    protected Settings initialSettings(URI uri, int n) {
-        return ImmutableSettings.settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("network.server", false)
-                .put("node.client", true) // node client
-                .put("client.transport.sniff", false) // sniff would join us into any cluster ...?
-                .build();
     }
 
     @Override

@@ -1,5 +1,7 @@
 
-package org.elasticsearch.test;
+package org.xbib.elasticsearch.support;
+
+import java.util.Map;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
@@ -7,7 +9,7 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -18,10 +20,6 @@ import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.Random;
-
 import static org.elasticsearch.common.collect.Maps.newHashMap;
 import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
@@ -29,83 +27,61 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public abstract class AbstractNodeTest extends Assert {
 
-    public final String INDEX = "test-" + NetworkUtils.getLocalAddress().getHostName().toLowerCase();
+    private final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
     protected final String CLUSTER = "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
 
-    protected int PORT;
+    protected final String INDEX = "test-" + NetworkUtils.getLocalAddress().getHostName().toLowerCase();
 
-    protected URI ADDRESS;
+    protected int PORT;
 
     protected Settings defaultSettings = ImmutableSettings
             .settingsBuilder()
             .put("cluster.name", CLUSTER)
+                    // default for queue_size for bulk thread pool is only 50 since 0.90.7
+                    // enlarge queue for this unit test because we are on a single machine
+            .put("threadpool.bulk.queue_size", 1000)
             .build();
 
     private Map<String, Node> nodes = newHashMap();
+
     private Map<String, Client> clients = newHashMap();
+
     private Map<String, InetSocketTransportAddress> addresses = newHashMap();
 
     @BeforeMethod
-    public void createIndices() throws Exception {
+    public void createIndex() throws Exception {
         startNode("1");
-
+        // find node address
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
         NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
         InetSocketTransportAddress address = (InetSocketTransportAddress)response.iterator().next()
                         .getTransport().getAddress().publishAddress();
         PORT = address.address().getPort();
-
-        ADDRESS = URI.create("es://localhost:"+PORT+"?es.cluster.name=" + CLUSTER);
-
         addresses.put("1", address);
-
-        client("1").admin().indices()
-                .create(new CreateIndexRequest(INDEX))
-                .actionGet();
+        logger.info("creating index {}", INDEX);
+        client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
+        logger.info("index {} created", INDEX);
     }
 
     @AfterMethod
     public void deleteIndices() {
+        logger.info("deleting index {}", INDEX);
         try {
-            // clear test index
-            client("1").admin().indices()
-                    .delete(new DeleteIndexRequest().indices(INDEX))
-                    .actionGet();
+            client("1").admin().indices().delete(new DeleteIndexRequest().indices(INDEX)).actionGet();
         } catch (IndexMissingException e) {
             // ignore
         }
-        closeNode("1");
+        logger.info("index {} deleted", INDEX);
         closeAllNodes();
-    }
-
-    public void putDefaultSettings(Settings.Builder settings) {
-        putDefaultSettings(settings.build());
-    }
-
-    public void putDefaultSettings(Settings settings) {
-        defaultSettings = ImmutableSettings.settingsBuilder().put(defaultSettings).put(settings).build();
     }
 
     public Node startNode(String id) {
         return buildNode(id).start();
     }
 
-    public Node startNode(String id, Settings.Builder settings) {
-        return startNode(id, settings.build());
-    }
-
-    public Node startNode(String id, Settings settings) {
-        return buildNode(id, settings)
-                .start();
-    }
-
     public Node buildNode(String id) {
         return buildNode(id, EMPTY_SETTINGS);
-    }
-
-    public Node buildNode(String id, Settings.Builder settings) {
-        return buildNode(id, settings.build());
     }
 
     public Node buildNode(String id, Settings settings) {
@@ -116,25 +92,20 @@ public abstract class AbstractNodeTest extends Assert {
                 .put(settings)
                 .put("name", id)
                 .build();
-
         if (finalSettings.get("gateway.type") == null) {
-            // default to non gateway
             finalSettings = settingsBuilder().put(finalSettings).put("gateway.type", "none").build();
         }
         if (finalSettings.get("cluster.routing.schedule") != null) {
-            // decrease the routing schedule so new nodes will be added quickly
             finalSettings = settingsBuilder().put(finalSettings).put("cluster.routing.schedule", "50ms").build();
         }
         Node node = nodeBuilder().settings(finalSettings).build();
-
         Client client = node.client();
-
         nodes.put(id, node);
         clients.put(id, client);
         return node;
     }
 
-    public void closeNode(String id) {
+    public void stopNode(String id) {
         Client client = clients.remove(id);
         if (client != null) {
             client.close();
@@ -145,16 +116,8 @@ public abstract class AbstractNodeTest extends Assert {
         }
     }
 
-    public Node node(String id) {
-        return nodes.get(id);
-    }
-
     public Client client(String id) {
         return clients.get(id);
-    }
-
-    public InetSocketTransportAddress address(String id) {
-        return addresses.get(id);
     }
 
     public void closeAllNodes() {
@@ -166,18 +129,6 @@ public abstract class AbstractNodeTest extends Assert {
             node.close();
         }
         nodes.clear();
-    }
-
-    private static Random random = new Random();
-    private static char[] numbersAndLetters = ("0123456789abcdefghijklmnopqrstuvwxyz").toCharArray();
-
-    protected String randomString(int len) {
-        final char[] buf = new char[len];
-        final int n = numbersAndLetters.length - 1;
-        for (int i = 0; i < buf.length; i++) {
-            buf[i] = numbersAndLetters[random.nextInt(n)];
-        }
-        return new String(buf);
     }
 
 }

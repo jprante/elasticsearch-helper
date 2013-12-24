@@ -17,7 +17,6 @@ public class IngestItemRequest implements Streamable {
     private ActionRequest request;
 
     IngestItemRequest() {
-
     }
 
     public IngestItemRequest(int id, ActionRequest request) {

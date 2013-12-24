@@ -2,83 +2,110 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 
 /**
  * Interface for providing convenient ingest methods.
  */
 public interface Ingest extends DocumentIngest {
 
+    Ingest newClient(URI uri);
+
+    Ingest setIndex(String index);
+
+    Ingest setType(String type);
+
+    Ingest dateDetection(boolean b);
+
     /**
      * Wait for healthy cluster
      *
-     * @return this TransportClientIndexer
-     * @throws java.io.IOException
+     * @return this ingest
+     * @throws IOException
      */
     Ingest waitForCluster() throws IOException;
 
     Ingest waitForCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
 
     /**
-     * Set maximum number of bulk actions
+     * Set the maximum number of actions per bulk request
      *
-     * @param bulkActions maximum number of bulk actions
-     * @return this TransportClientIndexer
+     * @param maxActions maximum number of bulk actions
+     * @return this ingest
      */
-    Ingest maxBulkActions(int bulkActions);
+    Ingest maxActionsPerBulkRequest(int maxActions);
 
     /**
-     * Set maximum concurent bulk requests
+     * Set the maximum concurent bulk requests
      *
-     * @param maxConcurentBulkRequests maximum umber of concurrent bulk requests
-     * @return this TransportClientIndexer
+     * @param maxConcurentBulkRequests maximum number of concurrent bulk requests
+     * @return this Ingest
      */
     Ingest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
 
     /**
-     * Start bulk mode. Disables refresh.
-     *
-     * @return this TransportClientIndexer
+     * Set the maximum volume for bulk request before flush
+     * @param maxVolume maximum volume
+     * @return this ingest
      */
-    Ingest startBulkMode();
-
-    /**
-     * Stops bulk mode. Enables refresh.
-     *
-     * @return this TransportClientIndexer
-     */
-    Ingest stopBulkMode();
+    Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
 
     Ingest shards(int shards);
 
     Ingest replica(int replica);
 
+    Ingest resetSettings();
+
     Ingest setting(String key, String value);
+
+    Ingest setting(String key, Boolean value);
 
     Ingest setting(String key, Integer value);
 
-    Ingest setting(String key, Boolean value);
+    Ingest setting(InputStream in) throws IOException;
+
+    Ingest mapping(String type, InputStream in) throws IOException;
+
+    Ingest mapping(String type, String mapping);
+
+    /**
+     * Start bulk mode
+     *
+     * @return this ingest
+     */
+    Ingest startBulk() throws IOException;
+
+    /**
+     * Stops bulk mode. Enables refresh.
+     *
+     * @return this Ingest
+     */
+    Ingest stopBulk() throws IOException;
 
     /**
      * Create a new index
      *
-     * @return this TransportClientIndexer
+     * @return this ingest
      */
     Ingest newIndex();
-
-    Ingest newIndex(boolean ignoreExceptions);
 
     /**
      * Delete index
      *
-     * @return this TransportClientIndexer
+     * @return this ingest
      */
     Ingest deleteIndex();
 
-    Ingest newType();
-
+    /**
+     * Refresh the index.
+     *
+     * @return this ingest
+     */
     Ingest refresh();
 
     /**
@@ -89,11 +116,22 @@ public interface Ingest extends DocumentIngest {
      */
     int updateReplicaLevel(int level) throws IOException;
 
-    /**
-     * Get the ingested data volume so far.
-     *
-     * @return the volume in bytes
-     */
-    long getVolumeInBytes();
+    int waitForRecovery();
 
+    long getTotalBulkRequests();
+
+    long getTotalBulkRequestTime();
+
+    long getTotalDocuments();
+
+    /**
+     * Get the total ingested data size in bytes so far.
+     *
+     * @return the total size in bytes
+     */
+    long getTotalSizeInBytes();
+
+    boolean hasErrors();
+
+    Throwable getThrowable();
 }

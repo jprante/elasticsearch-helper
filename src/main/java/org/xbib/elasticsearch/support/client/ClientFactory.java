@@ -7,7 +7,7 @@ public interface ClientFactory {
     /**
      * Create a new client
      *
-     * @return this TransportClientIndexer
+     * @return this ingest
      */
     Ingest newClient();
 
@@ -15,7 +15,7 @@ public interface ClientFactory {
      * Create a new client
      *
      * @param uri the URI to connect to
-     * @return this TransportClientIndexer
+     * @return this ingest
      */
     Ingest newClient(URI uri);
 

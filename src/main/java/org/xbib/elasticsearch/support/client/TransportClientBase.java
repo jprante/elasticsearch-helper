@@ -1,10 +1,13 @@
 package org.xbib.elasticsearch.support.client;
 
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -24,52 +27,38 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public abstract class AbstractClient {
+public abstract class TransportClientBase {
 
-    private final static ESLogger logger = Loggers.getLogger(AbstractClient.class);
+    private final static ESLogger logger = ESLoggerFactory.getLogger(TransportClientBase.class.getSimpleName());
 
-    // the default cluster name
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
-    // the default connection specification
-    private final static URI DEFAULT_URI = URI.create("es://hostname:9300");
-    // the transport addresses
-    private final Set<InetSocketTransportAddress> addresses = new HashSet();
 
-    // singleton
+    private final Set<InetSocketTransportAddress> addresses = newHashSet();
+
     protected TransportClient client;
-    // the settings
-    protected Settings settings;
 
-    protected abstract Settings initialSettings(URI uri, int poolsize);
-
-    public AbstractClient newClient() {
-        return newClient(findURI());
-    }
-
-    public AbstractClient newClient(URI uri) {
-        return newClient(uri, Runtime.getRuntime().availableProcessors() * 4);
-    }
-
-    public synchronized AbstractClient newClient(URI uri, int poolsize) {
+    public TransportClientBase newClient(URI uri, Settings settings) {
         if (client != null) {
-            // disconnect
             client.close();
-            // release thread pool
             client.threadPool().shutdown();
             client = null;
         }
-        this.settings = initialSettings(uri, poolsize);
-        logger.info("settings={}", settings.getAsMap());
-        this.client = new TransportClient(settings);
+        if (settings != null) {
+            logger.info("creating new client, effective settings = {}", settings.getAsMap());
+            this.client = new TransportClient(settings);
+        } else {
+            logger.info("creating new client, no settings, using default");
+            this.client = new TransportClient();
+        }
         try {
             connect(uri);
         } catch (UnknownHostException e) {
@@ -96,22 +85,22 @@ public abstract class AbstractClient {
 
     public synchronized void shutdown() {
         if (client != null) {
-            // close() sends a disconnect to the server by using the threadpool
             client.close();
-            // threadpool can be closed now
             client.threadPool().shutdown();
             client = null;
         }
         addresses.clear();
     }
 
-    protected static URI findURI() {
-        URI uri = DEFAULT_URI;
+    protected URI findURI() {
+        URI uri = null;
         String hostname = "localhost";
         try {
             hostname = InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
-            URL url = AbstractIngestClient.class.getResource("/org/xbib/elasticsearch/cluster.properties");
+            uri = URI.create("es://"+hostname+":9300");
+            // custom?
+            URL url = getClass().getResource("/org/xbib/elasticsearch/cluster.properties");
             if (url != null) {
                 InputStream in = url.openStream();
                 Properties p = new Properties();
@@ -120,7 +109,7 @@ public abstract class AbstractClient {
                 // the properties contains default URIs per hostname
                 if (p.containsKey(hostname)) {
                     uri = URI.create(p.getProperty(hostname));
-                    logger.debug("URI found in cluster.properties for hostname {}: {}", hostname, uri);
+                    logger.debug("custom URI found in cluster.properties for hostname {}: {}", hostname, uri);
                     return uri;
                 }
             }
@@ -136,7 +125,6 @@ public abstract class AbstractClient {
     protected String findClusterName(URI uri) {
         String clustername;
         try {
-            // look for URI parameters
             Map<String, String> map = parseQueryString(uri, "UTF-8");
             clustername = map.get("es.cluster.name");
             if (clustername != null) {
@@ -244,13 +232,37 @@ public abstract class AbstractClient {
             }
         }
         logger.info("configured addresses to connect: {}", addresses);
-        if (newaddresses) {
+        if (client.connectedNodes() != null) {
             List<DiscoveryNode> nodes = client.connectedNodes().asList();
             logger.info("connected nodes = {}", nodes);
-            for (DiscoveryNode node : nodes) {
-                logger.info("new connection to {} {}", node.getId(), node.getName());
+            if (newaddresses) {
+                for (DiscoveryNode node : nodes) {
+                    logger.info("new connection to {}", node);
+                }
+                if (!nodes.isEmpty()) {
+                    try {
+                        connectMore();
+                    } catch (Exception e) {
+                        logger.error("error while connecting to more nodes", e);
+                    }
+                }
             }
         }
+    }
+
+    private void connectMore() throws IOException {
+        logger.info("trying to discover more nodes...");
+        ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();
+        DiscoveryNodes nodes = clusterStateResponse.getState().getNodes();
+        for (DiscoveryNode node : nodes) {
+            logger.info("adding discovered node {}", node);
+            try {
+                client.addTransportAddress(node.address());
+            } catch (Exception e) {
+                logger.warn("can't add node " + node, e);
+            }
+        }
+        logger.info("... discovery done");
     }
 
     private Map<String, String> parseQueryString(URI uri, String encoding)
@@ -262,7 +274,7 @@ public abstract class AbstractClient {
         if (uri.getRawQuery() == null) {
             return m;
         }
-        // use getRawQuery because we do our decoding by ourselves
+        // getRawQuery() because we do our decoding by ourselves
         StringTokenizer st = new StringTokenizer(uri.getRawQuery(), "&");
         while (st.hasMoreTokens()) {
             String pair = st.nextToken();
