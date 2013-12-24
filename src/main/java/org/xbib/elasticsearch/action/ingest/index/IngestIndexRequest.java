@@ -4,6 +4,7 @@ package org.xbib.elasticsearch.action.ingest.index;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.WriteConsistencyLevel;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -35,7 +36,7 @@ public class IngestIndexRequest extends ActionRequest {
 
     private String defaultType;
 
-    public Queue<IndexRequest> newQueue() {
+    protected Queue<IndexRequest> newQueue() {
         return newConcurrentLinkedQueue();
     }
 
@@ -89,7 +90,7 @@ public class IngestIndexRequest extends ActionRequest {
     }
 
     IngestIndexRequest internalAdd(IndexRequest request) {
-        requests.add(request);
+        requests.offer(request);
         sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
         return this;
     }
@@ -156,9 +157,9 @@ public class IngestIndexRequest extends ActionRequest {
         IngestIndexRequest request = new IngestIndexRequest();
         while (!requests.isEmpty()) {
             IndexRequest indexRequest = requests.poll();
-            if (indexRequest != null) {
-                request.add(indexRequest);
-            }
+            request.add(indexRequest);
+            long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+            sizeInBytes.addAndGet(-length);
         }
         return request;
     }
@@ -176,9 +177,9 @@ public class IngestIndexRequest extends ActionRequest {
         IngestIndexRequest request = new IngestIndexRequest();
         for (int i = 0; i < numRequests; i++) {
             IndexRequest indexRequest = requests.poll();
-            if (indexRequest != null) {
-                request.add(indexRequest);
-            }
+            request.add(indexRequest);
+            long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+            sizeInBytes.addAndGet(-length);
         }
         return request;
     }

@@ -54,11 +54,11 @@ public class TransportIngestIndexAction extends TransportAction<IngestIndexReque
 
     @Override
     protected void doExecute(final IngestIndexRequest ingestRequest, final ActionListener<IngestResponse> listener) {
-        final long startTime = System.currentTimeMillis();
-        executeBulk(ingestRequest, startTime, listener);
+        executeBulk(ingestRequest, listener);
     }
 
-    private void executeBulk(final IngestIndexRequest ingestRequest, final long startTime, final ActionListener<IngestResponse> listener) {
+    private void executeBulk(final IngestIndexRequest ingestRequest, final ActionListener<IngestResponse> listener) {
+        final long startTime = System.currentTimeMillis();
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);

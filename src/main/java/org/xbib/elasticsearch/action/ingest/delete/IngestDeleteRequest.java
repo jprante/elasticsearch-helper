@@ -36,7 +36,7 @@ public class IngestDeleteRequest extends ActionRequest {
 
     private String defaultType;
 
-    public Queue<DeleteRequest> newQueue() {
+    protected Queue<DeleteRequest> newQueue() {
         return newConcurrentLinkedQueue();
     }
 
@@ -93,7 +93,7 @@ public class IngestDeleteRequest extends ActionRequest {
     }
 
     IngestDeleteRequest internalAdd(DeleteRequest request) {
-        requests.add(request);
+        requests.offer(request);
         sizeInBytes.addAndGet(REQUEST_OVERHEAD);
         return this;
     }
@@ -152,7 +152,6 @@ public class IngestDeleteRequest extends ActionRequest {
 
     /**
      * Take all requests out of this bulk request.
-     * This method is thread safe.
      *
      * @return another bulk request
      */
@@ -171,18 +170,15 @@ public class IngestDeleteRequest extends ActionRequest {
      * Take a number of requests out of this bulk request and put them
      * into an array list.
      *
-     * This method is thread safe.
-     *
      * @param numRequests number of requests
-     * @return a partial bulk request
+     * @return another bulk request
      */
     public IngestDeleteRequest take(int numRequests) {
         IngestDeleteRequest request = new IngestDeleteRequest();
         for (int i = 0; i < numRequests; i++) {
             DeleteRequest deleteRequest = requests.poll();
-            if (deleteRequest != null) {
-                request.add(deleteRequest);
-            }
+            request.add(deleteRequest);
+            sizeInBytes.addAndGet(-REQUEST_OVERHEAD);
         }
         return request;
     }
@@ -200,6 +196,7 @@ public class IngestDeleteRequest extends ActionRequest {
     public void readFrom(StreamInput in) throws IOException {
         replicationType = ReplicationType.fromId(in.readByte());
         consistencyLevel = WriteConsistencyLevel.fromId(in.readByte());
+        timeout = TimeValue.readTimeValue(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             DeleteRequest request = new DeleteRequest();
@@ -212,6 +209,7 @@ public class IngestDeleteRequest extends ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeByte(replicationType.id());
         out.writeByte(consistencyLevel.id());
+        timeout.writeTo(out);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
             request.writeTo(out);

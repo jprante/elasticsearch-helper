@@ -7,7 +7,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
-import org.xbib.elasticsearch.support.client.index.IngestIndexClient;
+import org.xbib.elasticsearch.support.client.IngestIndexClient;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;

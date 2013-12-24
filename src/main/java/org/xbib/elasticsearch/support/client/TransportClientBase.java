@@ -1,8 +1,11 @@
 package org.xbib.elasticsearch.support.client;
 
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -39,8 +42,6 @@ public abstract class TransportClientBase {
 
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
 
-    private final static URI DEFAULT_URI = URI.create("es://hostname:9300");
-
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     protected TransportClient client;
@@ -55,7 +56,7 @@ public abstract class TransportClientBase {
             logger.info("creating new client, effective settings = {}", settings.getAsMap());
             this.client = new TransportClient(settings);
         } else {
-            logger.info("creating new client,no settings, using default");
+            logger.info("creating new client, no settings, using default");
             this.client = new TransportClient();
         }
         try {
@@ -91,13 +92,15 @@ public abstract class TransportClientBase {
         addresses.clear();
     }
 
-    protected static URI findURI() {
-        URI uri = DEFAULT_URI;
+    protected URI findURI() {
+        URI uri = null;
         String hostname = "localhost";
         try {
             hostname = InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
-            URL url = AbstractIngestClient.class.getResource("/org/xbib/elasticsearch/cluster.properties");
+            uri = URI.create("es://"+hostname+":9300");
+            // custom?
+            URL url = getClass().getResource("/org/xbib/elasticsearch/cluster.properties");
             if (url != null) {
                 InputStream in = url.openStream();
                 Properties p = new Properties();
@@ -106,7 +109,7 @@ public abstract class TransportClientBase {
                 // the properties contains default URIs per hostname
                 if (p.containsKey(hostname)) {
                     uri = URI.create(p.getProperty(hostname));
-                    logger.debug("URI found in cluster.properties for hostname {}: {}", hostname, uri);
+                    logger.debug("custom URI found in cluster.properties for hostname {}: {}", hostname, uri);
                     return uri;
                 }
             }
@@ -229,13 +232,37 @@ public abstract class TransportClientBase {
             }
         }
         logger.info("configured addresses to connect: {}", addresses);
-        if (newaddresses) {
+        if (client.connectedNodes() != null) {
             List<DiscoveryNode> nodes = client.connectedNodes().asList();
             logger.info("connected nodes = {}", nodes);
-            for (DiscoveryNode node : nodes) {
-                logger.info("new connection to {} {}", node.getId(), node.getName());
+            if (newaddresses) {
+                for (DiscoveryNode node : nodes) {
+                    logger.info("new connection to {}", node);
+                }
+                if (!nodes.isEmpty()) {
+                    try {
+                        connectMore();
+                    } catch (Exception e) {
+                        logger.error("error while connecting to more nodes", e);
+                    }
+                }
             }
         }
+    }
+
+    private void connectMore() throws IOException {
+        logger.info("trying to discover more nodes...");
+        ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();
+        DiscoveryNodes nodes = clusterStateResponse.getState().getNodes();
+        for (DiscoveryNode node : nodes) {
+            logger.info("adding discovered node {}", node);
+            try {
+                client.addTransportAddress(node.address());
+            } catch (Exception e) {
+                logger.warn("can't add node " + node, e);
+            }
+        }
+        logger.info("... discovery done");
     }
 
     private Map<String, String> parseQueryString(URI uri, String encoding)

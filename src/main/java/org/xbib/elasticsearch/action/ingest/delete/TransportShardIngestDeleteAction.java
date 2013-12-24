@@ -91,7 +91,6 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
     protected PrimaryResponse<IngestDeleteShardResponse, IngestDeleteShardRequest> shardOperationOnPrimary(ClusterState clusterState, PrimaryOperationRequest shardRequest) {
         final IngestDeleteShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
-        Engine.IndexingOperation[] ops = null;
 
         int successSize = 0;
         List<IngestItemFailure> failure = newLinkedList();
@@ -128,12 +127,7 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
         }
 
         IngestDeleteShardResponse response = new IngestDeleteShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
-        return new PrimaryResponse<IngestDeleteShardResponse, IngestDeleteShardRequest>(shardRequest.request, response, ops);
-    }
-
-    @Override
-    protected void postPrimaryOperation(IngestDeleteShardRequest request, PrimaryResponse<IngestDeleteShardResponse, IngestDeleteShardRequest> response) {
-        // percolate removed ...
+        return new PrimaryResponse<IngestDeleteShardResponse, IngestDeleteShardRequest>(shardRequest.request, response, null);
     }
 
     @Override

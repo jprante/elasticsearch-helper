@@ -8,7 +8,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import java.io.IOException;
 import java.util.List;
 
-import static org.elasticsearch.common.collect.Lists.newArrayList;
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class IngestIndexShardRequest extends ShardReplicationOperationRequest {
 
@@ -63,7 +63,7 @@ public class IngestIndexShardRequest extends ShardReplicationOperationRequest {
         super.readFrom(in);
         shardId = in.readVInt();
         int size = in.readVInt();
-        items = newArrayList();
+        items = newLinkedList();
         for (int i = 0; i < size; i++) {
             if (in.readBoolean()) {
                 items.add(IngestIndexItemRequest.readBulkItem(in));

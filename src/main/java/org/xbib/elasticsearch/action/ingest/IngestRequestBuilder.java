@@ -23,7 +23,6 @@ import org.elasticsearch.common.unit.TimeValue;
  */
 public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
-
     public IngestRequestBuilder(Client client) {
         this(client, new IngestRequest());
     }

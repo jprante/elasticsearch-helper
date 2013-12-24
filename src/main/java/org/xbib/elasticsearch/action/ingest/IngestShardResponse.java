@@ -56,7 +56,7 @@ public class IngestShardResponse extends ActionResponse {
         out.writeVInt(successSize);
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
-            out.writeVInt(f.id());
+            out.writeVInt(f.pos());
             out.writeString(f.message());
         }
     }

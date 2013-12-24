@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.support.client;
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 
 import java.io.IOException;
@@ -18,6 +17,7 @@ import java.util.Enumeration;
 import java.util.Set;
 
 import static org.elasticsearch.common.collect.Sets.newHashSet;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 
 /**
  * Search client mock. Do not perform actions on a real cluster.
@@ -29,11 +29,11 @@ public class MockSearchClient extends SearchClient {
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     public MockSearchClient newClient() {
-        return newClient(AbstractIngestClient.findURI());
+        return newClient(findURI());
     }
 
     public MockSearchClient newClient(URI uri) {
-        super.newClient(uri, ImmutableSettings.settingsBuilder()
+        super.newClient(uri, settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build());
         return this;

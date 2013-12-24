@@ -96,7 +96,7 @@ public class RestIngestAction extends BaseRestHandler {
                 }
                 if (!response.failure().isEmpty()) {
                     for (IngestItemFailure f: response.failure()) {
-                        logger.error("bulk [{}] [{} failure reason: {}", bulkId, f.id(), f.message());
+                        logger.error("bulk [{}] [{} failure reason: {}", bulkId, f.pos(), f.message());
                     }
                 }
             }

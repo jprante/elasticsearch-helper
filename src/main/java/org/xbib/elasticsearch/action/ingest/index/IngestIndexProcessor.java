@@ -43,11 +43,15 @@ public class IngestIndexProcessor {
                                 ByteSizeValue maxVolume, TimeValue waitForResponses) {
         this.client = client;
         this.concurrency = concurrency != null ?
-                concurrency > 0 ? Math.min(concurrency, 256) : Math.min(-concurrency, 256) :
+                Math.min(Math.abs(concurrency), 256) :
                 Runtime.getRuntime().availableProcessors() * 4;
         this.actions = actions != null ? Math.min(actions, 32768) : 1000;
-        this.maxVolume = maxVolume != null ? maxVolume : new ByteSizeValue(10, ByteSizeUnit.MB);
-        this.waitForResponses = waitForResponses != null ? waitForResponses : new TimeValue(60, TimeUnit.SECONDS);
+        this.maxVolume = maxVolume != null ?
+                new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES) :
+                new ByteSizeValue(10, ByteSizeUnit.MB);
+        this.waitForResponses = waitForResponses != null ?
+                new TimeValue(Math.max(waitForResponses.millis(), 1000), TimeUnit.MILLISECONDS) :
+                new TimeValue(60, TimeUnit.SECONDS);
         this.semaphore = new Semaphore(this.concurrency);
         this.bulkId = new AtomicLong(0L);
         this.ingestRequest = new IngestIndexRequest();
@@ -113,13 +117,16 @@ public class IngestIndexProcessor {
         if (closed) {
             throw new ElasticSearchIllegalStateException("processor already closed");
         }
-        while (actions > 0 && ingestRequest.numberOfActions() >= actions) {
-            process(ingestRequest.take(actions), listener);
-        }
-        while (ingestRequest.numberOfActions() > 0
+        if (actions > 0) {
+            while (ingestRequest.numberOfActions() >= actions) {
+                process(ingestRequest.take(actions), listener);
+            }
+        } else {
+            while (ingestRequest.numberOfActions() > 0
                 && maxVolume.bytesAsInt() > 0
                 && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
-            process(ingestRequest.takeAll(), listener);
+                process(ingestRequest.takeAll(), listener);
+            }
         }
     }
 

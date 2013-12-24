@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client.index;
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -11,7 +11,6 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -20,7 +19,6 @@ import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexProcessor;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexRequest;
-import org.xbib.elasticsearch.support.client.AbstractIngestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -113,13 +111,16 @@ public class IngestIndexClient extends AbstractIngestClient {
      */
     @Override
     public IngestIndexClient newClient(URI uri) {
-        Settings settings = settingsBuilder()
+        super.newClient(uri, settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false)
-                .build();
-        super.newClient(uri, settings);
+                .put("client.transport.ignore_cluster_name", false)
+                .put("client.transport.ping_timeout", "30s")
+                .put("client.transport.nodes_sampler_interval", "30s")
+                .build());
+        resetSettings();
         IngestIndexProcessor.Listener listener = new IngestIndexProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestIndexRequest request) {
@@ -140,7 +141,7 @@ public class IngestIndexClient extends AbstractIngestClient {
                 }
                 if (!response.failure().isEmpty()) {
                     for (IngestItemFailure f: response.failure()) {
-                        logger.error("after bulk [{}] [{} failure reason: {}", executionId, f.id(), f.message());
+                        logger.error("after bulk [{}] [{} failure reason: {}", executionId, f.pos(), f.message());
                     }
                 } else {
                     currentIngestNumDocs.dec(response.successSize());

@@ -31,6 +31,11 @@ public class ConfigHelper {
 
     private String timeStampField = "@timestamp";
 
+    public ConfigHelper reset() {
+        settingsBuilder = ImmutableSettings.settingsBuilder();
+        return this;
+    }
+
     public ConfigHelper setting(String key, String value) {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();

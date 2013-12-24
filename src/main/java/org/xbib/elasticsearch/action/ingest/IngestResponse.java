@@ -2,7 +2,6 @@
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -81,7 +80,7 @@ public class IngestResponse extends ActionResponse {
         StringBuilder sb = new StringBuilder();
         sb.append("failure in bulk execution:");
         for (IngestItemFailure f : failure) {
-            sb.append("\n[").append(f.id()).append("], message [").append(f.message()).append("]");
+            sb.append("\n[").append(f.pos()).append("], message [").append(f.message()).append("]");
         }
         return sb.toString();
     }
@@ -102,7 +101,7 @@ public class IngestResponse extends ActionResponse {
         out.writeVInt(successSize);
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
-            out.writeVInt(f.id());
+            out.writeVInt(f.pos());
             out.writeString(f.message());
         }
         out.writeVLong(tookInMillis);

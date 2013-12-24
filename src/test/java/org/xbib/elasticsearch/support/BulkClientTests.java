@@ -148,6 +148,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
         } finally {
             es.stopBulk().shutdown();
             logger.info("total bulk requests = {}", es.getTotalBulkRequests());
+            // this test randomly fails... !
             assertEquals(es.getTotalBulkRequests(), 10);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());

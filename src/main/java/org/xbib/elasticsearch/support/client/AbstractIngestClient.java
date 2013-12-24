@@ -121,6 +121,12 @@ public abstract class AbstractIngestClient extends TransportClientBase
         return setting("index.number_of_replicas", replica);
     }
 
+    public AbstractIngestClient resetSettings() {
+        configHelper.reset();
+        return this;
+    }
+
+    @Override
     public AbstractIngestClient setting(String key, String value) {
         configHelper.setting(key, value);
         return this;

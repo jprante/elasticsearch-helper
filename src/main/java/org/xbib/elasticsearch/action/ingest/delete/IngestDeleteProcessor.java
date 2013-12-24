@@ -43,11 +43,15 @@ public class IngestDeleteProcessor {
                                  ByteSizeValue maxVolume, TimeValue waitForResponses) {
         this.client = client;
         this.concurrency = concurrency != null ?
-                concurrency > 0 ? Math.min(concurrency, 256) : Math.min(-concurrency, 256) :
+                Math.min(Math.abs(concurrency), 256) :
                 Runtime.getRuntime().availableProcessors() * 4;
         this.actions = actions != null ? Math.min(actions, 32768) : 1000;
-        this.maxVolume = maxVolume != null ? maxVolume : new ByteSizeValue(10, ByteSizeUnit.MB);
-        this.waitForResponses = waitForResponses != null ? waitForResponses : new TimeValue(60, TimeUnit.SECONDS);
+        this.maxVolume = maxVolume != null ?
+                new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES) :
+                new ByteSizeValue(10, ByteSizeUnit.MB);
+        this.waitForResponses = waitForResponses != null ?
+                new TimeValue(Math.max(waitForResponses.millis(), 1000), TimeUnit.MILLISECONDS) :
+                new TimeValue(60, TimeUnit.SECONDS);
         this.semaphore = new Semaphore(this.concurrency);
         this.bulkId = new AtomicLong(0L);
         this.ingestRequest = new IngestDeleteRequest();
@@ -99,11 +103,9 @@ public class IngestDeleteProcessor {
     /**
      * Flush this bulk processor, write all requests
      */
-    public void flush() {
-        synchronized (ingestRequest) {
-            if (ingestRequest.numberOfActions() > 0) {
-                process(ingestRequest.takeAll(), listener);
-            }
+    public synchronized void flush() {
+        if (ingestRequest.numberOfActions() > 0) {
+            process(ingestRequest.takeAll(), listener);
         }
     }
 
@@ -111,14 +113,16 @@ public class IngestDeleteProcessor {
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to push
      */
-    private void flushIfNeeded(Listener listener) {
+    private synchronized void flushIfNeeded(Listener listener) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("ingest processor already closed");
         }
-        synchronized (ingestRequest) {
-            if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
+        if (actions > 0) {
+            if (ingestRequest.numberOfActions() >= actions) {
                 process(ingestRequest.take(actions), listener);
-            } else if (ingestRequest.numberOfActions() > 0
+            }
+        } else {
+            if (ingestRequest.numberOfActions() > 0
                     && maxVolume.bytesAsInt() > 0
                     && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
                 process(ingestRequest.takeAll(), listener);
@@ -182,12 +186,8 @@ public class IngestDeleteProcessor {
      * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
+    public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
         semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
-        //while (semaphore.availablePermits() < concurrency && secs > 0) {
-        //    Thread.sleep(1000L);
-        //    secs--;
-        //}
         return semaphore.availablePermits() == concurrency;
     }
 

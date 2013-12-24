@@ -30,9 +30,8 @@ import static org.elasticsearch.common.collect.Lists.newLinkedList;
 import static org.elasticsearch.common.collect.Maps.newHashMap;
 
 /**
- * A concurrent bulk transport action
+ * Ingest transport action
  *
- * This action registers a ConcurrentTransportHandler to the transport service
  */
 public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
 
@@ -56,11 +55,11 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
 
     @Override
     protected void doExecute(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
-        final long startTime = System.currentTimeMillis();
-        executeBulk(ingestRequest, startTime, listener);
+        executeBulk(ingestRequest, listener);
     }
 
-    private void executeBulk(final IngestRequest ingestRequest, final long startTime, final ActionListener<IngestResponse> listener) {
+    private void executeBulk(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
+        final long startTime = System.currentTimeMillis();
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);

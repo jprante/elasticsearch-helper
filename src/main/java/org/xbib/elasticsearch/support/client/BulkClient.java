@@ -123,13 +123,16 @@ public class BulkClient extends AbstractIngestClient {
      */
     @Override
     public BulkClient newClient(URI uri) {
-        Settings settings = settingsBuilder()
+        super.newClient(uri, settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false)
-                .build();
-        super.newClient(uri, settings);
+                .put("client.transport.ignore_cluster_name", false)
+                .put("client.transport.ping_timeout", "30s")
+                .put("client.transport.nodes_sampler_interval", "30s")
+                .build());
+        resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {

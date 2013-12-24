@@ -6,11 +6,21 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 
 /**
  * Interface for providing convenient ingest methods.
  */
 public interface Ingest extends DocumentIngest {
+
+    Ingest newClient(URI uri);
+
+    Ingest setIndex(String index);
+
+    Ingest setType(String type);
+
+    Ingest dateDetection(boolean b);
 
     /**
      * Wait for healthy cluster
@@ -21,8 +31,6 @@ public interface Ingest extends DocumentIngest {
     Ingest waitForCluster() throws IOException;
 
     Ingest waitForCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
-
-    int waitForRecovery();
 
     /**
      * Set the maximum number of actions per bulk request
@@ -46,6 +54,24 @@ public interface Ingest extends DocumentIngest {
      * @return this ingest
      */
     Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
+
+    Ingest shards(int shards);
+
+    Ingest replica(int replica);
+
+    Ingest resetSettings();
+
+    Ingest setting(String key, String value);
+
+    Ingest setting(String key, Boolean value);
+
+    Ingest setting(String key, Integer value);
+
+    Ingest setting(InputStream in) throws IOException;
+
+    Ingest mapping(String type, InputStream in) throws IOException;
+
+    Ingest mapping(String type, String mapping);
 
     /**
      * Start bulk mode
@@ -90,10 +116,7 @@ public interface Ingest extends DocumentIngest {
      */
     int updateReplicaLevel(int level) throws IOException;
 
-
-    Ingest shards(int shards);
-
-    Ingest replica(int replica);
+    int waitForRecovery();
 
     long getTotalBulkRequests();
 

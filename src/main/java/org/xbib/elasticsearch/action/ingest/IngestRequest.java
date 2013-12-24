@@ -44,7 +44,7 @@ public class IngestRequest extends ActionRequest {
         return newConcurrentLinkedQueue();
     }
 
-    public Queue<ActionRequest> requests() {
+    protected Queue<ActionRequest> requests() {
         return requests;
     }
 
@@ -64,7 +64,7 @@ public class IngestRequest extends ActionRequest {
         } else if (request instanceof DeleteRequest) {
             add((DeleteRequest) request);
         } else {
-            throw new ElasticSearchIllegalArgumentException("No support for request [" + request + "]");
+            throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
         }
         return this;
     }
@@ -79,7 +79,7 @@ public class IngestRequest extends ActionRequest {
             } else if (request instanceof DeleteRequest) {
                 add((DeleteRequest) request);
             } else {
-                throw new ElasticSearchIllegalArgumentException("No support for request [" + request + "]");
+                throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
             }
         }
         return this;
@@ -298,8 +298,13 @@ public class IngestRequest extends ActionRequest {
         IngestRequest request = new IngestRequest();
         while (!requests.isEmpty()) {
             ActionRequest actionRequest = requests.poll();
-            if (actionRequest != null) {
-                request.add(actionRequest);
+            request.add(actionRequest);
+            if (actionRequest instanceof IndexRequest) {
+                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                sizeInBytes.addAndGet(-length);
+            } else if (actionRequest instanceof DeleteRequest) {
+                sizeInBytes.addAndGet(REQUEST_OVERHEAD);
             }
         }
         return request;
@@ -317,8 +322,13 @@ public class IngestRequest extends ActionRequest {
         IngestRequest request = new IngestRequest();
         for (int i = 0; i < numRequests; i++) {
             ActionRequest actionRequest = requests.poll();
-            if (actionRequest != null) {
-                request.add(actionRequest);
+            request.add(actionRequest);
+            if (actionRequest instanceof IndexRequest) {
+                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                sizeInBytes.addAndGet(-length);
+            } else if (actionRequest instanceof DeleteRequest) {
+                sizeInBytes.addAndGet(REQUEST_OVERHEAD);
             }
         }
         return request;

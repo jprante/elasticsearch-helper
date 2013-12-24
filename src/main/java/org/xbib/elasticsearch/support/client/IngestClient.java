@@ -21,7 +21,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.settings.Settings;
 
 import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
@@ -98,14 +97,16 @@ public class IngestClient extends AbstractIngestClient {
      */
     @Override
     public IngestClient newClient(URI uri) {
-        Settings settings = settingsBuilder()
+        super.newClient(uri, settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .put("network.server", false)
                 .put("node.client", true)
                 .put("client.transport.sniff", false)
-                .build();
-        logger.info("new client, settings = {}", settings.getAsMap());
-        super.newClient(uri, settings);
+                .put("client.transport.ignore_cluster_name", false)
+                .put("client.transport.ping_timeout", "30s")
+                .put("client.transport.nodes_sampler_interval", "30s")
+                .build());
+        resetSettings();
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestRequest request) {
@@ -127,7 +128,7 @@ public class IngestClient extends AbstractIngestClient {
                 if (!response.failure().isEmpty()) {
                     closed = true;
                     for (IngestItemFailure f: response.failure()) {
-                        logger.error("after bulk [{}] [{}] failure, reason: {}", executionId, f.id(), f.message());
+                        logger.error("after bulk [{}] [{}] failure, reason: {}", executionId, f.pos(), f.message());
                     }
                 } else {
                     currentIngestNumDocs.dec(response.successSize());
@@ -275,7 +276,7 @@ public class IngestClient extends AbstractIngestClient {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
         if (logger.isTraceEnabled()) {
-            logger.trace("create: {}/{}/{} source = {}", index, type, id, source);
+            logger.trace("create: {}/{}/{}", index, type, id);
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
         try {
@@ -297,7 +298,7 @@ public class IngestClient extends AbstractIngestClient {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
         if (logger.isTraceEnabled()) {
-            logger.trace("index: {}/{}/{} source = {}", index, type, id, source);
+            logger.trace("index: {}/{}/{}", index, type, id);
         }
         IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {

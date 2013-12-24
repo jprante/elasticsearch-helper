@@ -105,7 +105,6 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
     protected PrimaryResponse<IngestIndexShardResponse, IngestIndexShardRequest> shardOperationOnPrimary(ClusterState clusterState, PrimaryOperationRequest shardRequest) {
         final IngestIndexShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
-        Engine.IndexingOperation[] ops = null;
         Set<Tuple<String, String>> mappingsToUpdate = null;
 
         int successSize = 0;
@@ -176,12 +175,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
         }
 
         IngestIndexShardResponse response = new IngestIndexShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
-        return new PrimaryResponse<IngestIndexShardResponse, IngestIndexShardRequest>(shardRequest.request, response, ops);
-    }
-
-    @Override
-    protected void postPrimaryOperation(IngestIndexShardRequest request, PrimaryResponse<IngestIndexShardResponse, IngestIndexShardRequest> response) {
-        // percolate removed ...
+        return new PrimaryResponse<IngestIndexShardResponse, IngestIndexShardRequest>(shardRequest.request, response, null);
     }
 
     @Override
