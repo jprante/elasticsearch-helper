@@ -1,8 +1,9 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.xbib.elasticsearch.support.client.Ingest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -118,17 +119,17 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient createDocument(String index, String type, String id, String source) {
+    public MockBulkClient create(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockBulkClient indexDocument(String index, String type, String id, String source) {
+    public MockBulkClient index(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockBulkClient deleteDocument(String index, String type, String id) {
+    public MockBulkClient delete(String index, String type, String id) {
         return this;
     }
 

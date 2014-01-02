@@ -36,9 +36,9 @@ import java.util.StringTokenizer;
 import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public abstract class TransportClientBase {
+public abstract class AbstractTransportClient {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(TransportClientBase.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());
 
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
 
@@ -46,7 +46,7 @@ public abstract class TransportClientBase {
 
     protected TransportClient client;
 
-    public TransportClientBase newClient(URI uri, Settings settings) {
+    public AbstractTransportClient newClient(URI uri, Settings settings) {
         if (client != null) {
             client.close();
             client.threadPool().shutdown();

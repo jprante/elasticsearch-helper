@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.search;
 
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;

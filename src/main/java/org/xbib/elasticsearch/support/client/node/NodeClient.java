@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.ElasticSearchTimeoutException;
@@ -22,6 +22,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.config.ConfigHelper;
+import org.xbib.elasticsearch.support.client.Feeder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Node client support
  */
-public class NodeClient implements DocumentIngest {
+public class NodeClient implements Feeder {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
 
@@ -152,13 +154,11 @@ public class NodeClient implements DocumentIngest {
         return client;
     }
 
-    @Override
     public NodeClient setIndex(String index) {
         this.index = index;
         return this;
     }
 
-    @Override
     public NodeClient setType(String type) {
         this.type = type;
         return this;
@@ -177,7 +177,7 @@ public class NodeClient implements DocumentIngest {
     }
 
     @Override
-    public NodeClient createDocument(String index, String type, String id, String source) {
+    public NodeClient create(String index, String type, String id, String source) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
@@ -197,7 +197,7 @@ public class NodeClient implements DocumentIngest {
     }
 
     @Override
-    public NodeClient indexDocument(String index, String type, String id, String source) {
+    public NodeClient index(String index, String type, String id, String source) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
@@ -217,7 +217,7 @@ public class NodeClient implements DocumentIngest {
     }
 
     @Override
-    public NodeClient deleteDocument(String index, String type, String id) {
+    public NodeClient delete(String index, String type, String id) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
@@ -236,7 +236,6 @@ public class NodeClient implements DocumentIngest {
         return this;
     }
 
-    @Override
     public NodeClient flush() {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
@@ -250,7 +249,6 @@ public class NodeClient implements DocumentIngest {
         return this;
     }
 
-    @Override
     public void shutdown() {
         flush();
         bulkProcessor.close();

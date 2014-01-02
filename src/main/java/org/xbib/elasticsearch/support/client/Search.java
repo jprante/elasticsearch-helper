@@ -7,7 +7,7 @@ import org.elasticsearch.client.Client;
 import java.net.URI;
 
 /**
- * Transport client search
+ * Search support
  */
 public interface Search {
 
@@ -31,8 +31,6 @@ public interface Search {
      * @return the index
      */
     String getIndex();
-
-    String getType();
 
     /**
      * Create a new client

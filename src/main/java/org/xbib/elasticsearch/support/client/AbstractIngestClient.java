@@ -15,14 +15,14 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.config.ConfigHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Map;
 
-public abstract class AbstractIngestClient extends TransportClientBase
-        implements Ingest, ClientFactory {
+public abstract class AbstractIngestClient extends AbstractTransportClient
+        implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractIngestClient.class.getSimpleName());
 
@@ -43,7 +43,6 @@ public abstract class AbstractIngestClient extends TransportClientBase
         return this;
     }
 
-    @Override
     public String getIndex() {
         return index;
     }
@@ -54,7 +53,6 @@ public abstract class AbstractIngestClient extends TransportClientBase
         return this;
     }
 
-    @Override
     public String getType() {
         return type;
     }
@@ -126,7 +124,6 @@ public abstract class AbstractIngestClient extends TransportClientBase
         return this;
     }
 
-    @Override
     public AbstractIngestClient setting(String key, String value) {
         configHelper.setting(key, value);
         return this;

@@ -1,18 +1,20 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.search;
 
 import java.net.URI;
 
 import org.elasticsearch.client.Client;
 
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
+import org.xbib.elasticsearch.support.client.AbstractTransportClient;
+import org.xbib.elasticsearch.support.client.Search;
 
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 
 /**
  * Search client support
  */
-public class SearchClient extends TransportClientBase implements Search {
+public class SearchClient extends AbstractTransportClient implements Search {
 
     private String index;
 
@@ -28,12 +30,10 @@ public class SearchClient extends TransportClientBase implements Search {
         return this;
     }
 
-    @Override
     public String getIndex() {
         return index;
     }
 
-    @Override
     public String getType() {
         return type;
     }

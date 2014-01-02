@@ -62,7 +62,6 @@ public class TransportIngestIndexAction extends TransportAction<IngestIndexReque
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
-
         MetaData metaData = clusterState.metaData();
         for (ActionRequest request : ingestRequest.requests()) {
             IndexRequest indexRequest = (IndexRequest) request;
@@ -74,7 +73,6 @@ public class TransportIngestIndexAction extends TransportAction<IngestIndexReque
             }
             indexRequest.process(metaData, aliasOrIndex, mappingMd, allowIdGeneration);
         }
-
         // first, go over all the requests and create a ShardId -> Operations mapping
         Map<ShardId, List<IngestIndexItemRequest>> requestsByShard = newHashMap();
         int i = 0;
@@ -89,15 +87,12 @@ public class TransportIngestIndexAction extends TransportAction<IngestIndexReque
             list.add(new IngestIndexItemRequest(i, request));
             i++;
         }
-
         final AtomicInteger successSize = new AtomicInteger(0);
         final List<IngestItemFailure> failure = newLinkedList();
-
         if (requestsByShard.isEmpty()) {
             listener.onResponse(new IngestResponse(0, failure, System.currentTimeMillis() - startTime));
             return;
         }
-
         final AtomicInteger counter = new AtomicInteger(requestsByShard.size());
         for (Map.Entry<ShardId, List<IngestIndexItemRequest>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
