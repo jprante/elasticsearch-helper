@@ -1,1 +1,5 @@
 org.xbib.elasticsearch.support
+org.xbib.elasticsearch.support.client.bulk
+org.xbib.elasticsearch.support.client.ingest
+org.xbib.elasticsearch.support.client.ingest.index
+org.xbib.elasticsearch.support.client.node
