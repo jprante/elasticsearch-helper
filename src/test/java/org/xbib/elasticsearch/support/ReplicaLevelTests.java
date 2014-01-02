@@ -6,7 +6,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.testng.annotations.Test;
 
-import org.xbib.elasticsearch.support.client.IngestClient;
+import org.xbib.elasticsearch.support.client.ingest.IngestClient;
 
 import java.io.IOException;
 
@@ -35,7 +35,7 @@ public class ReplicaLevelTests extends AbstractNodeRandomTest {
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.indexDocument("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
             shardsAfterReplica = es.updateReplicaLevel(replicaLevel);

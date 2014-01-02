@@ -347,7 +347,7 @@ public class IngestRequest extends ActionRequest {
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
         if (requests.isEmpty()) {
-            validationException = addValidationError("no requests added", validationException);
+            validationException = addValidationError("no requests added", null);
         }
         for (ActionRequest request : requests) {
             ActionRequestValidationException ex = request.validate();
@@ -358,7 +358,6 @@ public class IngestRequest extends ActionRequest {
                 validationException.addValidationErrors(ex.validationErrors());
             }
         }
-
         return validationException;
     }
 

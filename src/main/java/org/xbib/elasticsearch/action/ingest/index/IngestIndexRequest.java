@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.action.ingest.index;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -188,7 +187,7 @@ public class IngestIndexRequest extends ActionRequest {
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
         if (requests.isEmpty()) {
-            validationException = addValidationError("no requests added", validationException);
+            validationException = addValidationError("no requests added", null);
         }
         for (ActionRequest request : requests) {
             ActionRequestValidationException ex = request.validate();

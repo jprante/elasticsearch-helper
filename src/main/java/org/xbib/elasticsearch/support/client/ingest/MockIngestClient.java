@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.client.Client;
 
@@ -8,7 +8,7 @@ import java.io.InputStream;
 import java.net.URI;
 
 /**
- * Mock ingest client. Do not perform actions on a real cluster.
+ * Mock ingest client, it does not perform actions on a cluster.
  * Useful for testing or dry runs.
  */
 public class MockIngestClient extends IngestClient {
@@ -107,17 +107,17 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient createDocument(String index, String type, String id, String source) {
+    public MockIngestClient create(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockIngestClient indexDocument(String index, String type, String id, String source) {
+    public MockIngestClient index(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockIngestClient deleteDocument(String index, String type, String id) {
+    public MockIngestClient delete(String index, String type, String id) {
         return this;
     }
 

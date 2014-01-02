@@ -167,13 +167,11 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                 request.items().set(i, null);
             }
         }
-
         if (mappingsToUpdate != null) {
             for (Tuple<String, String> mappingToUpdate : mappingsToUpdate) {
                 updateMappingOnMaster(mappingToUpdate.v1(), mappingToUpdate.v2());
             }
         }
-
         IngestIndexShardResponse response = new IngestIndexShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
         return new PrimaryResponse<IngestIndexShardResponse, IngestIndexShardRequest>(shardRequest.request, response, null);
     }
@@ -217,7 +215,8 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
 
             IndexMetaData metaData = clusterService.state().metaData().index(index);
 
-            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource());
+            final MappingUpdatedAction.MappingUpdatedRequest request =
+                    new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource(), -1, null);
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override
                 public void onResponse(MappingUpdatedAction.MappingUpdatedResponse mappingUpdatedResponse) {

@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.support.client.ingest.delete;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -19,6 +19,7 @@ import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteProcessor;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteRequest;
+import org.xbib.elasticsearch.support.client.AbstractIngestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -268,17 +269,17 @@ public class IngestDeleteClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestDeleteClient createDocument(String index, String type, String id, String source) {
+    public IngestDeleteClient create(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public IngestDeleteClient indexDocument(String index, String type, String id, String source) {
+    public IngestDeleteClient index(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public IngestDeleteClient deleteDocument(String index, String type, String id) {
+    public IngestDeleteClient delete(String index, String type, String id) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
@@ -335,7 +336,6 @@ public class IngestDeleteClient extends AbstractIngestClient {
         return this;
     }
 
-    @Override
     public IngestDeleteClient flush() {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");

@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client.ingest.index;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -7,7 +7,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
 
-import org.xbib.elasticsearch.support.client.IngestIndexClient;
+import org.xbib.elasticsearch.support.AbstractNodeRandomTest;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -64,7 +64,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
         try {
             es.deleteIndex();
             es.newIndex();
-            es.indexDocument("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
+            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
             logger.info("stats={}", es.stats());
         } catch (IOException e) {
@@ -92,7 +92,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
                 .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
-                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -109,6 +109,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
 
     @Test
     public void testThreadedRandomIngestClient() throws Exception {
+        int max = Runtime.getRuntime().availableProcessors();
         final IngestIndexClient es = new IngestIndexClient()
                 .maxActionsPerBulkRequest(10000)
                 .newClient(getAddress())
@@ -117,24 +118,21 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
                 .newIndex()
                 .startBulk();
         try {
-            int min = 0;
-            int max = 8;
-            ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,
+            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
                     EsExecutors.daemonThreadFactory("ingest-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
                     public void run() {
                             for (int i = 0; i < 12345; i++) {
-                                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                             }
-                            logger.info("done");
                             latch.countDown();
                     }
                 });
             }
-            logger.info("waiting for 30 seconds...");
-            latch.await(30, TimeUnit.SECONDS);
+            logger.info("waiting for max 60 seconds...");
+            latch.await(60, TimeUnit.SECONDS);
             pool.shutdown();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -142,7 +140,8 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
             logger.info("stats={}", es.stats());
             es.stopBulk().shutdown();
             logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            assertEquals(es.getTotalBulkRequests(), 10);
+            int target = max * 12345 / 10000 + 1;
+            assertEquals(es.getTotalBulkRequests(), target);
             if (es.hasErrors()) {
                 logger.error("error", es.getThrowable());
             }

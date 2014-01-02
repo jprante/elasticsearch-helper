@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -7,7 +7,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.testng.annotations.Test;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 
-import org.xbib.elasticsearch.support.client.NodeClient;
+import org.xbib.elasticsearch.support.AbstractNodeRandomTest;
 
 public class NodeClientTests extends AbstractNodeRandomTest {
 
@@ -40,7 +40,7 @@ public class NodeClientTests extends AbstractNodeRandomTest {
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.indexDocument(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.index(null, null, null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");

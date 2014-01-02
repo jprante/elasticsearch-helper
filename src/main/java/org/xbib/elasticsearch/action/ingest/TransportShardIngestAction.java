@@ -300,7 +300,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
 
             IndexMetaData metaData = clusterService.state().metaData().index(index);
 
-            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource());
+            final MappingUpdatedAction.MappingUpdatedRequest request =
+                    new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource(), -1, null);
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override
                 public void onResponse(MappingUpdatedAction.MappingUpdatedResponse mappingUpdatedResponse) {

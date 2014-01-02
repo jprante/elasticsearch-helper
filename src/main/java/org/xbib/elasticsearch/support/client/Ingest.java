@@ -12,7 +12,9 @@ import java.net.URI;
 /**
  * Interface for providing convenient ingest methods.
  */
-public interface Ingest extends DocumentIngest {
+public interface Ingest extends Feeder {
+
+    Ingest newClient();
 
     Ingest newClient(URI uri);
 

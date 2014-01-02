@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -7,7 +7,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.testng.annotations.Test;
-import org.xbib.elasticsearch.support.client.BulkClient;
+import org.xbib.elasticsearch.support.AbstractNodeRandomTest;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -68,7 +68,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
         try {
             es.deleteIndex();
             es.newIndex();
-            es.indexDocument("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
+            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
             logger.info("stats={}", es.stats());
         } catch (IOException e) {
@@ -97,7 +97,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
                 .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
-                es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -114,46 +114,42 @@ public class BulkClientTests extends AbstractNodeRandomTest {
 
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
-        final BulkClient es = new BulkClient()
-                .flushInterval(TimeValue.timeValueSeconds(30))
-                .maxActionsPerBulkRequest(10000)
+        final BulkClient client = new BulkClient()
+                .flushInterval(TimeValue.timeValueSeconds(5))
+                .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex()
                 .startBulk();
+        int max = Runtime.getRuntime().availableProcessors();
         try {
-            int min = 0;
-            int max = 8;
-            ThreadPoolExecutor pool = EsExecutors.newScaling(min, max, 100, TimeUnit.DAYS,
-                    EsExecutors.daemonThreadFactory("bulk-test"));
+            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30, EsExecutors.daemonThreadFactory("bulk-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
                     public void run() {
-                        logger.info("starting");
                         for (int i = 0; i < 12345; i++) {
-                            es.indexDocument("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                            client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                         }
                         latch.countDown();
-                        logger.info("completed");
                     }
                 });
             }
-            logger.info("waiting for 30 seconds...");
-            latch.await(30, TimeUnit.SECONDS);
+            logger.info("waiting for {} seconds...", 2 * client.flushInterval().getSeconds());
+            latch.await(2 * client.flushInterval().getSeconds(), TimeUnit.SECONDS);
             pool.shutdown();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            es.stopBulk().shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            // this test randomly fails... !
-            assertEquals(es.getTotalBulkRequests(), 10);
-            if (es.hasErrors()) {
-                logger.error("error", es.getThrowable());
+            client.stopBulk().shutdown();
+            logger.info("total bulk requests = {}", client.getTotalBulkRequests());
+            int target = max * 12345 / 1000 + 1;
+            assertEquals(client.getTotalBulkRequests(), target);
+            if (client.hasErrors()) {
+                logger.error("error", client.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(client.hasErrors());
         }
     }
 
