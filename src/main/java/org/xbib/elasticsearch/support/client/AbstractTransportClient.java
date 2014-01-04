@@ -34,9 +34,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import static org.elasticsearch.common.collect.Sets.newHashSet;
+import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public abstract class AbstractTransportClient {
+public abstract class AbstractTransportClient implements ClientBuilder {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());
 
@@ -69,6 +70,18 @@ public abstract class AbstractTransportClient {
             logger.error(e.getMessage(), e);
         }
         return this;
+    }
+
+    public Settings defaultSettings(URI uri) {
+        return settingsBuilder()
+                .put("cluster.name", findClusterName(uri))
+                .put("network.server", false)
+                .put("node.client", true)
+                .put("client.transport.sniff", false)
+                .put("client.transport.ignore_cluster_name", false)
+                .put("client.transport.ping_timeout", "30s")
+                .put("client.transport.nodes_sampler_interval", "30s")
+                .build();
     }
 
     public Client client() {

@@ -33,16 +33,6 @@ public interface Search {
     String getIndex();
 
     /**
-     * Create a new client
-     */
-    Search newClient();
-
-    /**
-     * Create a new client
-     */
-    Search newClient(URI uri);
-
-    /**
      * Create new search request
      */
     BasicRequest newSearchRequest();

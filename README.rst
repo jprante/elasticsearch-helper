@@ -22,7 +22,7 @@ ES version     Plugin          Release date       Command
 0.90.5         0.90.5.5        Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/HBEBbz
 0.90.6         0.90.6.1        Nov 7, 2013        ./bin/plugin --install support --url http://bit.ly/1bdSNQY
 0.90.7         0.90.7.1        Dec 3, 2013        ./bin/plugin --install support --url http://bit.ly/1arMpDf
-1.0.0.Beta2    1.0.0.Beta2.5   Jan 2, 2014        ./bin/plugin --install support --url http://bit.ly/1arhpUW
+1.0.0.Beta2    1.0.0.Beta2.6   Jan 4, 2014        ./bin/plugin --install support --url http://bit.ly/19VdJ0T
 =============  ==============  =================  ==========================================================
 
 Do not forget to restart the node after installing.

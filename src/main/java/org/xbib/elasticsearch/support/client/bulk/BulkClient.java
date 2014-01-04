@@ -11,6 +11,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Bulk client
+ *  Client using the BulkProcessor of ES
  */
 public class BulkClient extends AbstractIngestClient {
 
@@ -129,15 +130,12 @@ public class BulkClient extends AbstractIngestClient {
      */
     @Override
     public BulkClient newClient(URI uri) {
-        super.newClient(uri, settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("network.server", false)
-                .put("node.client", true)
-                .put("client.transport.sniff", false)
-                .put("client.transport.ignore_cluster_name", false)
-                .put("client.transport.ping_timeout", "30s")
-                .put("client.transport.nodes_sampler_interval", "30s")
-                .build());
+        return this.newClient(uri, defaultSettings(uri));
+    }
+
+    @Override
+    public BulkClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
@@ -147,7 +145,7 @@ public class BulkClient extends AbstractIngestClient {
                 totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
+                            executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
                 }
             }
 
@@ -157,10 +155,10 @@ public class BulkClient extends AbstractIngestClient {
                 totalIngest.inc(response.getTookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("bulk [{}] [{} items] [{}] [{}ms]",
-                        executionId,
-                        response.getItems().length,
-                        response.hasFailures() ? "failure" : "ok",
-                        response.getTook().millis());
+                            executionId,
+                            response.getItems().length,
+                            response.hasFailures() ? "failure" : "ok",
+                            response.getTook().millis());
                 }
                 if (response.hasFailures()) {
                     closed = true;
@@ -313,36 +311,15 @@ public class BulkClient extends AbstractIngestClient {
     }
 
     @Override
-    public BulkClient create(String index, String type, String id, String source) {
-        if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
-        }
-        if (logger.isTraceEnabled()) {
-            logger.trace("create: {}/{}/{} source = {}", index, type, id, source);
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
-        try {
-            currentIngest.inc();
-            bulkProcessor.add(indexRequest);
-        } catch (Exception e) {
-            throwable = e;
-            closed = true;
-            logger.error("bulk add of create failed: " + e.getMessage(), e);
-        } finally {
-            currentIngest.dec();
-        }
-        return this;
+    public BulkClient index(String index, String type, String id, BytesReference source) {
+        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source, false));
     }
 
     @Override
-    public BulkClient index(String index, String type, String id, String source) {
+    public BulkClient index(IndexRequest indexRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("index: {}/{}/{} source = {}", index, type, id, source);
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
             currentIngest.inc();
             bulkProcessor.add(indexRequest);
@@ -358,13 +335,14 @@ public class BulkClient extends AbstractIngestClient {
 
     @Override
     public BulkClient delete(String index, String type, String id) {
+        return delete(Requests.deleteRequest(index).type(type).id(id));
+    }
+
+    @Override
+    public BulkClient delete(DeleteRequest deleteRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("delete: {}/{}/{} ", index, type, id);
-        }
-        DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
             currentIngest.inc();
             bulkProcessor.add(deleteRequest);

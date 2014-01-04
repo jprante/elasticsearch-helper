@@ -7,16 +7,11 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 
 /**
  * Interface for providing convenient ingest methods.
  */
 public interface Ingest extends Feeder {
-
-    Ingest newClient();
-
-    Ingest newClient(URI uri);
 
     Ingest setIndex(String index);
 

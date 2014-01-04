@@ -5,12 +5,15 @@ import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -95,15 +98,12 @@ public class IngestDeleteClient extends AbstractIngestClient {
      */
     @Override
     public IngestDeleteClient newClient(URI uri) {
-        super.newClient(uri, settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("network.server", false)
-                .put("node.client", true)
-                .put("client.transport.sniff", false)
-                .put("client.transport.ignore_cluster_name", false)
-                .put("client.transport.ping_timeout", "30s")
-                .put("client.transport.nodes_sampler_interval", "30s")
-                .build());
+        return this.newClient(uri, defaultSettings(uri));
+    }
+
+    @Override
+    public IngestDeleteClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         resetSettings();
         IngestDeleteProcessor.Listener listener = new IngestDeleteProcessor.Listener() {
             @Override
@@ -269,24 +269,25 @@ public class IngestDeleteClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestDeleteClient create(String index, String type, String id, String source) {
+    public IngestDeleteClient index(String index, String type, String id, BytesReference source) {
         return this;
     }
 
     @Override
-    public IngestDeleteClient index(String index, String type, String id, String source) {
+    public IngestDeleteClient index(IndexRequest indexRequest) {
         return this;
     }
 
     @Override
     public IngestDeleteClient delete(String index, String type, String id) {
+        return delete(Requests.deleteRequest(index).type(type).id(id));
+    }
+
+    @Override
+    public IngestDeleteClient delete(DeleteRequest deleteRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("delete: {}/{}/{}", index, type, id);
-        }
-        DeleteRequest deleteRequest = Requests.deleteRequest(index).type(type).id(id);
         try {
             currentIngest.inc();
             ingestProcessor.add(deleteRequest);

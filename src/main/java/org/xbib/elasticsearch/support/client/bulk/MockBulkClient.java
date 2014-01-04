@@ -1,7 +1,11 @@
 
 package org.xbib.elasticsearch.support.client.bulk;
 
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.xbib.elasticsearch.support.client.Ingest;
 
@@ -43,6 +47,12 @@ public class MockBulkClient extends BulkClient implements Ingest {
     @Override
     public MockBulkClient newClient(URI uri) {
         super.newClient(uri);
+        return this;
+    }
+
+    @Override
+    public MockBulkClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         return this;
     }
 
@@ -119,17 +129,22 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient create(String index, String type, String id, String source) {
+    public MockBulkClient index(String index, String type, String id, BytesReference source) {
         return this;
     }
 
     @Override
-    public MockBulkClient index(String index, String type, String id, String source) {
+    public MockBulkClient index(IndexRequest indexRequest) {
         return this;
     }
 
     @Override
     public MockBulkClient delete(String index, String type, String id) {
+        return this;
+    }
+
+    @Override
+    public MockBulkClient delete(DeleteRequest deleteRequest) {
         return this;
     }
 

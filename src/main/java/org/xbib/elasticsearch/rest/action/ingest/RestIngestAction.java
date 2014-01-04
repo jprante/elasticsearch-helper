@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.action.ingest;
+package org.xbib.elasticsearch.rest.action.ingest;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.support.replication.ReplicationType;
@@ -17,6 +17,10 @@ import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.XContentRestResponse;
+import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
+import org.xbib.elasticsearch.action.ingest.IngestProcessor;
+import org.xbib.elasticsearch.action.ingest.IngestRequest;
+import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;

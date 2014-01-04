@@ -7,28 +7,25 @@ import org.elasticsearch.rest.RestModule;
 
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.TransportIngestAction;
-import org.xbib.elasticsearch.action.ingest.RestIngestAction;
+import org.xbib.elasticsearch.rest.action.ingest.RestIngestAction;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteAction;
 import org.xbib.elasticsearch.action.ingest.delete.TransportIngestDeleteAction;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexAction;
 import org.xbib.elasticsearch.action.ingest.index.TransportIngestIndexAction;
 
 /**
- * Ingest plugin
- *
- * A replacement for bulk action. Returns only short bulk responses
- * and allows multi threaded concurrent access in the action bulk request building.
+ * Support plugin
  */
-public class IngestPlugin extends AbstractPlugin {
+public class SupportPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "ingest";
+        return "support";
     }
 
     @Override
     public String description() {
-        return "Ingest plugin";
+        return "Support plugin";
     }
 
     public void onModule(ActionModule module) {
