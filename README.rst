@@ -13,13 +13,13 @@ Installation
 
 Prerequisites::
 
-  Elasticsearch 0.90+ or 1.0.0+
+  Elasticsearch 0.90.x
 
 =============  ==============  =================  ==========================================================
 ES version     Plugin          Release date       Command
 -------------  --------------  -----------------  ----------------------------------------------------------
-0.90.9         0.90.9.1        Jan 2, 2014        ./bin/plugin --install support --url http://bit.ly/1a4r5bq
-1.0.0.Beta2    1.0.0.Beta2.5   Jan 2, 2014        ./bin/plugin --install support --url http://bit.ly/1arhpUW
+0.90.9         0.90.9.2        Jan 4, 2014        ./bin/plugin --install support --url http://bit.ly/19Vek2x
+1.0.0.Beta2    1.0.0.Beta2.6   Jan 4, 2014        ./bin/plugin --install support --url http://bit.ly/19VdJ0T
 =============  ==============  =================  ==========================================================
 
 Do not forget to restart the node after installing.

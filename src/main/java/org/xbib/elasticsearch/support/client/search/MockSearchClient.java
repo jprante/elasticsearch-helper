@@ -1,6 +1,7 @@
 
 package org.xbib.elasticsearch.support.client.search;
 
+import org.elasticsearch.common.settings.Settings;
 import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -29,13 +30,18 @@ public class MockSearchClient extends SearchClient {
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     public MockSearchClient newClient() {
-        return newClient(findURI());
+        super.newClient();
+        return this;
     }
 
     public MockSearchClient newClient(URI uri) {
-        super.newClient(uri, settingsBuilder()
+        return this.newClient(uri, settingsBuilder()
                 .put("cluster.name", findClusterName(uri))
                 .build());
+    }
+
+    public MockSearchClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         return this;
     }
 

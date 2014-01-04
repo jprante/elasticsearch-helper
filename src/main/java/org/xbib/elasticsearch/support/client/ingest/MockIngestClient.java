@@ -1,7 +1,11 @@
 
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +26,12 @@ public class MockIngestClient extends IngestClient {
     @Override
     public MockIngestClient newClient(URI uri) {
         super.newClient(uri);
+        return this;
+    }
+
+    @Override
+    public MockIngestClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         return this;
     }
 
@@ -107,17 +117,22 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient create(String index, String type, String id, String source) {
+    public MockIngestClient index(String index, String type, String id, BytesReference source) {
         return this;
     }
 
     @Override
-    public MockIngestClient index(String index, String type, String id, String source) {
+    public MockIngestClient index(IndexRequest indexRequest) {
         return this;
     }
 
     @Override
     public MockIngestClient delete(String index, String type, String id) {
+        return this;
+    }
+
+    @Override
+    public MockIngestClient delete(DeleteRequest deleteRequest) {
         return this;
     }
 

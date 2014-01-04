@@ -14,6 +14,7 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -177,32 +178,16 @@ public class NodeClient implements Feeder {
     }
 
     @Override
-    public NodeClient create(String index, String type, String id, String source) {
-        if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id).create(true).source(source);
-        try {
-            currentIngest.inc();
-            bulkProcessor.add(indexRequest);
-        } catch (Exception e) {
-            throwable = e;
-            logger.error("bulk add of create failed: " + e.getMessage(), e);
-            closed = true;
-        } finally {
-            currentIngest.dec();
-        }
-        return this;
+    public NodeClient index(String index, String type, String id, BytesReference source) {
+        return index(Requests.indexRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id).create(false).source(source, false));
     }
 
     @Override
-    public NodeClient index(String index, String type, String id, String source) {
+    public NodeClient index(IndexRequest indexRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        IndexRequest indexRequest = Requests.indexRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id).create(false).source(source);
         try {
             currentIngest.inc();
             bulkProcessor.add(indexRequest);
@@ -218,11 +203,15 @@ public class NodeClient implements Feeder {
 
     @Override
     public NodeClient delete(String index, String type, String id) {
+        return delete(Requests.deleteRequest(index != null ? index : getIndex())
+                .type(type != null ? type : getType()).id(id));
+    }
+
+    @Override
+    public NodeClient delete(DeleteRequest deleteRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        DeleteRequest deleteRequest = Requests.deleteRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id);
         try {
             currentIngest.inc();
             bulkProcessor.add(deleteRequest);

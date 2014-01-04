@@ -4,13 +4,16 @@ package org.xbib.elasticsearch.support.client.ingest.index;
 import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -112,15 +115,12 @@ public class IngestIndexClient extends AbstractIngestClient {
      */
     @Override
     public IngestIndexClient newClient(URI uri) {
-        super.newClient(uri, settingsBuilder()
-                .put("cluster.name", findClusterName(uri))
-                .put("network.server", false)
-                .put("node.client", true)
-                .put("client.transport.sniff", false)
-                .put("client.transport.ignore_cluster_name", false)
-                .put("client.transport.ping_timeout", "30s")
-                .put("client.transport.nodes_sampler_interval", "30s")
-                .build());
+        return this.newClient(uri, defaultSettings(uri));
+    }
+
+    @Override
+    public IngestIndexClient newClient(URI uri, Settings settings) {
+        super.newClient(uri, settings);
         resetSettings();
         IngestIndexProcessor.Listener listener = new IngestIndexProcessor.Listener() {
             @Override
@@ -285,36 +285,15 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient create(String index, String type, String id, String source) {
-        if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
-        }
-        if (logger.isTraceEnabled()) {
-            logger.trace("create: {}/{}/{} source = {}", index, type, id, source);
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(true).source(source);
-        try {
-            currentIngest.inc();
-            ingestProcessor.add(indexRequest);
-        } catch (Exception e) {
-            throwable = e;
-            closed = true;
-            logger.error("bulk add of create failed: " + e.getMessage(), e);
-        } finally {
-            currentIngest.dec();
-        }
-        return this;
+    public IngestIndexClient index(String index, String type, String id, BytesReference source) {
+        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source, false));
     }
 
     @Override
-    public IngestIndexClient index(String index, String type, String id, String source) {
+    public IngestIndexClient index(IndexRequest indexRequest) {
         if (closed) {
             throw new ElasticSearchIllegalStateException("client is closed");
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace("index: {}/{}/{} source = {}", index, type, id, source);
-        }
-        IndexRequest indexRequest = Requests.indexRequest(index).type(type).id(id).create(false).source(source);
         try {
             currentIngest.inc();
             ingestProcessor.add(indexRequest);
@@ -330,6 +309,12 @@ public class IngestIndexClient extends AbstractIngestClient {
 
     @Override
     public IngestIndexClient delete(String index, String type, String id) {
+        // do nothing
+        return this;
+    }
+
+    @Override
+    public IngestIndexClient delete(DeleteRequest deleteRequest) {
         // do nothing
         return this;
     }
