@@ -3,6 +3,7 @@ org.xbib.elasticsearch.action.ingest.delete
 org.xbib.elasticsearch.action.ingest.index
 org.xbib.elasticsearch.action.search.support
 org.xbib.elasticsearch.plugin
+org.xbib.elasticsearch.rest.action.ingest
 org.xbib.elasticsearch.support.client
 org.xbib.elasticsearch.support.client.bulk
 org.xbib.elasticsearch.support.client.ingest
