@@ -20,10 +20,15 @@ public interface Feeder {
      * @param type the type
      * @param id the id
      * @param source the source
-     * @return this document ingest
+     * @return this
      */
     Feeder index(String index, String type, String id, BytesReference source);
 
+    /**
+     * Index document
+     * @param indexRequest the index request
+     * @return this
+     */
     Feeder index(IndexRequest indexRequest);
 
     /**
@@ -32,7 +37,7 @@ public interface Feeder {
      * @param index the index
      * @param type the type
      * @param id the id
-     * @return this document ingest
+     * @return this
      */
     Feeder delete(String index, String type, String id);
 
