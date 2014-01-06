@@ -2,35 +2,35 @@
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.support.BaseRequestBuilder;
 import org.elasticsearch.action.support.PlainListenableActionFuture;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.unit.TimeValue;
 
 /**
  * A bulk request holds an ordered {@link org.elasticsearch.action.index.IndexRequest}s
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class IngestRequestBuilder implements ActionRequestBuilder<IngestRequest, IngestResponse> {
+public class IngestRequestBuilder extends BaseRequestBuilder<IngestRequest, IngestResponse> {
 
-    protected final InternalClient client;
-
-    protected final IngestRequest request;
-
-    protected IngestRequestBuilder(Client client) {
-        this.client = (InternalClient) client;
-        this.request = new IngestRequest();
+    public IngestRequestBuilder(Client client) {
+        this(client, new IngestRequest());
     }
 
+    public IngestRequestBuilder(Client client, IngestRequest request) {
+        super(client, request);
+    }
+
+    @Override
     public IngestRequest request() {
         return this.request;
     }
@@ -110,6 +110,11 @@ public class IngestRequestBuilder implements ActionRequestBuilder<IngestRequest,
      */
     public IngestRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {
         request.consistencyLevel(consistencyLevel);
+        return this;
+    }
+
+    public IngestRequestBuilder setTimeout(TimeValue timeout) {
+        request.timeout(timeout);
         return this;
     }
 

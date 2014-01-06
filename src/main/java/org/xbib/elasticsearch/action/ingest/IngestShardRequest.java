@@ -8,31 +8,28 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import java.io.IOException;
 import java.util.List;
 
-import static org.elasticsearch.common.collect.Lists.newArrayList;
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
-/**
- *
- */
 public class IngestShardRequest extends ShardReplicationOperationRequest {
 
     private int shardId;
 
     private List<IngestItemRequest> items;
 
-    IngestShardRequest() {
+    public IngestShardRequest() {
     }
 
-    IngestShardRequest(String index, int shardId, List<IngestItemRequest> items) {
+    public IngestShardRequest(String index, int shardId, List<IngestItemRequest> items) {
         this.index = index;
         this.shardId = shardId;
         this.items = items;
     }
 
-    int shardId() {
+    public int shardId() {
         return shardId;
     }
 
-    List<IngestItemRequest> items() {
+    public List<IngestItemRequest> items() {
         return items;
     }
 
@@ -66,7 +63,7 @@ public class IngestShardRequest extends ShardReplicationOperationRequest {
         super.readFrom(in);
         shardId = in.readVInt();
         int size = in.readVInt();
-        items = newArrayList();
+        items = newLinkedList();
         for (int i = 0; i < size; i++) {
             if (in.readBoolean()) {
                 items.add(IngestItemRequest.readBulkItem(in));

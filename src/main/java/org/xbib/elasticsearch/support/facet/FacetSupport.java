@@ -28,8 +28,6 @@ import java.util.Iterator;
 
 /**
  * Facet support
- *
- * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
 public class FacetSupport  {
 

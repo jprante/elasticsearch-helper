@@ -7,17 +7,21 @@ import org.elasticsearch.client.Client;
 import java.net.URI;
 
 /**
- * Transport client search helper API
+ * Search support
  */
 public interface Search {
 
+    /**
+     * Return the Elasticsearch client
+     * @return the client
+     */
     Client client();
 
     /**
      * Set index
      *
-     * @param index
-     * @return this TransportClientHelper
+     * @param index index
+     * @return this search
      */
     Search setIndex(String index);
 
@@ -27,18 +31,6 @@ public interface Search {
      * @return the index
      */
     String getIndex();
-
-    String getType();
-
-    /**
-     * Create a new client
-     */
-    Search newClient();
-
-    /**
-     * Create a new client
-     */
-    Search newClient(URI uri);
 
     /**
      * Create new search request
@@ -51,7 +43,7 @@ public interface Search {
     BasicRequest newGetRequest();
 
     /**
-     * Shutdown, free all resources
+     * Shutdown and release all resources
      */
     void shutdown();
 

@@ -4,9 +4,6 @@ package org.xbib.elasticsearch.action.ingest;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.create.TransportCreateIndexAction;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.TransportAction;
@@ -17,13 +14,9 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.ShardIterator;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Maps;
-import org.elasticsearch.common.collect.Sets;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BaseTransportRequestHandler;
 import org.elasticsearch.transport.TransportChannel;
@@ -31,18 +24,16 @@ import org.elasticsearch.transport.TransportService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
+import static org.elasticsearch.common.collect.Maps.newHashMap;
+
 /**
- * A concurrent bulk transport action
+ * Ingest transport action
  *
- * This action registers a ConcurrentTransportHandler to the transport service
  */
 public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
-
-    private final boolean autoCreateIndex;
 
     private final boolean allowIdGeneration;
 
@@ -50,17 +41,13 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
 
     private final TransportShardIngestAction shardBulkAction;
 
-    private final TransportCreateIndexAction createIndexAction;
-
     @Inject
     public TransportIngestAction(Settings settings, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-                                 TransportShardIngestAction shardBulkAction, TransportCreateIndexAction createIndexAction) {
+                                 TransportShardIngestAction shardBulkAction) {
         super(settings, threadPool);
         this.clusterService = clusterService;
         this.shardBulkAction = shardBulkAction;
-        this.createIndexAction = createIndexAction;
 
-        this.autoCreateIndex = settings.getAsBoolean("action.auto_create_index", true);
         this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
 
         transportService.registerHandler(IngestAction.NAME, new IngestTransportHandler());
@@ -68,59 +55,11 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
 
     @Override
     protected void doExecute(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
-        final long startTime = System.currentTimeMillis();
-        Set<String> indices = Sets.newHashSet();
-        for (ActionRequest request : ingestRequest.requests()) {
-            if (request instanceof IndexRequest) {
-                IndexRequest indexRequest = (IndexRequest) request;
-                if (!indices.contains(indexRequest.index())) {
-                    indices.add(indexRequest.index());
-                }
-            } else if (request instanceof DeleteRequest) {
-                DeleteRequest deleteRequest = (DeleteRequest) request;
-                if (!indices.contains(deleteRequest.index())) {
-                    indices.add(deleteRequest.index());
-                }
-            }
-        }
-
-        if (autoCreateIndex) {
-            final AtomicInteger counter = new AtomicInteger(indices.size());
-            final AtomicBoolean failed = new AtomicBoolean();
-            for (String index : indices) {
-                if (!clusterService.state().metaData().hasConcreteIndex(index)) {
-                    createIndexAction.execute(new CreateIndexRequest(index).cause("auto(bulk api)"), new ActionListener<CreateIndexResponse>() {
-                        @Override
-                        public void onResponse(CreateIndexResponse result) {
-                            if (counter.decrementAndGet() == 0) {
-                                executeBulk(ingestRequest, startTime, listener);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Throwable e) {
-                            if (ExceptionsHelper.unwrapCause(e) instanceof IndexAlreadyExistsException) {
-                                // we have the index, do it
-                                if (counter.decrementAndGet() == 0) {
-                                    executeBulk(ingestRequest, startTime, listener);
-                                }
-                            } else if (failed.compareAndSet(false, true)) {
-                                listener.onFailure(e);
-                            }
-                        }
-                    });
-                } else {
-                    if (counter.decrementAndGet() == 0) {
-                        executeBulk(ingestRequest, startTime, listener);
-                    }
-                }
-            }
-        } else {
-            executeBulk(ingestRequest, startTime, listener);
-        }
+        executeBulk(ingestRequest, listener);
     }
 
-    private void executeBulk(final IngestRequest ingestRequest, final long startTime, final ActionListener<IngestResponse> listener) {
+    private void executeBulk(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
+        final long startTime = System.currentTimeMillis();
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
@@ -145,7 +84,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         }
 
         // first, go over all the requests and create a ShardId -> Operations mapping
-        Map<ShardId, List<IngestItemRequest>> requestsByShard = Maps.newHashMap();
+        Map<ShardId, List<IngestItemRequest>> requestsByShard = newHashMap();
         int i = 0;
         for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
@@ -153,7 +92,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
                 List<IngestItemRequest> list = requestsByShard.get(shardId);
                 if (list == null) {
-                    list = Lists.newArrayList();
+                    list = newLinkedList();
                     requestsByShard.put(shardId, list);
                 }
                 list.add(new IngestItemRequest(i, request));
@@ -166,7 +105,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     for (ShardIterator shardIt : groupShards) {
                         List<IngestItemRequest> list = requestsByShard.get(shardIt.shardId());
                         if (list == null) {
-                            list = Lists.newArrayList();
+                            list = newLinkedList();
                             requestsByShard.put(shardIt.shardId(), list);
                         }
                         list.add(new IngestItemRequest(i, deleteRequest));
@@ -175,7 +114,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
                     List<IngestItemRequest> list = requestsByShard.get(shardId);
                     if (list == null) {
-                        list = Lists.newArrayList();
+                        list = newLinkedList();
                         requestsByShard.put(shardId, list);
                     }
                     list.add(new IngestItemRequest(i, request));
@@ -184,11 +123,11 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             i++;
         }
 
-        final List<IngestItemSuccess> success = Lists.newLinkedList();
-        final List<IngestItemFailure> failure = Lists.newLinkedList();
+        final AtomicInteger successSize = new AtomicInteger(0);
+        final List<IngestItemFailure> failure = newLinkedList();
 
         if (requestsByShard.isEmpty()) {
-            listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
+            listener.onResponse(new IngestResponse(0, failure, System.currentTimeMillis() - startTime));
             return;
         }
 
@@ -202,9 +141,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestShardResponse>() {
                 @Override
                 public void onResponse(IngestShardResponse ingestShardResponse) {
-                    synchronized (success) {
-                        success.addAll(ingestShardResponse.success());
-                    }
+                    successSize.addAndGet(ingestShardResponse.successSize());
                     if (counter.decrementAndGet() == 0) {
                         finishHim();
                     }
@@ -225,7 +162,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                 }
 
                 private void finishHim() {
-                    listener.onResponse(new IngestResponse(success, failure, System.currentTimeMillis() - startTime));
+                    listener.onResponse(new IngestResponse(successSize.get(), failure, System.currentTimeMillis() - startTime));
                 }
             });
         }

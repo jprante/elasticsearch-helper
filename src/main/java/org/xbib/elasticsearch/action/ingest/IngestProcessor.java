@@ -13,8 +13,10 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestProcessor {
@@ -25,28 +27,36 @@ public class IngestProcessor {
 
     private final int actions;
 
-    private final int maxVolume;
+    private final ByteSizeValue maxVolume;
+
+    private final TimeValue waitForResponses;
 
     private final Semaphore semaphore;
 
-    private final AtomicLong executionIdGen = new AtomicLong();
+    private final AtomicLong bulkId;
 
-    private final IngestRequest ingestRequest = new IngestRequest();
+    private final IngestRequest ingestRequest;
 
     private Listener listener;
 
     private volatile boolean closed = false;
 
-    public static Builder builder(Client client) {
-        return new Builder(client);
-    }
-
-    IngestProcessor(Client client, int concurrency, int actions, ByteSizeValue maxVolume) {
+    public IngestProcessor(Client client, Integer concurrency, Integer actions,
+                           ByteSizeValue maxVolume, TimeValue waitForResponses) {
         this.client = client;
-        this.concurrency = concurrency;
-        this.actions = actions;
-        this.maxVolume = maxVolume.bytesAsInt();
-        this.semaphore = new Semaphore(concurrency);
+        this.concurrency = concurrency != null ?
+                Math.min(Math.abs(concurrency), 256) :
+                Runtime.getRuntime().availableProcessors() * 4;
+        this.actions = actions != null ? Math.min(actions, 32768) : 1000;
+        this.maxVolume = maxVolume != null ?
+                new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES) :
+                new ByteSizeValue(10, ByteSizeUnit.MB);
+        this.waitForResponses = waitForResponses != null ?
+                new TimeValue(Math.max(waitForResponses.millis(), 1000), TimeUnit.MILLISECONDS) :
+                new TimeValue(60, TimeUnit.SECONDS);
+        this.semaphore = new Semaphore(this.concurrency);
+        this.bulkId = new AtomicLong(0L);
+        this.ingestRequest = new IngestRequest();
     }
 
     public IngestProcessor listener(Listener listener) {
@@ -77,7 +87,7 @@ public class IngestProcessor {
      */
     public IngestProcessor add(IndexRequest request) {
         ingestRequest.add((ActionRequest) request);
-        flushIfNeeded();
+        flushIfNeeded(listener);
         return this;
     }
 
@@ -87,10 +97,20 @@ public class IngestProcessor {
      */
     public IngestProcessor add(DeleteRequest request) {
         ingestRequest.add((ActionRequest) request);
-        flushIfNeeded();
+        flushIfNeeded(listener);
         return this;
     }
 
+    /**
+     * For REST API
+     * @param data the REST body data
+     * @param contentUnsafe if content is unsafe
+     * @param defaultIndex default index
+     * @param defaultType default type
+     * @param listener the listener
+     * @return this processor
+     * @throws Exception
+     */
     public IngestProcessor add(BytesReference data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                Listener listener) throws Exception {
@@ -103,91 +123,64 @@ public class IngestProcessor {
      * Closes the processor. If flushing by time is enabled, then it is shut down.
      * Any remaining bulk actions are flushed, and for the bulk responses is being waited.
      */
-    public synchronized void close() throws InterruptedException {
+    public void close() throws InterruptedException {
         if (closed) {
-            return;
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
         closed = true;
         flush();
-        waitForAllResponses();
+        waitForResponses(waitForResponses);
     }
 
     /**
      * Flush this bulk processor, write all requests
      */
-    public void flush() {
-        synchronized (ingestRequest) {
-            if (ingestRequest.numberOfActions() > 0) {
-                process(ingestRequest.takeAll(), listener);
-            }
+    public synchronized void flush() {
+        if (ingestRequest.numberOfActions() > 0) {
+            process(ingestRequest.takeAll(), listener);
         }
-    }
-
-    private void flushIfNeeded() {
-        flushIfNeeded(listener);
     }
 
     /**
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to push
      */
-    private void flushIfNeeded(Listener listener) {
+    private synchronized void flushIfNeeded(Listener listener) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("ingest processor already closed");
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
-        synchronized (ingestRequest) {
-            if (maxVolume > 0 && ingestRequest.estimatedSizeInBytes() >= maxVolume) {
+        if (actions > 0) {
+            while (ingestRequest.numberOfActions() >= actions) {
+               process(ingestRequest.take(actions), listener);
+            }
+        } else {
+            while (ingestRequest.numberOfActions() > 0
+                    && maxVolume.bytesAsInt() > 0
+                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
                 process(ingestRequest.takeAll(), listener);
-            } else {
-                if (actions > 0 && ingestRequest.numberOfActions() >= actions) {
-                    process(ingestRequest.take(actions), listener);
-                }
             }
         }
     }
 
     /**
-     * A thread can flush a partial ConcurrentBulkRequest here.
-     * Check for concurrency limit and wait for outstanding requests by the help
-     * of a semaphore.
+     * Process an ingest request and send responses via the listener.
      *
      * @param request the ingest request
      */
     private void process(final IngestRequest request, final Listener listener) {
-        if (request.numberOfActions() == 0) {
-            return;
-        }
-        // only works with a listener
         if (listener == null) {
             return;
         }
-
-        final long executionId = executionIdGen.incrementAndGet();
-
-        if (concurrency <= 0) {
-            // execute in a blocking fashion...
-            try {
-                listener.beforeBulk(executionId, request);
-                listener.afterBulk(executionId, client.execute(IngestAction.INSTANCE, request).actionGet());
-            } catch (Exception e) {
-                listener.afterBulk(executionId, e);
-            }
-        } else {
-            listener.beforeBulk(executionId, request);
-
-            // concurrency control
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                listener.afterBulk(executionId, e);
-                return;
-            }
-
+        final long id = bulkId.incrementAndGet();
+        boolean done = false;
+        try {
+            semaphore.acquire();
+            listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
             client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
                 @Override
                 public void onResponse(IngestResponse response) {
                     try {
-                        listener.afterBulk(executionId, response);
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
                     } finally {
                         semaphore.release();
                     }
@@ -196,28 +189,32 @@ public class IngestProcessor {
                 @Override
                 public void onFailure(Throwable e) {
                     try {
-                        listener.afterBulk(executionId, e);
+                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
                     } finally {
                         semaphore.release();
                     }
                 }
             });
+            done = true;
+        } catch (InterruptedException e) {
+            // semaphore not acquired
+            Thread.currentThread().interrupt();
+            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+        } finally {
+            if (!done) {
+                semaphore.release();
+            }
         }
     }
 
     /**
-     * Wait for all outstanding bulk requests.
-     * At maximum, the waiting time is 60 seconds.
+     * Wait for responses of outstanding requests.
      *
-     * @return true if there are no outstanding bulk requests, false otherwise
+     * @return true if all requests answered within the waiting time, false if not
      * @throws InterruptedException
      */
-    public synchronized boolean waitForAllResponses() throws InterruptedException {
-        int n = 60;
-        while (semaphore.availablePermits() < concurrency && n > 0) {
-            Thread.sleep(1000L);
-            n--;
-        }
+    public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
+        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
         return semaphore.availablePermits() == concurrency;
     }
 
@@ -227,86 +224,19 @@ public class IngestProcessor {
     public static interface Listener {
 
         /**
-         * Callback before the bulk is executed.
+         * Callback before the bulk request is executed.
          */
-        void beforeBulk(long executionId, IngestRequest request);
+        void beforeBulk(long bulkId, int concurrency, IngestRequest request);
 
         /**
-         * Callback after a successful execution of bulk request.
+         * Callback after a successful execution of a bulk request.
          */
-        void afterBulk(long executionId, IngestResponse response);
+        void afterBulk(long bulkId, int concurrency, IngestResponse response);
 
         /**
-         * Callback after a failed execution of bulk request.
+         * Callback after a failed execution of a bulk request.
          */
-        void afterBulk(long executionId, Throwable failure);
+        void afterBulk(long bulkId, int concurrency, Throwable failure);
     }
 
-    /**
-     * A builder used to create a build an instance of a bulk processor.
-     */
-    public static class Builder {
-
-        private final Client client;
-        private Listener listener;
-        private int concurrency = 30;
-        private int actions = 100;
-        private ByteSizeValue volume = new ByteSizeValue(5, ByteSizeUnit.MB);
-
-        /**
-         * Creates a builder of bulk processor with the client to use
-         */
-        public Builder(Client client) {
-            this.client = client;
-        }
-
-        /**
-         *  Set the listener that will be used to be notified on the completion of bulk requests.
-         * @param listener the listener
-         * @return the builder
-         */
-        public Builder listener(Listener listener) {
-            this.listener = listener;
-            return this;
-        }
-
-        /**
-         * Sets the number of concurrent requests allowed to be executed. A
-         * value of 0 means that only a single request will be allowed to be
-         * executed. A value of 1 means 1 concurrent request is allowed to be
-         * executed while accumulating new bulk requests. Defaults to
-         * <tt>1</tt>.
-         */
-        public Builder concurrency(int concurrency) {
-            this.concurrency = concurrency;
-            return this;
-        }
-
-        /**
-         * Sets when to flush a new bulk request based on the number of actions
-         * currently added. Defaults to <tt>1000</tt>. Can be set to <tt>-1</tt>
-         * to disable it.
-         */
-        public Builder actions(int actions) {
-            this.actions = actions;
-            return this;
-        }
-
-        /**
-         * When to flush a new bulk request based on the byte volume of actions
-         * currently added. Defaults to <tt>5mb</tt>. Can be set to <tt>-1</tt>
-         * to disable it.
-         */
-        public Builder maxVolume(ByteSizeValue volume) {
-            this.volume = volume;
-            return this;
-        }
-
-        /**
-         * Builds a new bulk processor.
-         */
-        public IngestProcessor build() {
-            return new IngestProcessor(client, concurrency, actions, volume).listener(listener);
-        }
-    }
 }

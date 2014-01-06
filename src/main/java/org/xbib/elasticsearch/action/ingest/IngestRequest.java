@@ -11,8 +11,6 @@ import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.collect.Lists;
-import org.elasticsearch.common.collect.Queues;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -22,15 +20,17 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.VersionType;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
+import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestRequest implements ActionRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
+
+    private boolean listenerThreaded = false;
 
     private final Queue<ActionRequest> requests = newQueue();
 
@@ -40,20 +40,14 @@ public class IngestRequest implements ActionRequest {
 
     private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
 
-    private boolean listenerThreaded;
+    private TimeValue timeout = IngestShardRequest.DEFAULT_TIMEOUT;
 
-    protected Queue<ActionRequest> newQueue() {
-        return Queues.newConcurrentLinkedQueue();
+    public Queue<ActionRequest> newQueue() {
+        return newConcurrentLinkedQueue();
     }
 
     protected Queue<ActionRequest> requests() {
         return requests;
-    }
-
-    protected IngestRequest requests(Collection<ActionRequest> requests, long sizeInBytes) {
-        this.requests.addAll(requests);
-        this.sizeInBytes.set(sizeInBytes);
-        return this;
     }
 
     /**
@@ -72,7 +66,7 @@ public class IngestRequest implements ActionRequest {
         } else if (request instanceof DeleteRequest) {
             add((DeleteRequest) request);
         } else {
-            throw new ElasticSearchIllegalArgumentException("No support for request [" + request + "]");
+            throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
         }
         return this;
     }
@@ -87,7 +81,7 @@ public class IngestRequest implements ActionRequest {
             } else if (request instanceof DeleteRequest) {
                 add((DeleteRequest) request);
             } else {
-                throw new ElasticSearchIllegalArgumentException("No support for request [" + request + "]");
+                throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
             }
         }
         return this;
@@ -104,8 +98,9 @@ public class IngestRequest implements ActionRequest {
     }
 
     IngestRequest internalAdd(IndexRequest request) {
-        requests.add(request);
-        sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
+        requests.offer(request);
+        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+        sizeInBytes.addAndGet(length);
         return this;
     }
 
@@ -113,7 +108,7 @@ public class IngestRequest implements ActionRequest {
      * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
      */
     public IngestRequest add(DeleteRequest request) {
-        requests.add(request);
+        requests.offer(request);
         sizeInBytes.addAndGet(REQUEST_OVERHEAD);
         return this;
     }
@@ -188,7 +183,6 @@ public class IngestRequest implements ActionRequest {
                 String opType = null;
                 long version = 0;
                 VersionType versionType = VersionType.INTERNAL;
-                String percolate = null;
 
                 // at this stage, next token can either be END_OBJECT (and use default index and type, with auto generated id)
                 // or START_OBJECT which will have another set of parameters
@@ -222,8 +216,6 @@ public class IngestRequest implements ActionRequest {
                             version = parser.longValue();
                         } else if ("_version_type".equals(currentFieldName) || "_versionType".equals(currentFieldName) || "version_type".equals(currentFieldName) || "versionType".equals(currentFieldName)) {
                             versionType = VersionType.fromString(parser.text());
-                        } else if ("percolate".equals(currentFieldName) || "_percolate".equals(currentFieldName)) {
-                            percolate = parser.textOrNull();
                         }
                     }
                 }
@@ -241,19 +233,16 @@ public class IngestRequest implements ActionRequest {
                     if ("index".equals(action)) {
                         if (opType == null) {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                    .percolate(percolate));
+                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
                         } else {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                     .create("create".equals(opType))
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                    .percolate(percolate));
+                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
                         }
                     } else if ("create".equals(action)) {
                         internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                 .create(true)
-                                .source(data.slice(from, nextMarker - from), contentUnsafe)
-                                .percolate(percolate));
+                                .source(data.slice(from, nextMarker - from), contentUnsafe));
                     }
                     // move pointers
                     from = nextMarker + 1;
@@ -291,43 +280,60 @@ public class IngestRequest implements ActionRequest {
     }
 
     /**
-     * Take all requests out of this bulk request.
-     * This method is thread safe.
-     *
-     * @return another bulk request
+     * Set the timeout for this operation.
      */
-    public synchronized IngestRequest takeAll() {
-        return take(requests.size());
+    public IngestRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return this.timeout;
     }
 
     /**
-     * Take a number of requests out of this bulk request and put them
-     * into an array list.
-     * <p/>
+     * Take all requests from queue. This method is thread safe.
+     *
+     * @return a bulk request
+     */
+    public IngestRequest takeAll() {
+        IngestRequest request = new IngestRequest();
+        while (!requests.isEmpty()) {
+            ActionRequest actionRequest = requests.poll();
+            request.add(actionRequest);
+            if (actionRequest instanceof IndexRequest) {
+                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                sizeInBytes.addAndGet(-length);
+            } else if (actionRequest instanceof DeleteRequest) {
+                sizeInBytes.addAndGet(REQUEST_OVERHEAD);
+            }
+        }
+        return request;
+    }
+
+    /**
+     * Take a number of requests from the bulk request queue.
+     *
      * This method is thread safe.
      *
      * @param numRequests number of requests
      * @return a partial bulk request
      */
-    public synchronized IngestRequest take(int numRequests) {
-        Collection<ActionRequest> partRequest = Lists.newArrayListWithCapacity(numRequests);
-        long size = 0L;
+    public IngestRequest take(int numRequests) {
+        IngestRequest request = new IngestRequest();
         for (int i = 0; i < numRequests; i++) {
-            ActionRequest request = requests.poll();
-            if (request != null) {
-                // some nasty overhead to calculate the decreased byte size
-                if (request instanceof IndexRequest) {
-                    long l = ((IndexRequest) request).source().length() + REQUEST_OVERHEAD;
-                    sizeInBytes.addAndGet(-l);
-                    size += l;
-                } else if (request instanceof DeleteRequest) {
-                    sizeInBytes.addAndGet(-REQUEST_OVERHEAD);
-                    size += REQUEST_OVERHEAD;
-                }
-                partRequest.add(request);
+            ActionRequest actionRequest = requests.poll();
+            request.add(actionRequest);
+            if (actionRequest instanceof IndexRequest) {
+                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                sizeInBytes.addAndGet(-length);
+            } else if (actionRequest instanceof DeleteRequest) {
+                sizeInBytes.addAndGet(REQUEST_OVERHEAD);
             }
         }
-        return new IngestRequest().requests(partRequest, size);
+        return request;
     }
 
     private int findNextMarker(byte marker, int from, BytesReference data, int length) {
@@ -343,7 +349,7 @@ public class IngestRequest implements ActionRequest {
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = null;
         if (requests.isEmpty()) {
-            validationException = addValidationError("no requests added", validationException);
+            validationException = addValidationError("no requests added", null);
         }
         for (ActionRequest request : requests) {
             ActionRequestValidationException ex = request.validate();
@@ -354,7 +360,6 @@ public class IngestRequest implements ActionRequest {
                 validationException.addValidationErrors(ex.validationErrors());
             }
         }
-
         return validationException;
     }
 
@@ -373,6 +378,7 @@ public class IngestRequest implements ActionRequest {
     public void readFrom(StreamInput in) throws IOException {
         replicationType = ReplicationType.fromId(in.readByte());
         consistencyLevel = WriteConsistencyLevel.fromId(in.readByte());
+        timeout = TimeValue.readTimeValue(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             byte type = in.readByte();
@@ -392,6 +398,7 @@ public class IngestRequest implements ActionRequest {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeByte(replicationType.id());
         out.writeByte(consistencyLevel.id());
+        timeout.writeTo(out);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {

@@ -5,39 +5,26 @@ import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.admin.indices.status.ShardStatus;
 import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
+import org.xbib.elasticsearch.support.config.ConfigHelper;
 
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
+import java.util.Map;
 
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+public abstract class AbstractIngestClient extends AbstractTransportClient
+        implements Ingest {
 
-public abstract class AbstractIngestClient extends AbstractClient
-        implements Ingest, ClientFactory {
-
-    private final static ESLogger logger = Loggers.getLogger(AbstractIngestClient.class);
-
-    /**
-     * An optional mapping
-     */
-    private String mapping;
-
-    private boolean dateDetection = false;
-
-    private boolean timeStampFieldEnabled = false;
-
-    private boolean kibanaEnabled = false;
-
-    private String timeStampField = "@timestamp";
+    private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractIngestClient.class.getSimpleName());
 
     /**
      * The default index
@@ -48,15 +35,7 @@ public abstract class AbstractIngestClient extends AbstractClient
      */
     private String type;
 
-    public AbstractIngestClient newClient() {
-        super.newClient();
-        return this;
-    }
-
-    public AbstractIngestClient newClient(URI uri) {
-        super.newClient(uri);
-        return this;
-    }
+    private ConfigHelper configHelper = new ConfigHelper();
 
     @Override
     public AbstractIngestClient setIndex(String index) {
@@ -64,7 +43,6 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
-    @Override
     public String getIndex() {
         return index;
     }
@@ -75,7 +53,6 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
-    @Override
     public String getType() {
         return type;
     }
@@ -104,22 +81,24 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
+    @Override
     public int waitForRecovery() {
         if (getIndex() == null) {
             logger.warn("not waiting for recovery, index not set");
             return -1;
         }
+        logger.info("waiting for recovery");
         IndicesStatusResponse response = client.admin().indices()
-                .status(new IndicesStatusRequest(getIndex())
-                        .recovery(true)
-                ).actionGet();
-        logger.info("indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
-        for (ShardStatus status : response.shards()) {
-            logger.info("shard {} status {}", status.shardId(), status.state().name());
+                .status(new IndicesStatusRequest(getIndex()).recovery(true)).actionGet();
+        logger.info("waiting for recovery: indices status response = {}, failed = {}", response.getTotalShards(), response.getFailedShards());
+        // not all shards are in getShards()
+        for (ShardStatus status : response.getShards()) {
+            logger.info("recovery: shard {} status {}", status.getShardId(), status.getState().name());
         }
         return response.getTotalShards();
     }
 
+    @Override
     public int updateReplicaLevel(int level) throws IOException {
         if (getIndex() == null) {
             logger.warn("no index name given");
@@ -130,142 +109,93 @@ public abstract class AbstractIngestClient extends AbstractClient
         return waitForRecovery();
     }
 
-
+    @Override
     public AbstractIngestClient shards(int shards) {
         return setting("index.number_of_shards", shards);
     }
 
+    @Override
     public AbstractIngestClient replica(int replica) {
         return setting("index.number_of_replicas", replica);
     }
 
-    /**
-     * Optional settings
-     */
-    private ImmutableSettings.Builder settingsBuilder;
-
+    public AbstractIngestClient resetSettings() {
+        configHelper.reset();
+        return this;
+    }
 
     public AbstractIngestClient setting(String key, String value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
     public AbstractIngestClient setting(String key, Boolean value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
     public AbstractIngestClient setting(String key, Integer value) {
-        if (settingsBuilder == null) {
-            settingsBuilder = ImmutableSettings.settingsBuilder();
-        }
-        settingsBuilder.put(key, value);
+        configHelper.setting(key, value);
         return this;
     }
 
-    public ImmutableSettings.Builder settings() {
-        return settingsBuilder != null ? settingsBuilder : null;
+    public AbstractIngestClient setting(InputStream in) throws IOException {
+        configHelper.setting(in);
+        return this;
+    }
+
+    public ImmutableSettings.Builder settingsBuilder() {
+        return configHelper.settingsBuilder();
+    }
+
+    public Settings settings() {
+        return configHelper.settings();
+    }
+
+    public AbstractIngestClient mapping(String type, InputStream in) throws IOException {
+        configHelper.mapping(type, in);
+        return this;
+    }
+
+    public AbstractIngestClient mapping(String type, String mapping) {
+        configHelper.mapping(type, mapping);
+        return this;
     }
 
     public AbstractIngestClient dateDetection(boolean dateDetection) {
-        this.dateDetection = dateDetection;
+        configHelper.dateDetection(dateDetection);
         return this;
     }
 
     public boolean dateDetection() {
-        return dateDetection;
+        return configHelper.dateDetection();
     }
 
     public AbstractIngestClient timeStampField(String timeStampField) {
-        this.timeStampField = timeStampField;
+        configHelper.timeStampField(timeStampField);
         return this;
     }
 
     public String timeStampField() {
-        return timeStampField;
+        return configHelper.timeStampField();
     }
 
     public AbstractIngestClient timeStampFieldEnabled(boolean enable) {
-        this.timeStampFieldEnabled = enable;
+        configHelper.timeStampFieldEnabled(enable);
         return this;
     }
 
     public AbstractIngestClient kibanaEnabled(boolean enable) {
-        this.kibanaEnabled = enable;
+        configHelper.kibanaEnabled(enable);
         return this;
     }
 
-    public AbstractIngestClient mapping(String mapping) {
-        this.mapping = mapping;
-        return this;
+    public String defaultMapping() throws IOException {
+        return configHelper.defaultMapping();
     }
 
-    public String mapping() {
-        return mapping;
-    }
-
-    public String defaultMapping() {
-        try {
-            XContentBuilder b =
-                    jsonBuilder()
-                            .startObject()
-                            .startObject("_default_")
-                            .field("date_detection", dateDetection);
-            if (timeStampFieldEnabled) {
-                            b.startObject("_timestamp")
-                            .field("enabled", timeStampFieldEnabled)
-                            .field("path", timeStampField)
-                            .endObject();
-            }
-            if (kibanaEnabled) {
-                            b.startObject("properties")
-                            .startObject("@fields")
-                            .field("type", "object")
-                            .field("dynamic", true)
-                            .field("path", "full")
-                            .endObject()
-                            .startObject("@message")
-                            .field("type", "string")
-                            .field("index", "analyzed")
-                            .endObject()
-                            .startObject("@source")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@source_host")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@source_path")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@tags")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .startObject("@timestamp")
-                            .field("type", "date")
-                            .endObject()
-                            .startObject("@type")
-                            .field("type", "string")
-                            .field("index", "not_analyzed")
-                            .endObject()
-                            .endObject();
-            }
-                            b.endObject()
-                            .endObject();
-            return b.string();
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
+    public Map<String,String> mappings() {
+        return configHelper.mappings();
     }
 
     protected AbstractIngestClient enableRefreshInterval() {
@@ -278,41 +208,71 @@ public abstract class AbstractIngestClient extends AbstractClient
         return this;
     }
 
-    public synchronized AbstractIngestClient newIndex(boolean ignoreException) {
+    @Override
+    public AbstractIngestClient newIndex() {
         if (client == null) {
-            logger.warn("no client");
+            logger.warn("no client for create index");
             return this;
         }
         if (getIndex() == null) {
-            logger.warn("no index name given to create");
-            return this;
-        }
-        if (getType() == null) {
-            logger.warn("no type name given to create");
+            logger.warn("no index name given to create index");
             return this;
         }
         CreateIndexRequest request = new CreateIndexRequest(getIndex());
         if (settings() != null) {
             request.settings(settings());
         }
-        if (mapping() == null) {
-            mapping(defaultMapping());
+        if (mappings() != null) {
+            for (Map.Entry<String,String> me : mappings().entrySet()) {
+                request.mapping(me.getKey(), me.getValue());
+            }
         }
-        request.mapping(getType(), mapping());
-        logger.info("creating index = {} type = {} settings = {} mapping = {}",
-                getIndex(),
-                getType(),
-                settings() != null ? settings().build().getAsMap() : "",
-                mapping());
+        logger.info("creating index {} with settings = {}, mappings = {}",
+                getIndex(), settings() != null ? settings().getAsMap() : null, mappings());
         try {
             client.admin().indices().create(request).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            if (!ignoreException) {
-                throw new RuntimeException(e);
-            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
         return this;
     }
+
+    @Override
+    public synchronized AbstractIngestClient deleteIndex() {
+        if (client == null) {
+            logger.warn("no client for delete index");
+            return this;
+        }
+        if (getIndex() == null) {
+            logger.warn("no index name given to delete index");
+            return this;
+        }
+        try {
+            client.admin().indices().delete(new DeleteIndexRequest(getIndex())).actionGet();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return this;
+    }
+
+    public AbstractIngestClient putMapping(String index) {
+        if (client == null) {
+            logger.warn("no client for put mapping");
+            return this;
+        }
+        configHelper.putMapping(client, index);
+        return this;
+    }
+
+    public AbstractIngestClient deleteMapping(String index, String type) {
+        if (client == null) {
+            logger.warn("no client for delete mapping");
+            return this;
+        }
+        configHelper.deleteMapping(client, index, type);
+        return this;
+    }
+
 
     protected void update(String key, Object value) {
         if (client == null) {
