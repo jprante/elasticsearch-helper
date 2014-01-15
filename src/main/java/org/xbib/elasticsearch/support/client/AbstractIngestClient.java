@@ -1,12 +1,12 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.ElasticSearchTimeoutException;
+import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
 import org.elasticsearch.action.admin.indices.status.ShardStatus;
@@ -75,7 +75,7 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
             } else {
                 logger.info("... cluster state ok");
             }
-        } catch (ElasticSearchTimeoutException e) {
+        } catch (ElasticsearchTimeoutException e) {
             throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
         }
         return this;

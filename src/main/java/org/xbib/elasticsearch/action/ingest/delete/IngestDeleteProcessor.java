@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest.delete;
 
-import org.elasticsearch.ElasticSearchIllegalStateException;
+import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.WriteConsistencyLevel;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -115,7 +115,7 @@ public class IngestDeleteProcessor {
      */
     private synchronized void flushIfNeeded(Listener listener) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("ingest processor already closed");
+            throw new ElasticsearchIllegalStateException("ingest processor already closed");
         }
         if (actions > 0) {
             if (ingestRequest.numberOfActions() >= actions) {

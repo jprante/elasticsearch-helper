@@ -6,7 +6,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.ElasticSearchIllegalStateException;
+import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -207,7 +207,7 @@ public class IngestClient extends AbstractIngestClient {
 
     public IngestClient deleteIndex() {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.deleteIndex();
         return this;
@@ -228,7 +228,7 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public IngestClient putMapping(String index) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.putMapping(index);
         return this;
@@ -237,7 +237,7 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public IngestClient deleteMapping(String index, String type) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.deleteMapping(index, type);
         return this;
@@ -278,7 +278,7 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public IngestClient index(IndexRequest indexRequest) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -301,7 +301,7 @@ public class IngestClient extends AbstractIngestClient {
     @Override
     public IngestClient delete(DeleteRequest deleteRequest) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -330,7 +330,7 @@ public class IngestClient extends AbstractIngestClient {
 
     public IngestClient numberOfShards(int value) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);
+            throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
         }
         if (getIndex() == null) {
             logger.warn("no index name given");
@@ -351,7 +351,7 @@ public class IngestClient extends AbstractIngestClient {
 
     public IngestClient flush() {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);
+            throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
         }
         if (client == null) {
             logger.warn("no client");
@@ -365,7 +365,7 @@ public class IngestClient extends AbstractIngestClient {
     public synchronized void shutdown() {
         if (closed) {
             super.shutdown();
-            throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);
+            throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
         }
         if (client == null) {
             logger.warn("no client");

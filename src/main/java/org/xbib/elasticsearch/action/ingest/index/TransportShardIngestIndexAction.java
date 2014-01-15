@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest.index;
 
-import org.elasticsearch.ElasticSearchException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.RoutingMissingException;
@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Sets;
@@ -155,9 +156,9 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                     for (int j = 0; j < i; j++) {
                         ((IndexRequest) request.items().get(j).request()).version(versions[j]);
                     }
-                    throw (ElasticSearchException) e;
+                    throw (ElasticsearchException) e;
                 }
-                if (e instanceof ElasticSearchException && ((ElasticSearchException) e).status() == RestStatus.CONFLICT) {
+                if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
                     logger.trace("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
                 } else {
                     logger.debug("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
@@ -211,11 +212,15 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
             if (documentMapper == null) { // should not happen
                 return;
             }
+            IndexMetaData metaData = clusterService.state().metaData().index(index);
+            if (metaData == null) {
+                return;
+            }
+            long orderId = mappingUpdatedAction.generateNextMappingUpdateOrder();
             documentMapper.refreshSource();
 
-            IndexMetaData metaData = clusterService.state().metaData().index(index);
-
-            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource());
+            DiscoveryNode node = clusterService.localNode();
+            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource(), orderId, node != null ? node.id() : null);
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override
                 public void onResponse(MappingUpdatedAction.MappingUpdatedResponse mappingUpdatedResponse) {

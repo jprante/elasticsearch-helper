@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.support.client.bulk;
 
-import org.elasticsearch.ElasticSearchIllegalStateException;
+import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -268,7 +268,7 @@ public class BulkClient extends AbstractIngestClient {
     @Override
     public BulkClient newIndex() {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.newIndex();
         return this;
@@ -277,7 +277,7 @@ public class BulkClient extends AbstractIngestClient {
     @Override
     public BulkClient deleteIndex() {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.deleteIndex();
         return this;
@@ -318,7 +318,7 @@ public class BulkClient extends AbstractIngestClient {
     @Override
     public BulkClient index(IndexRequest indexRequest) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -341,7 +341,7 @@ public class BulkClient extends AbstractIngestClient {
     @Override
     public BulkClient delete(DeleteRequest deleteRequest) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -370,7 +370,7 @@ public class BulkClient extends AbstractIngestClient {
 
     public BulkClient numberOfShards(int value) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         if (getIndex() == null) {
             logger.warn("no index name given");
@@ -382,7 +382,7 @@ public class BulkClient extends AbstractIngestClient {
 
     public BulkClient numberOfReplicas(int value) {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         if (getIndex() == null) {
             logger.warn("no index name given");
@@ -394,7 +394,7 @@ public class BulkClient extends AbstractIngestClient {
 
     public BulkClient flush() {
         if (closed) {
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");
@@ -414,7 +414,7 @@ public class BulkClient extends AbstractIngestClient {
     public synchronized void shutdown() {
         if (closed) {
             super.shutdown();
-            throw new ElasticSearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");
