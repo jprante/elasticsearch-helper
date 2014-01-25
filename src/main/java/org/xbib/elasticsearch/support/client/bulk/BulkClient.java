@@ -356,18 +356,6 @@ public class BulkClient extends AbstractIngestClient {
         return this;
     }
 
-    @Override
-    public BulkClient waitForCluster() throws IOException {
-        super.waitForCluster();
-        return this;
-    }
-
-    @Override
-    public BulkClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        super.waitForCluster(status, timeout);
-        return this;
-    }
-
     public BulkClient numberOfShards(int value) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");

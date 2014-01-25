@@ -1,8 +1,6 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -15,6 +13,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+
 import org.xbib.elasticsearch.support.config.ConfigHelper;
 
 import java.io.IOException;
@@ -57,29 +56,6 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
         return type;
     }
 
-    @Override
-    public AbstractIngestClient waitForCluster() throws IOException {
-        return waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-    }
-
-    @Override
-    public AbstractIngestClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        try {
-            logger.info("waiting for cluster state {}", status.name());
-            ClusterHealthResponse healthResponse =
-                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
-            if (healthResponse.isTimedOut()) {
-                throw new IOException("cluster state is " + healthResponse.getStatus().name()
-                        + " and not " + status.name()
-                        + ", cowardly refusing to continue with operations");
-            } else {
-                logger.info("... cluster state ok");
-            }
-        } catch (ElasticsearchTimeoutException e) {
-            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
-        }
-        return this;
-    }
 
     @Override
     public int waitForRecovery() {

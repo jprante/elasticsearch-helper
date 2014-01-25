@@ -28,23 +28,6 @@ public interface Ingest extends ClientBuilder, Feeder {
     Ingest setType(String type);
 
     /**
-     * Wait for healthy cluster
-     *
-     * @return this
-     * @throws IOException
-     */
-    Ingest waitForCluster() throws IOException;
-
-    /**
-     * Wait for a cluster state
-     * @param status cluster helath status
-     * @param timevalue the time to wait
-     * @return this
-     * @throws IOException
-     */
-    Ingest waitForCluster(ClusterHealthStatus status, TimeValue timevalue) throws IOException;
-
-    /**
      * Set the maximum number of actions per bulk request
      *
      * @param maxActions maximum number of bulk actions
@@ -177,6 +160,12 @@ public interface Ingest extends ClientBuilder, Feeder {
      * @return number of shards after updating replica level
      */
     int updateReplicaLevel(int level) throws IOException;
+
+    /**
+     * Wait for cluster being healthy.
+     * @throws IOException
+     */
+    void waitForCluster() throws IOException;
 
     /**
      * Wait for index recovery (after replica change)

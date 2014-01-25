@@ -62,8 +62,7 @@ public class MockBulkClient extends BulkClient implements Ingest {
     }
 
     @Override
-    public MockBulkClient waitForCluster() throws IOException {
-        return this;
+    public void waitForCluster() throws IOException {
     }
 
     @Override

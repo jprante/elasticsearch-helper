@@ -319,18 +319,6 @@ public class IngestIndexClient extends AbstractIngestClient {
         return this;
     }
 
-    @Override
-    public IngestIndexClient waitForCluster() throws IOException {
-        super.waitForCluster();
-        return this;
-    }
-
-    @Override
-    public IngestIndexClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        super.waitForCluster(status, timeout);
-        return this;
-    }
-
     public IngestIndexClient numberOfShards(int value) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");

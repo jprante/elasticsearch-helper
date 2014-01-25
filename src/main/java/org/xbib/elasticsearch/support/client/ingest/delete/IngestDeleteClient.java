@@ -301,18 +301,6 @@ public class IngestDeleteClient extends AbstractIngestClient {
         return this;
     }
 
-    @Override
-    public IngestDeleteClient waitForCluster() throws IOException {
-        super.waitForCluster();
-        return this;
-    }
-
-    @Override
-    public IngestDeleteClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        super.waitForCluster(status, timeout);
-        return this;
-    }
-
     public IngestDeleteClient numberOfShards(int value) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
