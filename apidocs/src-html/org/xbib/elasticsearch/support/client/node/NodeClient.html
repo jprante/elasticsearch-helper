@@ -4,8 +4,8 @@
 <FONT color="green">001</FONT>    <a name="line.1"></a>
 <FONT color="green">002</FONT>    package org.xbib.elasticsearch.support.client.node;<a name="line.2"></a>
 <FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.ElasticSearchIllegalStateException;<a name="line.4"></a>
-<FONT color="green">005</FONT>    import org.elasticsearch.ElasticSearchTimeoutException;<a name="line.5"></a>
+<FONT color="green">004</FONT>    import org.elasticsearch.ElasticsearchIllegalStateException;<a name="line.4"></a>
+<FONT color="green">005</FONT>    import org.elasticsearch.ElasticsearchTimeoutException;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;<a name="line.7"></a>
 <FONT color="green">008</FONT>    import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;<a name="line.8"></a>
@@ -189,7 +189,7 @@
 <FONT color="green">186</FONT>        @Override<a name="line.186"></a>
 <FONT color="green">187</FONT>        public NodeClient index(IndexRequest indexRequest) {<a name="line.187"></a>
 <FONT color="green">188</FONT>            if (closed) {<a name="line.188"></a>
-<FONT color="green">189</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.189"></a>
+<FONT color="green">189</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.189"></a>
 <FONT color="green">190</FONT>            }<a name="line.190"></a>
 <FONT color="green">191</FONT>            try {<a name="line.191"></a>
 <FONT color="green">192</FONT>                currentIngest.inc();<a name="line.192"></a>
@@ -213,7 +213,7 @@
 <FONT color="green">210</FONT>        @Override<a name="line.210"></a>
 <FONT color="green">211</FONT>        public NodeClient delete(DeleteRequest deleteRequest) {<a name="line.211"></a>
 <FONT color="green">212</FONT>            if (closed) {<a name="line.212"></a>
-<FONT color="green">213</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.213"></a>
+<FONT color="green">213</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.213"></a>
 <FONT color="green">214</FONT>            }<a name="line.214"></a>
 <FONT color="green">215</FONT>            try {<a name="line.215"></a>
 <FONT color="green">216</FONT>                currentIngest.inc();<a name="line.216"></a>
@@ -230,7 +230,7 @@
 <FONT color="green">227</FONT>    <a name="line.227"></a>
 <FONT color="green">228</FONT>        public NodeClient flush() {<a name="line.228"></a>
 <FONT color="green">229</FONT>            if (closed) {<a name="line.229"></a>
-<FONT color="green">230</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.230"></a>
+<FONT color="green">230</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.230"></a>
 <FONT color="green">231</FONT>            }<a name="line.231"></a>
 <FONT color="green">232</FONT>            // we simply wait long enough for BulkProcessor flush<a name="line.232"></a>
 <FONT color="green">233</FONT>            try {<a name="line.233"></a>
@@ -259,7 +259,7 @@
 <FONT color="green">256</FONT>                if (healthResponse.isTimedOut()) {<a name="line.256"></a>
 <FONT color="green">257</FONT>                    throw new IOException("cluster not healthy, cowardly refusing to continue with operations");<a name="line.257"></a>
 <FONT color="green">258</FONT>                }<a name="line.258"></a>
-<FONT color="green">259</FONT>            } catch (ElasticSearchTimeoutException e) {<a name="line.259"></a>
+<FONT color="green">259</FONT>            } catch (ElasticsearchTimeoutException e) {<a name="line.259"></a>
 <FONT color="green">260</FONT>                throw new IOException("cluster not healthy, cowardly refusing to continue with operations");<a name="line.260"></a>
 <FONT color="green">261</FONT>            }<a name="line.261"></a>
 <FONT color="green">262</FONT>            return this;<a name="line.262"></a>
@@ -315,7 +315,7 @@
 <FONT color="green">312</FONT>    <a name="line.312"></a>
 <FONT color="green">313</FONT>        public NodeClient newIndex() {<a name="line.313"></a>
 <FONT color="green">314</FONT>            if (closed) {<a name="line.314"></a>
-<FONT color="green">315</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.315"></a>
+<FONT color="green">315</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.315"></a>
 <FONT color="green">316</FONT>            }<a name="line.316"></a>
 <FONT color="green">317</FONT>            if (client == null) {<a name="line.317"></a>
 <FONT color="green">318</FONT>                logger.warn("no client");<a name="line.318"></a>
@@ -346,7 +346,7 @@
 <FONT color="green">343</FONT>    <a name="line.343"></a>
 <FONT color="green">344</FONT>        public NodeClient deleteIndex() {<a name="line.344"></a>
 <FONT color="green">345</FONT>            if (closed) {<a name="line.345"></a>
-<FONT color="green">346</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.346"></a>
+<FONT color="green">346</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.346"></a>
 <FONT color="green">347</FONT>            }<a name="line.347"></a>
 <FONT color="green">348</FONT>            if (client == null) {<a name="line.348"></a>
 <FONT color="green">349</FONT>                logger.warn("no client");<a name="line.349"></a>

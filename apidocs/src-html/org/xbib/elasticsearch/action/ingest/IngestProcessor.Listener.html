@@ -4,7 +4,7 @@
 <FONT color="green">001</FONT>    <a name="line.1"></a>
 <FONT color="green">002</FONT>    package org.xbib.elasticsearch.action.ingest;<a name="line.2"></a>
 <FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.ElasticSearchIllegalStateException;<a name="line.4"></a>
+<FONT color="green">004</FONT>    import org.elasticsearch.ElasticsearchIllegalStateException;<a name="line.4"></a>
 <FONT color="green">005</FONT>    import org.elasticsearch.action.ActionListener;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.action.ActionRequest;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.action.WriteConsistencyLevel;<a name="line.7"></a>
@@ -128,7 +128,7 @@
 <FONT color="green">125</FONT>         */<a name="line.125"></a>
 <FONT color="green">126</FONT>        public void close() throws InterruptedException {<a name="line.126"></a>
 <FONT color="green">127</FONT>            if (closed) {<a name="line.127"></a>
-<FONT color="green">128</FONT>                throw new ElasticSearchIllegalStateException("processor already closed");<a name="line.128"></a>
+<FONT color="green">128</FONT>                throw new ElasticsearchIllegalStateException("processor already closed");<a name="line.128"></a>
 <FONT color="green">129</FONT>            }<a name="line.129"></a>
 <FONT color="green">130</FONT>            closed = true;<a name="line.130"></a>
 <FONT color="green">131</FONT>            flush();<a name="line.131"></a>
@@ -150,7 +150,7 @@
 <FONT color="green">147</FONT>         */<a name="line.147"></a>
 <FONT color="green">148</FONT>        private synchronized void flushIfNeeded(Listener listener) {<a name="line.148"></a>
 <FONT color="green">149</FONT>            if (closed) {<a name="line.149"></a>
-<FONT color="green">150</FONT>                throw new ElasticSearchIllegalStateException("processor already closed");<a name="line.150"></a>
+<FONT color="green">150</FONT>                throw new ElasticsearchIllegalStateException("processor already closed");<a name="line.150"></a>
 <FONT color="green">151</FONT>            }<a name="line.151"></a>
 <FONT color="green">152</FONT>            if (actions &gt; 0) {<a name="line.152"></a>
 <FONT color="green">153</FONT>                while (ingestRequest.numberOfActions() &gt;= actions) {<a name="line.153"></a>

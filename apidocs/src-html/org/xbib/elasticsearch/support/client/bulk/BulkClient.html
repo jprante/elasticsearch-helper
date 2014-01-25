@@ -4,7 +4,7 @@
 <FONT color="green">001</FONT>    <a name="line.1"></a>
 <FONT color="green">002</FONT>    package org.xbib.elasticsearch.support.client.bulk;<a name="line.2"></a>
 <FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.ElasticSearchIllegalStateException;<a name="line.4"></a>
+<FONT color="green">004</FONT>    import org.elasticsearch.ElasticsearchIllegalStateException;<a name="line.4"></a>
 <FONT color="green">005</FONT>    import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.action.bulk.BulkProcessor;<a name="line.7"></a>
@@ -271,7 +271,7 @@
 <FONT color="green">268</FONT>        @Override<a name="line.268"></a>
 <FONT color="green">269</FONT>        public BulkClient newIndex() {<a name="line.269"></a>
 <FONT color="green">270</FONT>            if (closed) {<a name="line.270"></a>
-<FONT color="green">271</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.271"></a>
+<FONT color="green">271</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.271"></a>
 <FONT color="green">272</FONT>            }<a name="line.272"></a>
 <FONT color="green">273</FONT>            super.newIndex();<a name="line.273"></a>
 <FONT color="green">274</FONT>            return this;<a name="line.274"></a>
@@ -280,7 +280,7 @@
 <FONT color="green">277</FONT>        @Override<a name="line.277"></a>
 <FONT color="green">278</FONT>        public BulkClient deleteIndex() {<a name="line.278"></a>
 <FONT color="green">279</FONT>            if (closed) {<a name="line.279"></a>
-<FONT color="green">280</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.280"></a>
+<FONT color="green">280</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.280"></a>
 <FONT color="green">281</FONT>            }<a name="line.281"></a>
 <FONT color="green">282</FONT>            super.deleteIndex();<a name="line.282"></a>
 <FONT color="green">283</FONT>            return this;<a name="line.283"></a>
@@ -321,7 +321,7 @@
 <FONT color="green">318</FONT>        @Override<a name="line.318"></a>
 <FONT color="green">319</FONT>        public BulkClient index(IndexRequest indexRequest) {<a name="line.319"></a>
 <FONT color="green">320</FONT>            if (closed) {<a name="line.320"></a>
-<FONT color="green">321</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.321"></a>
+<FONT color="green">321</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.321"></a>
 <FONT color="green">322</FONT>            }<a name="line.322"></a>
 <FONT color="green">323</FONT>            try {<a name="line.323"></a>
 <FONT color="green">324</FONT>                currentIngest.inc();<a name="line.324"></a>
@@ -344,7 +344,7 @@
 <FONT color="green">341</FONT>        @Override<a name="line.341"></a>
 <FONT color="green">342</FONT>        public BulkClient delete(DeleteRequest deleteRequest) {<a name="line.342"></a>
 <FONT color="green">343</FONT>            if (closed) {<a name="line.343"></a>
-<FONT color="green">344</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.344"></a>
+<FONT color="green">344</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.344"></a>
 <FONT color="green">345</FONT>            }<a name="line.345"></a>
 <FONT color="green">346</FONT>            try {<a name="line.346"></a>
 <FONT color="green">347</FONT>                currentIngest.inc();<a name="line.347"></a>
@@ -359,113 +359,101 @@
 <FONT color="green">356</FONT>            return this;<a name="line.356"></a>
 <FONT color="green">357</FONT>        }<a name="line.357"></a>
 <FONT color="green">358</FONT>    <a name="line.358"></a>
-<FONT color="green">359</FONT>        @Override<a name="line.359"></a>
-<FONT color="green">360</FONT>        public BulkClient waitForCluster() throws IOException {<a name="line.360"></a>
-<FONT color="green">361</FONT>            super.waitForCluster();<a name="line.361"></a>
-<FONT color="green">362</FONT>            return this;<a name="line.362"></a>
-<FONT color="green">363</FONT>        }<a name="line.363"></a>
-<FONT color="green">364</FONT>    <a name="line.364"></a>
-<FONT color="green">365</FONT>        @Override<a name="line.365"></a>
-<FONT color="green">366</FONT>        public BulkClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.366"></a>
-<FONT color="green">367</FONT>            super.waitForCluster(status, timeout);<a name="line.367"></a>
+<FONT color="green">359</FONT>        public BulkClient numberOfShards(int value) {<a name="line.359"></a>
+<FONT color="green">360</FONT>            if (closed) {<a name="line.360"></a>
+<FONT color="green">361</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.361"></a>
+<FONT color="green">362</FONT>            }<a name="line.362"></a>
+<FONT color="green">363</FONT>            if (getIndex() == null) {<a name="line.363"></a>
+<FONT color="green">364</FONT>                logger.warn("no index name given");<a name="line.364"></a>
+<FONT color="green">365</FONT>                return this;<a name="line.365"></a>
+<FONT color="green">366</FONT>            }<a name="line.366"></a>
+<FONT color="green">367</FONT>            setting("index.number_of_shards", value);<a name="line.367"></a>
 <FONT color="green">368</FONT>            return this;<a name="line.368"></a>
 <FONT color="green">369</FONT>        }<a name="line.369"></a>
 <FONT color="green">370</FONT>    <a name="line.370"></a>
-<FONT color="green">371</FONT>        public BulkClient numberOfShards(int value) {<a name="line.371"></a>
+<FONT color="green">371</FONT>        public BulkClient numberOfReplicas(int value) {<a name="line.371"></a>
 <FONT color="green">372</FONT>            if (closed) {<a name="line.372"></a>
-<FONT color="green">373</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.373"></a>
+<FONT color="green">373</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.373"></a>
 <FONT color="green">374</FONT>            }<a name="line.374"></a>
 <FONT color="green">375</FONT>            if (getIndex() == null) {<a name="line.375"></a>
 <FONT color="green">376</FONT>                logger.warn("no index name given");<a name="line.376"></a>
 <FONT color="green">377</FONT>                return this;<a name="line.377"></a>
 <FONT color="green">378</FONT>            }<a name="line.378"></a>
-<FONT color="green">379</FONT>            setting("index.number_of_shards", value);<a name="line.379"></a>
+<FONT color="green">379</FONT>            setting("index.number_of_replicas", value);<a name="line.379"></a>
 <FONT color="green">380</FONT>            return this;<a name="line.380"></a>
 <FONT color="green">381</FONT>        }<a name="line.381"></a>
 <FONT color="green">382</FONT>    <a name="line.382"></a>
-<FONT color="green">383</FONT>        public BulkClient numberOfReplicas(int value) {<a name="line.383"></a>
+<FONT color="green">383</FONT>        public BulkClient flush() {<a name="line.383"></a>
 <FONT color="green">384</FONT>            if (closed) {<a name="line.384"></a>
-<FONT color="green">385</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.385"></a>
+<FONT color="green">385</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.385"></a>
 <FONT color="green">386</FONT>            }<a name="line.386"></a>
-<FONT color="green">387</FONT>            if (getIndex() == null) {<a name="line.387"></a>
-<FONT color="green">388</FONT>                logger.warn("no index name given");<a name="line.388"></a>
+<FONT color="green">387</FONT>            if (client == null) {<a name="line.387"></a>
+<FONT color="green">388</FONT>                logger.warn("no client");<a name="line.388"></a>
 <FONT color="green">389</FONT>                return this;<a name="line.389"></a>
 <FONT color="green">390</FONT>            }<a name="line.390"></a>
-<FONT color="green">391</FONT>            setting("index.number_of_replicas", value);<a name="line.391"></a>
-<FONT color="green">392</FONT>            return this;<a name="line.392"></a>
-<FONT color="green">393</FONT>        }<a name="line.393"></a>
-<FONT color="green">394</FONT>    <a name="line.394"></a>
-<FONT color="green">395</FONT>        public BulkClient flush() {<a name="line.395"></a>
-<FONT color="green">396</FONT>            if (closed) {<a name="line.396"></a>
-<FONT color="green">397</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.397"></a>
-<FONT color="green">398</FONT>            }<a name="line.398"></a>
-<FONT color="green">399</FONT>            if (client == null) {<a name="line.399"></a>
-<FONT color="green">400</FONT>                logger.warn("no client");<a name="line.400"></a>
-<FONT color="green">401</FONT>                return this;<a name="line.401"></a>
-<FONT color="green">402</FONT>            }<a name="line.402"></a>
-<FONT color="green">403</FONT>            // we simply wait long enough for BulkProcessor flush plus one second<a name="line.403"></a>
-<FONT color="green">404</FONT>            try {<a name="line.404"></a>
-<FONT color="green">405</FONT>                logger.info("flushing bulk processor (forced wait of {} seconds...)", flushInterval.seconds());<a name="line.405"></a>
-<FONT color="green">406</FONT>                Thread.sleep(flushInterval.getMillis());<a name="line.406"></a>
-<FONT color="green">407</FONT>            } catch (InterruptedException e) {<a name="line.407"></a>
-<FONT color="green">408</FONT>                logger.error("interrupted", e);<a name="line.408"></a>
-<FONT color="green">409</FONT>            }<a name="line.409"></a>
-<FONT color="green">410</FONT>            return this;<a name="line.410"></a>
-<FONT color="green">411</FONT>        }<a name="line.411"></a>
-<FONT color="green">412</FONT>    <a name="line.412"></a>
-<FONT color="green">413</FONT>        @Override<a name="line.413"></a>
-<FONT color="green">414</FONT>        public synchronized void shutdown() {<a name="line.414"></a>
-<FONT color="green">415</FONT>            if (closed) {<a name="line.415"></a>
-<FONT color="green">416</FONT>                super.shutdown();<a name="line.416"></a>
-<FONT color="green">417</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.417"></a>
-<FONT color="green">418</FONT>            }<a name="line.418"></a>
-<FONT color="green">419</FONT>            if (client == null) {<a name="line.419"></a>
-<FONT color="green">420</FONT>                logger.warn("no client");<a name="line.420"></a>
-<FONT color="green">421</FONT>                return;<a name="line.421"></a>
-<FONT color="green">422</FONT>            }<a name="line.422"></a>
-<FONT color="green">423</FONT>            try {<a name="line.423"></a>
-<FONT color="green">424</FONT>                if (bulkProcessor != null) {<a name="line.424"></a>
-<FONT color="green">425</FONT>                    flush();<a name="line.425"></a>
-<FONT color="green">426</FONT>                    bulkProcessor.close();<a name="line.426"></a>
-<FONT color="green">427</FONT>                }<a name="line.427"></a>
-<FONT color="green">428</FONT>                logger.info("enabling refresh interval...");<a name="line.428"></a>
-<FONT color="green">429</FONT>                enableRefreshInterval();<a name="line.429"></a>
-<FONT color="green">430</FONT>                logger.info("shutting down...");<a name="line.430"></a>
-<FONT color="green">431</FONT>                super.shutdown();<a name="line.431"></a>
-<FONT color="green">432</FONT>                logger.info("shutting down completed");<a name="line.432"></a>
-<FONT color="green">433</FONT>            } catch (Exception e) {<a name="line.433"></a>
-<FONT color="green">434</FONT>                logger.error(e.getMessage(), e);<a name="line.434"></a>
-<FONT color="green">435</FONT>            }<a name="line.435"></a>
-<FONT color="green">436</FONT>        }<a name="line.436"></a>
-<FONT color="green">437</FONT>    <a name="line.437"></a>
-<FONT color="green">438</FONT>        @Override<a name="line.438"></a>
-<FONT color="green">439</FONT>        public long getTotalSizeInBytes() {<a name="line.439"></a>
-<FONT color="green">440</FONT>            return totalIngestSizeInBytes.count();<a name="line.440"></a>
-<FONT color="green">441</FONT>        }<a name="line.441"></a>
-<FONT color="green">442</FONT>    <a name="line.442"></a>
-<FONT color="green">443</FONT>        @Override<a name="line.443"></a>
-<FONT color="green">444</FONT>        public long getTotalBulkRequestTime() {<a name="line.444"></a>
-<FONT color="green">445</FONT>            return totalIngest.sum();<a name="line.445"></a>
-<FONT color="green">446</FONT>        }<a name="line.446"></a>
-<FONT color="green">447</FONT>    <a name="line.447"></a>
-<FONT color="green">448</FONT>        @Override<a name="line.448"></a>
-<FONT color="green">449</FONT>        public long getTotalBulkRequests() {<a name="line.449"></a>
-<FONT color="green">450</FONT>            return totalIngest.count();<a name="line.450"></a>
-<FONT color="green">451</FONT>        }<a name="line.451"></a>
-<FONT color="green">452</FONT>    <a name="line.452"></a>
-<FONT color="green">453</FONT>        @Override<a name="line.453"></a>
-<FONT color="green">454</FONT>        public long getTotalDocuments() {<a name="line.454"></a>
-<FONT color="green">455</FONT>            return totalIngestNumDocs.count();<a name="line.455"></a>
-<FONT color="green">456</FONT>        }<a name="line.456"></a>
-<FONT color="green">457</FONT>    <a name="line.457"></a>
-<FONT color="green">458</FONT>        public boolean hasErrors() {<a name="line.458"></a>
-<FONT color="green">459</FONT>            return throwable != null;<a name="line.459"></a>
-<FONT color="green">460</FONT>        }<a name="line.460"></a>
-<FONT color="green">461</FONT>    <a name="line.461"></a>
-<FONT color="green">462</FONT>        public Throwable getThrowable() {<a name="line.462"></a>
-<FONT color="green">463</FONT>            return throwable;<a name="line.463"></a>
-<FONT color="green">464</FONT>        }<a name="line.464"></a>
-<FONT color="green">465</FONT>    }<a name="line.465"></a>
+<FONT color="green">391</FONT>            // we simply wait long enough for BulkProcessor flush plus one second<a name="line.391"></a>
+<FONT color="green">392</FONT>            try {<a name="line.392"></a>
+<FONT color="green">393</FONT>                logger.info("flushing bulk processor (forced wait of {} seconds...)", flushInterval.seconds());<a name="line.393"></a>
+<FONT color="green">394</FONT>                Thread.sleep(flushInterval.getMillis());<a name="line.394"></a>
+<FONT color="green">395</FONT>            } catch (InterruptedException e) {<a name="line.395"></a>
+<FONT color="green">396</FONT>                logger.error("interrupted", e);<a name="line.396"></a>
+<FONT color="green">397</FONT>            }<a name="line.397"></a>
+<FONT color="green">398</FONT>            return this;<a name="line.398"></a>
+<FONT color="green">399</FONT>        }<a name="line.399"></a>
+<FONT color="green">400</FONT>    <a name="line.400"></a>
+<FONT color="green">401</FONT>        @Override<a name="line.401"></a>
+<FONT color="green">402</FONT>        public synchronized void shutdown() {<a name="line.402"></a>
+<FONT color="green">403</FONT>            if (closed) {<a name="line.403"></a>
+<FONT color="green">404</FONT>                super.shutdown();<a name="line.404"></a>
+<FONT color="green">405</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.405"></a>
+<FONT color="green">406</FONT>            }<a name="line.406"></a>
+<FONT color="green">407</FONT>            if (client == null) {<a name="line.407"></a>
+<FONT color="green">408</FONT>                logger.warn("no client");<a name="line.408"></a>
+<FONT color="green">409</FONT>                return;<a name="line.409"></a>
+<FONT color="green">410</FONT>            }<a name="line.410"></a>
+<FONT color="green">411</FONT>            try {<a name="line.411"></a>
+<FONT color="green">412</FONT>                if (bulkProcessor != null) {<a name="line.412"></a>
+<FONT color="green">413</FONT>                    flush();<a name="line.413"></a>
+<FONT color="green">414</FONT>                    bulkProcessor.close();<a name="line.414"></a>
+<FONT color="green">415</FONT>                }<a name="line.415"></a>
+<FONT color="green">416</FONT>                logger.info("enabling refresh interval...");<a name="line.416"></a>
+<FONT color="green">417</FONT>                enableRefreshInterval();<a name="line.417"></a>
+<FONT color="green">418</FONT>                logger.info("shutting down...");<a name="line.418"></a>
+<FONT color="green">419</FONT>                super.shutdown();<a name="line.419"></a>
+<FONT color="green">420</FONT>                logger.info("shutting down completed");<a name="line.420"></a>
+<FONT color="green">421</FONT>            } catch (Exception e) {<a name="line.421"></a>
+<FONT color="green">422</FONT>                logger.error(e.getMessage(), e);<a name="line.422"></a>
+<FONT color="green">423</FONT>            }<a name="line.423"></a>
+<FONT color="green">424</FONT>        }<a name="line.424"></a>
+<FONT color="green">425</FONT>    <a name="line.425"></a>
+<FONT color="green">426</FONT>        @Override<a name="line.426"></a>
+<FONT color="green">427</FONT>        public long getTotalSizeInBytes() {<a name="line.427"></a>
+<FONT color="green">428</FONT>            return totalIngestSizeInBytes.count();<a name="line.428"></a>
+<FONT color="green">429</FONT>        }<a name="line.429"></a>
+<FONT color="green">430</FONT>    <a name="line.430"></a>
+<FONT color="green">431</FONT>        @Override<a name="line.431"></a>
+<FONT color="green">432</FONT>        public long getTotalBulkRequestTime() {<a name="line.432"></a>
+<FONT color="green">433</FONT>            return totalIngest.sum();<a name="line.433"></a>
+<FONT color="green">434</FONT>        }<a name="line.434"></a>
+<FONT color="green">435</FONT>    <a name="line.435"></a>
+<FONT color="green">436</FONT>        @Override<a name="line.436"></a>
+<FONT color="green">437</FONT>        public long getTotalBulkRequests() {<a name="line.437"></a>
+<FONT color="green">438</FONT>            return totalIngest.count();<a name="line.438"></a>
+<FONT color="green">439</FONT>        }<a name="line.439"></a>
+<FONT color="green">440</FONT>    <a name="line.440"></a>
+<FONT color="green">441</FONT>        @Override<a name="line.441"></a>
+<FONT color="green">442</FONT>        public long getTotalDocuments() {<a name="line.442"></a>
+<FONT color="green">443</FONT>            return totalIngestNumDocs.count();<a name="line.443"></a>
+<FONT color="green">444</FONT>        }<a name="line.444"></a>
+<FONT color="green">445</FONT>    <a name="line.445"></a>
+<FONT color="green">446</FONT>        public boolean hasErrors() {<a name="line.446"></a>
+<FONT color="green">447</FONT>            return throwable != null;<a name="line.447"></a>
+<FONT color="green">448</FONT>        }<a name="line.448"></a>
+<FONT color="green">449</FONT>    <a name="line.449"></a>
+<FONT color="green">450</FONT>        public Throwable getThrowable() {<a name="line.450"></a>
+<FONT color="green">451</FONT>            return throwable;<a name="line.451"></a>
+<FONT color="green">452</FONT>        }<a name="line.452"></a>
+<FONT color="green">453</FONT>    }<a name="line.453"></a>
 
 
 

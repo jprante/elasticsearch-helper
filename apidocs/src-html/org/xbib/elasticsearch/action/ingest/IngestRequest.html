@@ -4,7 +4,7 @@
 <FONT color="green">001</FONT>    <a name="line.1"></a>
 <FONT color="green">002</FONT>    package org.xbib.elasticsearch.action.ingest;<a name="line.2"></a>
 <FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.ElasticSearchIllegalArgumentException;<a name="line.4"></a>
+<FONT color="green">004</FONT>    import org.elasticsearch.ElasticsearchIllegalArgumentException;<a name="line.4"></a>
 <FONT color="green">005</FONT>    import org.elasticsearch.action.ActionRequest;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.action.ActionRequestValidationException;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.action.WriteConsistencyLevel;<a name="line.7"></a>
@@ -67,7 +67,7 @@
 <FONT color="green">064</FONT>            } else if (request instanceof DeleteRequest) {<a name="line.64"></a>
 <FONT color="green">065</FONT>                add((DeleteRequest) request);<a name="line.65"></a>
 <FONT color="green">066</FONT>            } else {<a name="line.66"></a>
-<FONT color="green">067</FONT>                throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");<a name="line.67"></a>
+<FONT color="green">067</FONT>                throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");<a name="line.67"></a>
 <FONT color="green">068</FONT>            }<a name="line.68"></a>
 <FONT color="green">069</FONT>            return this;<a name="line.69"></a>
 <FONT color="green">070</FONT>        }<a name="line.70"></a>
@@ -82,7 +82,7 @@
 <FONT color="green">079</FONT>                } else if (request instanceof DeleteRequest) {<a name="line.79"></a>
 <FONT color="green">080</FONT>                    add((DeleteRequest) request);<a name="line.80"></a>
 <FONT color="green">081</FONT>                } else {<a name="line.81"></a>
-<FONT color="green">082</FONT>                    throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");<a name="line.82"></a>
+<FONT color="green">082</FONT>                    throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");<a name="line.82"></a>
 <FONT color="green">083</FONT>                }<a name="line.83"></a>
 <FONT color="green">084</FONT>            }<a name="line.84"></a>
 <FONT color="green">085</FONT>            return this;<a name="line.85"></a>

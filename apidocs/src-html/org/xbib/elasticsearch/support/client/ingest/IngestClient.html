@@ -9,7 +9,7 @@
 <FONT color="green">006</FONT>    import java.net.URI;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import java.util.concurrent.TimeUnit;<a name="line.7"></a>
 <FONT color="green">008</FONT>    <a name="line.8"></a>
-<FONT color="green">009</FONT>    import org.elasticsearch.ElasticSearchIllegalStateException;<a name="line.9"></a>
+<FONT color="green">009</FONT>    import org.elasticsearch.ElasticsearchIllegalStateException;<a name="line.9"></a>
 <FONT color="green">010</FONT>    import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;<a name="line.10"></a>
 <FONT color="green">011</FONT>    import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;<a name="line.11"></a>
 <FONT color="green">012</FONT>    import org.elasticsearch.action.delete.DeleteRequest;<a name="line.12"></a>
@@ -210,7 +210,7 @@
 <FONT color="green">207</FONT>    <a name="line.207"></a>
 <FONT color="green">208</FONT>        public IngestClient deleteIndex() {<a name="line.208"></a>
 <FONT color="green">209</FONT>            if (closed) {<a name="line.209"></a>
-<FONT color="green">210</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.210"></a>
+<FONT color="green">210</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.210"></a>
 <FONT color="green">211</FONT>            }<a name="line.211"></a>
 <FONT color="green">212</FONT>            super.deleteIndex();<a name="line.212"></a>
 <FONT color="green">213</FONT>            return this;<a name="line.213"></a>
@@ -231,7 +231,7 @@
 <FONT color="green">228</FONT>        @Override<a name="line.228"></a>
 <FONT color="green">229</FONT>        public IngestClient putMapping(String index) {<a name="line.229"></a>
 <FONT color="green">230</FONT>            if (closed) {<a name="line.230"></a>
-<FONT color="green">231</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.231"></a>
+<FONT color="green">231</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.231"></a>
 <FONT color="green">232</FONT>            }<a name="line.232"></a>
 <FONT color="green">233</FONT>            super.putMapping(index);<a name="line.233"></a>
 <FONT color="green">234</FONT>            return this;<a name="line.234"></a>
@@ -240,7 +240,7 @@
 <FONT color="green">237</FONT>        @Override<a name="line.237"></a>
 <FONT color="green">238</FONT>        public IngestClient deleteMapping(String index, String type) {<a name="line.238"></a>
 <FONT color="green">239</FONT>            if (closed) {<a name="line.239"></a>
-<FONT color="green">240</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.240"></a>
+<FONT color="green">240</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.240"></a>
 <FONT color="green">241</FONT>            }<a name="line.241"></a>
 <FONT color="green">242</FONT>            super.deleteMapping(index, type);<a name="line.242"></a>
 <FONT color="green">243</FONT>            return this;<a name="line.243"></a>
@@ -281,7 +281,7 @@
 <FONT color="green">278</FONT>        @Override<a name="line.278"></a>
 <FONT color="green">279</FONT>        public IngestClient index(IndexRequest indexRequest) {<a name="line.279"></a>
 <FONT color="green">280</FONT>            if (closed) {<a name="line.280"></a>
-<FONT color="green">281</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.281"></a>
+<FONT color="green">281</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.281"></a>
 <FONT color="green">282</FONT>            }<a name="line.282"></a>
 <FONT color="green">283</FONT>            try {<a name="line.283"></a>
 <FONT color="green">284</FONT>                currentIngest.inc();<a name="line.284"></a>
@@ -304,7 +304,7 @@
 <FONT color="green">301</FONT>        @Override<a name="line.301"></a>
 <FONT color="green">302</FONT>        public IngestClient delete(DeleteRequest deleteRequest) {<a name="line.302"></a>
 <FONT color="green">303</FONT>            if (closed) {<a name="line.303"></a>
-<FONT color="green">304</FONT>                throw new ElasticSearchIllegalStateException("client is closed");<a name="line.304"></a>
+<FONT color="green">304</FONT>                throw new ElasticsearchIllegalStateException("client is closed");<a name="line.304"></a>
 <FONT color="green">305</FONT>            }<a name="line.305"></a>
 <FONT color="green">306</FONT>            try {<a name="line.306"></a>
 <FONT color="green">307</FONT>                currentIngest.inc();<a name="line.307"></a>
@@ -319,107 +319,95 @@
 <FONT color="green">316</FONT>            return this;<a name="line.316"></a>
 <FONT color="green">317</FONT>        }<a name="line.317"></a>
 <FONT color="green">318</FONT>    <a name="line.318"></a>
-<FONT color="green">319</FONT>        @Override<a name="line.319"></a>
-<FONT color="green">320</FONT>        public IngestClient waitForCluster() throws IOException {<a name="line.320"></a>
-<FONT color="green">321</FONT>            super.waitForCluster();<a name="line.321"></a>
-<FONT color="green">322</FONT>            return this;<a name="line.322"></a>
-<FONT color="green">323</FONT>        }<a name="line.323"></a>
-<FONT color="green">324</FONT>    <a name="line.324"></a>
-<FONT color="green">325</FONT>        @Override<a name="line.325"></a>
-<FONT color="green">326</FONT>        public IngestClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.326"></a>
-<FONT color="green">327</FONT>            super.waitForCluster(status, timeout);<a name="line.327"></a>
+<FONT color="green">319</FONT>        public IngestClient numberOfShards(int value) {<a name="line.319"></a>
+<FONT color="green">320</FONT>            if (closed) {<a name="line.320"></a>
+<FONT color="green">321</FONT>                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.321"></a>
+<FONT color="green">322</FONT>            }<a name="line.322"></a>
+<FONT color="green">323</FONT>            if (getIndex() == null) {<a name="line.323"></a>
+<FONT color="green">324</FONT>                logger.warn("no index name given");<a name="line.324"></a>
+<FONT color="green">325</FONT>                return this;<a name="line.325"></a>
+<FONT color="green">326</FONT>            }<a name="line.326"></a>
+<FONT color="green">327</FONT>            setting("index.number_of_shards", value);<a name="line.327"></a>
 <FONT color="green">328</FONT>            return this;<a name="line.328"></a>
 <FONT color="green">329</FONT>        }<a name="line.329"></a>
 <FONT color="green">330</FONT>    <a name="line.330"></a>
-<FONT color="green">331</FONT>        public IngestClient numberOfShards(int value) {<a name="line.331"></a>
-<FONT color="green">332</FONT>            if (closed) {<a name="line.332"></a>
-<FONT color="green">333</FONT>                throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.333"></a>
-<FONT color="green">334</FONT>            }<a name="line.334"></a>
-<FONT color="green">335</FONT>            if (getIndex() == null) {<a name="line.335"></a>
-<FONT color="green">336</FONT>                logger.warn("no index name given");<a name="line.336"></a>
-<FONT color="green">337</FONT>                return this;<a name="line.337"></a>
-<FONT color="green">338</FONT>            }<a name="line.338"></a>
-<FONT color="green">339</FONT>            setting("index.number_of_shards", value);<a name="line.339"></a>
-<FONT color="green">340</FONT>            return this;<a name="line.340"></a>
-<FONT color="green">341</FONT>        }<a name="line.341"></a>
-<FONT color="green">342</FONT>    <a name="line.342"></a>
-<FONT color="green">343</FONT>        public IngestClient numberOfReplicas(int value) {<a name="line.343"></a>
-<FONT color="green">344</FONT>            if (getIndex() == null) {<a name="line.344"></a>
-<FONT color="green">345</FONT>                logger.warn("no index name given");<a name="line.345"></a>
+<FONT color="green">331</FONT>        public IngestClient numberOfReplicas(int value) {<a name="line.331"></a>
+<FONT color="green">332</FONT>            if (getIndex() == null) {<a name="line.332"></a>
+<FONT color="green">333</FONT>                logger.warn("no index name given");<a name="line.333"></a>
+<FONT color="green">334</FONT>                return this;<a name="line.334"></a>
+<FONT color="green">335</FONT>            }<a name="line.335"></a>
+<FONT color="green">336</FONT>            setting("index.number_of_replicas", value);<a name="line.336"></a>
+<FONT color="green">337</FONT>            return this;<a name="line.337"></a>
+<FONT color="green">338</FONT>        }<a name="line.338"></a>
+<FONT color="green">339</FONT>    <a name="line.339"></a>
+<FONT color="green">340</FONT>        public IngestClient flush() {<a name="line.340"></a>
+<FONT color="green">341</FONT>            if (closed) {<a name="line.341"></a>
+<FONT color="green">342</FONT>                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.342"></a>
+<FONT color="green">343</FONT>            }<a name="line.343"></a>
+<FONT color="green">344</FONT>            if (client == null) {<a name="line.344"></a>
+<FONT color="green">345</FONT>                logger.warn("no client");<a name="line.345"></a>
 <FONT color="green">346</FONT>                return this;<a name="line.346"></a>
 <FONT color="green">347</FONT>            }<a name="line.347"></a>
-<FONT color="green">348</FONT>            setting("index.number_of_replicas", value);<a name="line.348"></a>
+<FONT color="green">348</FONT>            ingestProcessor.flush();<a name="line.348"></a>
 <FONT color="green">349</FONT>            return this;<a name="line.349"></a>
 <FONT color="green">350</FONT>        }<a name="line.350"></a>
 <FONT color="green">351</FONT>    <a name="line.351"></a>
-<FONT color="green">352</FONT>        public IngestClient flush() {<a name="line.352"></a>
-<FONT color="green">353</FONT>            if (closed) {<a name="line.353"></a>
-<FONT color="green">354</FONT>                throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.354"></a>
-<FONT color="green">355</FONT>            }<a name="line.355"></a>
-<FONT color="green">356</FONT>            if (client == null) {<a name="line.356"></a>
-<FONT color="green">357</FONT>                logger.warn("no client");<a name="line.357"></a>
-<FONT color="green">358</FONT>                return this;<a name="line.358"></a>
-<FONT color="green">359</FONT>            }<a name="line.359"></a>
-<FONT color="green">360</FONT>            ingestProcessor.flush();<a name="line.360"></a>
-<FONT color="green">361</FONT>            return this;<a name="line.361"></a>
-<FONT color="green">362</FONT>        }<a name="line.362"></a>
-<FONT color="green">363</FONT>    <a name="line.363"></a>
-<FONT color="green">364</FONT>        @Override<a name="line.364"></a>
-<FONT color="green">365</FONT>        public synchronized void shutdown() {<a name="line.365"></a>
-<FONT color="green">366</FONT>            if (closed) {<a name="line.366"></a>
-<FONT color="green">367</FONT>                super.shutdown();<a name="line.367"></a>
-<FONT color="green">368</FONT>                throw new ElasticSearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.368"></a>
-<FONT color="green">369</FONT>            }<a name="line.369"></a>
-<FONT color="green">370</FONT>            if (client == null) {<a name="line.370"></a>
-<FONT color="green">371</FONT>                logger.warn("no client");<a name="line.371"></a>
-<FONT color="green">372</FONT>                return;<a name="line.372"></a>
-<FONT color="green">373</FONT>            }<a name="line.373"></a>
-<FONT color="green">374</FONT>            try {<a name="line.374"></a>
-<FONT color="green">375</FONT>                if (ingestProcessor != null) {<a name="line.375"></a>
-<FONT color="green">376</FONT>                    logger.info("closing ingest processor...");<a name="line.376"></a>
-<FONT color="green">377</FONT>                    ingestProcessor.close();<a name="line.377"></a>
-<FONT color="green">378</FONT>                }<a name="line.378"></a>
-<FONT color="green">379</FONT>                logger.info("enabling refresh interval...");<a name="line.379"></a>
-<FONT color="green">380</FONT>                enableRefreshInterval();<a name="line.380"></a>
-<FONT color="green">381</FONT>                logger.info("shutting down...");<a name="line.381"></a>
-<FONT color="green">382</FONT>                super.shutdown();<a name="line.382"></a>
-<FONT color="green">383</FONT>                logger.info("shutting down completed");<a name="line.383"></a>
-<FONT color="green">384</FONT>            } catch (Exception e) {<a name="line.384"></a>
-<FONT color="green">385</FONT>                logger.error(e.getMessage(), e);<a name="line.385"></a>
-<FONT color="green">386</FONT>            }<a name="line.386"></a>
-<FONT color="green">387</FONT>        }<a name="line.387"></a>
-<FONT color="green">388</FONT>    <a name="line.388"></a>
-<FONT color="green">389</FONT>        @Override<a name="line.389"></a>
-<FONT color="green">390</FONT>        public long getTotalSizeInBytes() {<a name="line.390"></a>
-<FONT color="green">391</FONT>            return totalIngestSizeInBytes.count();<a name="line.391"></a>
-<FONT color="green">392</FONT>        }<a name="line.392"></a>
-<FONT color="green">393</FONT>    <a name="line.393"></a>
-<FONT color="green">394</FONT>        @Override<a name="line.394"></a>
-<FONT color="green">395</FONT>        public long getTotalBulkRequestTime() {<a name="line.395"></a>
-<FONT color="green">396</FONT>            return totalIngest.sum();<a name="line.396"></a>
-<FONT color="green">397</FONT>        }<a name="line.397"></a>
-<FONT color="green">398</FONT>    <a name="line.398"></a>
-<FONT color="green">399</FONT>        @Override<a name="line.399"></a>
-<FONT color="green">400</FONT>        public long getTotalBulkRequests() {<a name="line.400"></a>
-<FONT color="green">401</FONT>            return totalIngest.count();<a name="line.401"></a>
-<FONT color="green">402</FONT>        }<a name="line.402"></a>
-<FONT color="green">403</FONT>    <a name="line.403"></a>
-<FONT color="green">404</FONT>        @Override<a name="line.404"></a>
-<FONT color="green">405</FONT>        public long getTotalDocuments() {<a name="line.405"></a>
-<FONT color="green">406</FONT>            return totalIngestNumDocs.count();<a name="line.406"></a>
-<FONT color="green">407</FONT>        }<a name="line.407"></a>
-<FONT color="green">408</FONT>    <a name="line.408"></a>
-<FONT color="green">409</FONT>        @Override<a name="line.409"></a>
-<FONT color="green">410</FONT>        public boolean hasErrors() {<a name="line.410"></a>
-<FONT color="green">411</FONT>            return throwable != null;<a name="line.411"></a>
-<FONT color="green">412</FONT>        }<a name="line.412"></a>
-<FONT color="green">413</FONT>    <a name="line.413"></a>
-<FONT color="green">414</FONT>        @Override<a name="line.414"></a>
-<FONT color="green">415</FONT>        public Throwable getThrowable() {<a name="line.415"></a>
-<FONT color="green">416</FONT>            return throwable;<a name="line.416"></a>
-<FONT color="green">417</FONT>        }<a name="line.417"></a>
-<FONT color="green">418</FONT>    <a name="line.418"></a>
-<FONT color="green">419</FONT>    }<a name="line.419"></a>
+<FONT color="green">352</FONT>        @Override<a name="line.352"></a>
+<FONT color="green">353</FONT>        public synchronized void shutdown() {<a name="line.353"></a>
+<FONT color="green">354</FONT>            if (closed) {<a name="line.354"></a>
+<FONT color="green">355</FONT>                super.shutdown();<a name="line.355"></a>
+<FONT color="green">356</FONT>                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);<a name="line.356"></a>
+<FONT color="green">357</FONT>            }<a name="line.357"></a>
+<FONT color="green">358</FONT>            if (client == null) {<a name="line.358"></a>
+<FONT color="green">359</FONT>                logger.warn("no client");<a name="line.359"></a>
+<FONT color="green">360</FONT>                return;<a name="line.360"></a>
+<FONT color="green">361</FONT>            }<a name="line.361"></a>
+<FONT color="green">362</FONT>            try {<a name="line.362"></a>
+<FONT color="green">363</FONT>                if (ingestProcessor != null) {<a name="line.363"></a>
+<FONT color="green">364</FONT>                    logger.info("closing ingest processor...");<a name="line.364"></a>
+<FONT color="green">365</FONT>                    ingestProcessor.close();<a name="line.365"></a>
+<FONT color="green">366</FONT>                }<a name="line.366"></a>
+<FONT color="green">367</FONT>                logger.info("enabling refresh interval...");<a name="line.367"></a>
+<FONT color="green">368</FONT>                enableRefreshInterval();<a name="line.368"></a>
+<FONT color="green">369</FONT>                logger.info("shutting down...");<a name="line.369"></a>
+<FONT color="green">370</FONT>                super.shutdown();<a name="line.370"></a>
+<FONT color="green">371</FONT>                logger.info("shutting down completed");<a name="line.371"></a>
+<FONT color="green">372</FONT>            } catch (Exception e) {<a name="line.372"></a>
+<FONT color="green">373</FONT>                logger.error(e.getMessage(), e);<a name="line.373"></a>
+<FONT color="green">374</FONT>            }<a name="line.374"></a>
+<FONT color="green">375</FONT>        }<a name="line.375"></a>
+<FONT color="green">376</FONT>    <a name="line.376"></a>
+<FONT color="green">377</FONT>        @Override<a name="line.377"></a>
+<FONT color="green">378</FONT>        public long getTotalSizeInBytes() {<a name="line.378"></a>
+<FONT color="green">379</FONT>            return totalIngestSizeInBytes.count();<a name="line.379"></a>
+<FONT color="green">380</FONT>        }<a name="line.380"></a>
+<FONT color="green">381</FONT>    <a name="line.381"></a>
+<FONT color="green">382</FONT>        @Override<a name="line.382"></a>
+<FONT color="green">383</FONT>        public long getTotalBulkRequestTime() {<a name="line.383"></a>
+<FONT color="green">384</FONT>            return totalIngest.sum();<a name="line.384"></a>
+<FONT color="green">385</FONT>        }<a name="line.385"></a>
+<FONT color="green">386</FONT>    <a name="line.386"></a>
+<FONT color="green">387</FONT>        @Override<a name="line.387"></a>
+<FONT color="green">388</FONT>        public long getTotalBulkRequests() {<a name="line.388"></a>
+<FONT color="green">389</FONT>            return totalIngest.count();<a name="line.389"></a>
+<FONT color="green">390</FONT>        }<a name="line.390"></a>
+<FONT color="green">391</FONT>    <a name="line.391"></a>
+<FONT color="green">392</FONT>        @Override<a name="line.392"></a>
+<FONT color="green">393</FONT>        public long getTotalDocuments() {<a name="line.393"></a>
+<FONT color="green">394</FONT>            return totalIngestNumDocs.count();<a name="line.394"></a>
+<FONT color="green">395</FONT>        }<a name="line.395"></a>
+<FONT color="green">396</FONT>    <a name="line.396"></a>
+<FONT color="green">397</FONT>        @Override<a name="line.397"></a>
+<FONT color="green">398</FONT>        public boolean hasErrors() {<a name="line.398"></a>
+<FONT color="green">399</FONT>            return throwable != null;<a name="line.399"></a>
+<FONT color="green">400</FONT>        }<a name="line.400"></a>
+<FONT color="green">401</FONT>    <a name="line.401"></a>
+<FONT color="green">402</FONT>        @Override<a name="line.402"></a>
+<FONT color="green">403</FONT>        public Throwable getThrowable() {<a name="line.403"></a>
+<FONT color="green">404</FONT>            return throwable;<a name="line.404"></a>
+<FONT color="green">405</FONT>        }<a name="line.405"></a>
+<FONT color="green">406</FONT>    <a name="line.406"></a>
+<FONT color="green">407</FONT>    }<a name="line.407"></a>
 
 
 
