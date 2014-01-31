@@ -98,7 +98,7 @@ public class BasicRequest {
         return this;
     }
 
-    public BasicRequest filter(String filter) {
+    public BasicRequest postFilter(String filter) {
         searchRequestBuilder.setFilter(filter);
         return this;
     }

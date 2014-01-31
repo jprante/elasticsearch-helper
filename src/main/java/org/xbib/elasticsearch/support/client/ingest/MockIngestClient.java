@@ -65,11 +65,6 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient waitForCluster() throws IOException {
-        return this;
-    }
-
-    @Override
     public int updateReplicaLevel(int level) throws IOException {
         return -1;
     }
@@ -169,6 +164,10 @@ public class MockIngestClient extends IngestClient {
     @Override
     public MockIngestClient refresh() {
         return this;
+    }
+
+    @Override
+    public void waitForCluster() throws IOException {
     }
 
     @Override

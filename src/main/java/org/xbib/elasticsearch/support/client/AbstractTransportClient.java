@@ -1,6 +1,9 @@
 
 package org.xbib.elasticsearch.support.client;
 
+import org.elasticsearch.ElasticSearchTimeoutException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.Client;
@@ -11,6 +14,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -34,6 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
 import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -47,6 +52,8 @@ public abstract class AbstractTransportClient implements ClientBuilder {
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
     protected TransportClient client;
+
+    protected String clustername;
 
     public AbstractTransportClient newClient(URI uri, Settings settings) {
         if (client != null) {
@@ -87,6 +94,48 @@ public abstract class AbstractTransportClient implements ClientBuilder {
 
     public Client client() {
         return client;
+    }
+
+    public void waitForCluster() throws IOException {
+        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+    }
+
+    public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+        try {
+            logger.info("waiting for cluster state {}", status.name());
+            ClusterHealthResponse healthResponse =
+                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
+            if (healthResponse.isTimedOut()) {
+                throw new IOException("cluster state is " + healthResponse.getStatus().name()
+                        + " and not " + status.name()
+                        + ", cowardly refusing to continue with operations");
+            } else {
+                logger.info("... cluster state ok");
+            }
+        } catch (ElasticSearchTimeoutException e) {
+            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+        }
+    }
+
+    public String clusterName() {
+        return clustername;
+    }
+
+    public String healthColor() {
+        ClusterHealthResponse healthResponse =
+                client.admin().cluster().prepareHealth().setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();
+        ClusterHealthStatus status = healthResponse.getStatus();
+        return status.name();
+    }
+
+    public List<String> connectNodes() {
+        List<String> nodes = newLinkedList();
+        if (client.connectedNodes() != null) {
+            for (DiscoveryNode discoveryNode : client.connectedNodes()) {
+                nodes.add(discoveryNode.toString());
+            }
+        }
+        return nodes;
     }
 
     public String stats() throws IOException {
@@ -137,7 +186,6 @@ public abstract class AbstractTransportClient implements ClientBuilder {
     }
 
     protected String findClusterName(URI uri) {
-        String clustername;
         try {
             Map<String, String> map = parseQueryString(uri, "UTF-8");
             clustername = map.get("es.cluster.name");

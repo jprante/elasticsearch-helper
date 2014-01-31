@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -313,18 +312,6 @@ public class IngestClient extends AbstractIngestClient {
         } finally {
             currentIngest.dec();
         }
-        return this;
-    }
-
-    @Override
-    public IngestClient waitForCluster() throws IOException {
-        super.waitForCluster();
-        return this;
-    }
-
-    @Override
-    public IngestClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        super.waitForCluster(status, timeout);
         return this;
     }
 

@@ -107,12 +107,17 @@ public class ConfigHelper {
         return this;
     }
 
-    public ConfigHelper deleteMapping(Client client, String index, String type) {
+    public ConfigHelper deleteMappings(Client client, String index) {
         if (!mappings.isEmpty()) {
             for (Map.Entry<String,String> me : mappings.entrySet()) {
                 client.admin().indices().deleteMapping(new DeleteMappingRequest(index).type(me.getKey())).actionGet();
             }
         }
+        return this;
+    }
+
+    public ConfigHelper deleteMapping(Client client, String index, String type) {
+        client.admin().indices().deleteMapping(new DeleteMappingRequest(index).type(type)).actionGet();
         return this;
     }
 
