@@ -63,9 +63,10 @@ public abstract class AbstractTransportClient implements ClientBuilder {
         }
         if (settings != null) {
             logger.info("creating new client, effective settings = {}", settings.getAsMap());
-            this.client = new TransportClient(settings);
+            // false = do not load config settings from environment
+            this.client = new TransportClient(settings, false);
         } else {
-            logger.info("creating new client, no settings, using default");
+            logger.info("creating new client, using default");
             this.client = new TransportClient();
         }
         try {

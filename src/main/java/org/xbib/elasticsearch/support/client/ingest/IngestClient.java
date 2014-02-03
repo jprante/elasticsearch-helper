@@ -7,7 +7,6 @@ import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;

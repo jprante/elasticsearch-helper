@@ -390,8 +390,8 @@ public class BulkClient extends AbstractIngestClient {
         }
         // we simply wait long enough for BulkProcessor flush plus one second
         try {
-            logger.info("flushing bulk processor (forced wait of {} seconds...)", flushInterval.seconds());
-            Thread.sleep(flushInterval.getMillis());
+            logger.info("flushing bulk processor (forced wait of {} seconds...)", 2 * flushInterval.seconds());
+            Thread.sleep(2 * flushInterval.getMillis());
         } catch (InterruptedException e) {
             logger.error("interrupted", e);
         }
