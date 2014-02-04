@@ -30,7 +30,7 @@ public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRe
     @Override
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
-                .withType(TransportRequestOptions.Type.BULK)
+                .withType(TransportRequestOptions.Type.LOW)
                 .withTimeout(settings.getAsTime("action.ingest.timeout", TimeValue.timeValueMinutes(1)))
                 .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }

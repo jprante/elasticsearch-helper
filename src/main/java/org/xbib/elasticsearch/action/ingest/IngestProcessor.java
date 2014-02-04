@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.ElasticSearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -125,7 +125,7 @@ public class IngestProcessor {
      */
     public void close() throws InterruptedException {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("processor already closed");
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
         closed = true;
         flush();
@@ -147,7 +147,7 @@ public class IngestProcessor {
      */
     private synchronized void flushIfNeeded(Listener listener) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("processor already closed");
+            throw new ElasticSearchIllegalStateException("processor already closed");
         }
         if (actions > 0) {
             while (ingestRequest.numberOfActions() >= actions) {

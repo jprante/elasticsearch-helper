@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.ElasticsearchTimeoutException;
+import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -113,7 +113,7 @@ public abstract class AbstractTransportClient implements ClientBuilder {
             } else {
                 logger.info("... cluster state ok");
             }
-        } catch (ElasticsearchTimeoutException e) {
+        } catch (ElasticSearchTimeoutException e) {
             throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
         }
     }

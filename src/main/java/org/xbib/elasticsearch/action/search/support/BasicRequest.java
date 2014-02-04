@@ -99,7 +99,7 @@ public class BasicRequest {
     }
 
     public BasicRequest postFilter(String filter) {
-        searchRequestBuilder.setPostFilter(filter);
+        searchRequestBuilder.setFilter(filter);
         return this;
     }
 

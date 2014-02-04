@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest.delete;
 
-import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.support.replication.TransportShardReplicationOperationAction;
@@ -113,9 +113,9 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
                         for (int j = 0; j < i; j++) {
                             ((DeleteRequest)request.items().get(j).request()).version(versions[j]);
                         }
-                        throw (ElasticsearchException) e;
+                        throw (ElasticSearchException) e;
                     }
-                    if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
+                    if (e instanceof ElasticSearchException && ((ElasticSearchException) e).status() == RestStatus.CONFLICT) {
                         logger.trace("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);
                     } else {
                         logger.debug("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);

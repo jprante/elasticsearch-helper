@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest.index;
 
-import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.RoutingMissingException;
@@ -123,7 +123,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                         throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
                     }
                 }
-                SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
+                SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                         .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
                 long version;
                 Engine.IndexingOperation op;
@@ -156,9 +156,9 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                     for (int j = 0; j < i; j++) {
                         ((IndexRequest) request.items().get(j).request()).version(versions[j]);
                     }
-                    throw (ElasticsearchException) e;
+                    throw (ElasticSearchException) e;
                 }
-                if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
+                if (e instanceof ElasticSearchException && ((ElasticSearchException) e).status() == RestStatus.CONFLICT) {
                     logger.trace("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
                 } else {
                     logger.debug("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
@@ -189,7 +189,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
             }
             IndexRequest indexRequest = (IndexRequest) item.request();
             try {
-                SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.REPLICA, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
+                SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                         .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
 
                 if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
@@ -216,11 +216,10 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
             if (metaData == null) {
                 return;
             }
-            long orderId = mappingUpdatedAction.generateNextMappingUpdateOrder();
             documentMapper.refreshSource();
 
             DiscoveryNode node = clusterService.localNode();
-            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource(), orderId, node != null ? node.id() : null);
+            final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, type, documentMapper.mappingSource());
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override
                 public void onResponse(MappingUpdatedAction.MappingUpdatedResponse mappingUpdatedResponse) {

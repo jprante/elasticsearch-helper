@@ -119,7 +119,8 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
                 .newIndex()
                 .startBulk();
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
+            ThreadPoolExecutor pool =
+                    EsExecutors.newScalingExecutorService(max, 30, 1L, TimeUnit.HOURS,
                     EsExecutors.daemonThreadFactory("ingest-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {

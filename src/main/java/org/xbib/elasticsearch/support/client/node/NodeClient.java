@@ -1,8 +1,8 @@
 
 package org.xbib.elasticsearch.support.client.node;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
-import org.elasticsearch.ElasticsearchTimeoutException;
+import org.elasticsearch.ElasticSearchIllegalStateException;
+import org.elasticsearch.ElasticSearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -112,15 +112,15 @@ public class NodeClient implements Feeder {
                 totalIngest.inc(response.getTookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] success [{} items] [{}ms]",
-                            executionId, response.getItems().length, response.getTook().millis());
+                            executionId, response.items().length, response.getTook().millis());
                 }
                 if (response.hasFailures()) {
                     closed = true;
                     logger.error("after bulk [{}] failure reason: {}",
                             executionId, response.buildFailureMessage());
                 } else {
-                    currentIngestNumDocs.dec(response.getItems().length);
-                    totalIngestNumDocs.inc(response.getItems().length);
+                    currentIngestNumDocs.dec(response.items().length);
+                    totalIngestNumDocs.inc(response.items().length);
                 }
             }
 
@@ -186,7 +186,7 @@ public class NodeClient implements Feeder {
     @Override
     public NodeClient index(IndexRequest indexRequest) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticSearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -210,7 +210,7 @@ public class NodeClient implements Feeder {
     @Override
     public NodeClient delete(DeleteRequest deleteRequest) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticSearchIllegalStateException("client is closed");
         }
         try {
             currentIngest.inc();
@@ -227,7 +227,7 @@ public class NodeClient implements Feeder {
 
     public NodeClient flush() {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticSearchIllegalStateException("client is closed");
         }
         // we simply wait long enough for BulkProcessor flush
         try {
@@ -256,7 +256,7 @@ public class NodeClient implements Feeder {
             if (healthResponse.isTimedOut()) {
                 throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
             }
-        } catch (ElasticsearchTimeoutException e) {
+        } catch (ElasticSearchTimeoutException e) {
             throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
         }
         return this;
@@ -312,7 +312,7 @@ public class NodeClient implements Feeder {
 
     public NodeClient newIndex() {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticSearchIllegalStateException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");
@@ -343,7 +343,7 @@ public class NodeClient implements Feeder {
 
     public NodeClient deleteIndex() {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticSearchIllegalStateException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");

@@ -1,7 +1,7 @@
 
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalArgumentException;
+import org.elasticsearch.ElasticSearchIllegalArgumentException;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -64,7 +64,7 @@ public class IngestRequest extends ActionRequest {
         } else if (request instanceof DeleteRequest) {
             add((DeleteRequest) request);
         } else {
-            throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");
+            throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
         }
         return this;
     }
@@ -79,7 +79,7 @@ public class IngestRequest extends ActionRequest {
             } else if (request instanceof DeleteRequest) {
                 add((DeleteRequest) request);
             } else {
-                throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");
+                throw new ElasticSearchIllegalArgumentException("no support for request [" + request + "]");
             }
         }
         return this;

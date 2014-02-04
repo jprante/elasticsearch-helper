@@ -125,7 +125,8 @@ public class BulkClientTests extends AbstractNodeRandomTest {
                 .startBulk();
         int max = Runtime.getRuntime().availableProcessors();
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30, EsExecutors.daemonThreadFactory("bulk-test"));
+            ThreadPoolExecutor pool = EsExecutors.newScalingExecutorService(max, 30, 1L, TimeUnit.HOURS,
+                    EsExecutors.daemonThreadFactory("bulk-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
