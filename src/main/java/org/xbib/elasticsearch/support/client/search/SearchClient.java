@@ -6,7 +6,8 @@ import java.net.URI;
 import org.elasticsearch.client.Client;
 
 import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
+import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
+import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 import org.xbib.elasticsearch.support.client.AbstractTransportClient;
 import org.xbib.elasticsearch.support.client.Search;
 
@@ -60,15 +61,15 @@ public class SearchClient extends AbstractTransportClient implements Search {
     }
 
     @Override
-    public BasicRequest newSearchRequest() {
-        return new BasicRequest()
-                .newSearchRequest(client.prepareSearch().setPreference("_primary_first"));
+    public BasicSearchRequest newSearchRequest() {
+        return new BasicSearchRequest()
+                .newRequest(client.prepareSearch().setPreference("_primary_first"));
     }
 
     @Override
-    public BasicRequest newGetRequest() {
-        return new BasicRequest()
-                .newGetRequest(client.prepareGet());
+    public BasicGetRequest newGetRequest() {
+        return new BasicGetRequest()
+                .newRequest(client.prepareGet());
     }
 
 }

@@ -7,6 +7,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
@@ -123,10 +124,18 @@ public abstract class AbstractTransportClient implements ClientBuilder {
     }
 
     public String healthColor() {
-        ClusterHealthResponse healthResponse =
+        try {
+            ClusterHealthResponse healthResponse =
                 client.admin().cluster().prepareHealth().setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();
-        ClusterHealthStatus status = healthResponse.getStatus();
-        return status.name();
+            ClusterHealthStatus status = healthResponse.getStatus();
+            return status.name();
+        } catch (ElasticsearchTimeoutException e) {
+            return "TIMEOUT";
+        } catch (NoNodeAvailableException e) {
+            return "DISCONNECTED";
+        } catch (Throwable t) {
+            return "[" + t.getMessage() + "]";
+        }
     }
 
     public List<String> connectNodes() {
