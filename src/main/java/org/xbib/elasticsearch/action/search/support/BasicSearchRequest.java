@@ -1,7 +1,6 @@
 
 package org.xbib.elasticsearch.action.search.support;
 
-import org.elasticsearch.action.get.GetRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -10,16 +9,13 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 
 /**
- * Helper class for Elasticsearch search/get requests
- *
+ * Helper class for Elasticsearch search requests
  */
-public class BasicRequest {
+public class BasicSearchRequest {
 
-    private final ESLogger logger = ESLoggerFactory.getLogger(BasicRequest.class.getName());
+    private final ESLogger logger = ESLoggerFactory.getLogger(BasicSearchRequest.class.getName());
 
     private SearchRequestBuilder searchRequestBuilder;
-
-    private GetRequestBuilder getRequestBuilder;
 
     private String[] index;
 
@@ -29,7 +25,7 @@ public class BasicRequest {
 
     private String query;
 
-    public BasicRequest newSearchRequest(SearchRequestBuilder searchRequestBuilder) {
+    public BasicSearchRequest newRequest(SearchRequestBuilder searchRequestBuilder) {
         this.searchRequestBuilder = searchRequestBuilder;
         return this;
     }
@@ -38,23 +34,14 @@ public class BasicRequest {
         return searchRequestBuilder;
     }
 
-    public BasicRequest newGetRequest(GetRequestBuilder getRequestBuilder) {
-        this.getRequestBuilder = getRequestBuilder;
-        return this;
-    }
-
-    public GetRequestBuilder getRequestBuilder() {
-        return getRequestBuilder;
-    }
-
-    public BasicRequest index(String index) {
+    public BasicSearchRequest index(String index) {
         if (index != null && !"*".equals(index)) {
             this.index = new String[]{index};
         }
         return this;
     }
 
-    public BasicRequest index(String... index) {
+    public BasicSearchRequest index(String... index) {
         this.index = index;
         return this;
     }
@@ -63,14 +50,14 @@ public class BasicRequest {
         return index[0];
     }
 
-    public BasicRequest type(String type) {
+    public BasicSearchRequest type(String type) {
         if (type != null && !"*".equals(type)) {
             this.type = new String[]{type};
         }
         return this;
     }
 
-    public BasicRequest type(String... type) {
+    public BasicSearchRequest type(String... type) {
         this.type = type;
         return this;
     }
@@ -79,7 +66,7 @@ public class BasicRequest {
         return type[0];
     }
 
-    public BasicRequest id(String id) {
+    public BasicSearchRequest id(String id) {
         this.id = id;
         return this;
     }
@@ -88,39 +75,39 @@ public class BasicRequest {
         return id;
     }
 
-    public BasicRequest from(int from) {
+    public BasicSearchRequest from(int from) {
         searchRequestBuilder.setFrom(from);
         return this;
     }
 
-    public BasicRequest size(int size) {
+    public BasicSearchRequest size(int size) {
         searchRequestBuilder.setSize(size);
         return this;
     }
 
-    public BasicRequest postFilter(String filter) {
+    public BasicSearchRequest postFilter(String filter) {
         searchRequestBuilder.setFilter(filter);
         return this;
     }
 
-    public BasicRequest facets(String facets) {
+    public BasicSearchRequest facets(String facets) {
         searchRequestBuilder.setFacets(facets.getBytes());
         return this;
     }
 
-    public BasicRequest timeout(TimeValue timeout) {
+    public BasicSearchRequest timeout(TimeValue timeout) {
         searchRequestBuilder.setTimeout(timeout);
         return this;
     }
 
-    public BasicRequest query(String query) {
+    public BasicSearchRequest query(String query) {
         this.query = query == null || query.trim().length() == 0 ? "{\"query\":{\"match_all\":{}}}" : query;
         return this;
     }
 
-    public BasicResponse execute()
+    public BasicSearchResponse execute()
             throws IOException {
-        BasicResponse response = new BasicResponse();
+        BasicSearchResponse response = new BasicSearchResponse();
         if (searchRequestBuilder == null) {
             return response;
         }
@@ -134,58 +121,19 @@ public class BasicRequest {
             searchRequestBuilder.setTypes(type);
         }
         long t0 = System.currentTimeMillis();
-        response.searchResponse(searchRequestBuilder.setExtraSource(query)
-                .execute().actionGet());
+        response.setResponse(searchRequestBuilder.setExtraSource(query).execute().actionGet());
         long t1 = System.currentTimeMillis();
         logger.info(" [{}] [{}ms] [{}ms] [{}] [{}]",
                 formatIndexType(), t1 - t0, response.tookInMillis(), response.totalHits(), query);
         return response;
     }
 
-    public BasicResponse executeGet() throws IOException {
-        BasicResponse response = new BasicResponse();
-        if (getRequestBuilder == null) {
-            return response;
-        }
-        getRequestBuilder
-                .setIndex(index[0])
-                .setType(type[0])
-                .setId(id);
-        long t0 = System.currentTimeMillis();
-        response.getResponse(getRequestBuilder.execute().actionGet());
-        long t1 = System.currentTimeMillis();
-        logger.info(" get complete: {}/{}/{} [{}ms] {}",
-                getRequestBuilder.request().index(),
-                getRequestBuilder.request().type(),
-                getRequestBuilder.request().id(),
-                (t1 - t0), response.exists());
-        return response;
-    }
-
     private boolean hasIndex(String[] s) {
-        if (s == null) {
-            return false;
-        }
-        if (s.length == 0) {
-            return false;
-        }
-        if (s[0] == null) {
-            return false;
-        }
-        return true;
+        return s != null && s.length != 0 && s[0] != null;
     }
 
     private boolean hasType(String[] s) {
-        if (s == null) {
-            return false;
-        }
-        if (s.length == 0) {
-            return false;
-        }
-        if (s[0] == null) {
-            return false;
-        }
-        return true;
+        return s != null && s.length != 0 && s[0] != null;
     }
 
     private String[] fixIndexName(String[] s) {
