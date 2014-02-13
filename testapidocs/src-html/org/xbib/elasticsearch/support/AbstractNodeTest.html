@@ -43,7 +43,7 @@
 <FONT color="green">040</FONT>                .put("cluster.name", CLUSTER)<a name="line.40"></a>
 <FONT color="green">041</FONT>                        // default for queue_size for bulk thread pool is only 50 since 0.90.7<a name="line.41"></a>
 <FONT color="green">042</FONT>                        // enlarge queue for this unit test because we are on a single machine<a name="line.42"></a>
-<FONT color="green">043</FONT>                .put("threadpool.bulk.queue_size", 1000)<a name="line.43"></a>
+<FONT color="green">043</FONT>                .put("threadpool.bulk.queue_size", 100)<a name="line.43"></a>
 <FONT color="green">044</FONT>                .build();<a name="line.44"></a>
 <FONT color="green">045</FONT>    <a name="line.45"></a>
 <FONT color="green">046</FONT>        private Map&lt;String, Node&gt; nodes = newHashMap();<a name="line.46"></a>
@@ -129,12 +129,14 @@
 <FONT color="green">126</FONT>            }<a name="line.126"></a>
 <FONT color="green">127</FONT>            clients.clear();<a name="line.127"></a>
 <FONT color="green">128</FONT>            for (Node node : nodes.values()) {<a name="line.128"></a>
-<FONT color="green">129</FONT>                node.close();<a name="line.129"></a>
-<FONT color="green">130</FONT>            }<a name="line.130"></a>
-<FONT color="green">131</FONT>            nodes.clear();<a name="line.131"></a>
-<FONT color="green">132</FONT>        }<a name="line.132"></a>
-<FONT color="green">133</FONT>    <a name="line.133"></a>
-<FONT color="green">134</FONT>    }<a name="line.134"></a>
+<FONT color="green">129</FONT>                if (node != null) {<a name="line.129"></a>
+<FONT color="green">130</FONT>                    node.close();<a name="line.130"></a>
+<FONT color="green">131</FONT>                }<a name="line.131"></a>
+<FONT color="green">132</FONT>            }<a name="line.132"></a>
+<FONT color="green">133</FONT>            nodes.clear();<a name="line.133"></a>
+<FONT color="green">134</FONT>        }<a name="line.134"></a>
+<FONT color="green">135</FONT>    <a name="line.135"></a>
+<FONT color="green">136</FONT>    }<a name="line.136"></a>
 
 
 

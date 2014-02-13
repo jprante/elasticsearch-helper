@@ -5,7 +5,7 @@
 <FONT color="green">002</FONT>    package org.xbib.elasticsearch.support.client.search;<a name="line.2"></a>
 <FONT color="green">003</FONT>    <a name="line.3"></a>
 <FONT color="green">004</FONT>    import org.elasticsearch.common.settings.Settings;<a name="line.4"></a>
-<FONT color="green">005</FONT>    import org.xbib.elasticsearch.action.search.support.BasicRequest;<a name="line.5"></a>
+<FONT color="green">005</FONT>    import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.7"></a>
 <FONT color="green">008</FONT>    import org.elasticsearch.common.transport.InetSocketTransportAddress;<a name="line.8"></a>
@@ -51,8 +51,8 @@
 <FONT color="green">048</FONT>        public synchronized void shutdown() {<a name="line.48"></a>
 <FONT color="green">049</FONT>        }<a name="line.49"></a>
 <FONT color="green">050</FONT>    <a name="line.50"></a>
-<FONT color="green">051</FONT>        public BasicRequest newRequest() {<a name="line.51"></a>
-<FONT color="green">052</FONT>            return new BasicRequest();<a name="line.52"></a>
+<FONT color="green">051</FONT>        public BasicSearchRequest newRequest() {<a name="line.51"></a>
+<FONT color="green">052</FONT>            return new BasicSearchRequest();<a name="line.52"></a>
 <FONT color="green">053</FONT>        }<a name="line.53"></a>
 <FONT color="green">054</FONT>    <a name="line.54"></a>
 <FONT color="green">055</FONT>        /**<a name="line.55"></a>

@@ -10,385 +10,399 @@
 <FONT color="green">007</FONT>    import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;<a name="line.7"></a>
 <FONT color="green">008</FONT>    import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;<a name="line.8"></a>
 <FONT color="green">009</FONT>    import org.elasticsearch.client.Client;<a name="line.9"></a>
-<FONT color="green">010</FONT>    import org.elasticsearch.client.transport.TransportClient;<a name="line.10"></a>
-<FONT color="green">011</FONT>    import org.elasticsearch.cluster.node.DiscoveryNode;<a name="line.11"></a>
-<FONT color="green">012</FONT>    import org.elasticsearch.cluster.node.DiscoveryNodes;<a name="line.12"></a>
-<FONT color="green">013</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.13"></a>
-<FONT color="green">014</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.14"></a>
-<FONT color="green">015</FONT>    import org.elasticsearch.common.settings.Settings;<a name="line.15"></a>
-<FONT color="green">016</FONT>    import org.elasticsearch.common.transport.InetSocketTransportAddress;<a name="line.16"></a>
-<FONT color="green">017</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.17"></a>
-<FONT color="green">018</FONT>    import org.elasticsearch.common.xcontent.ToXContent;<a name="line.18"></a>
-<FONT color="green">019</FONT>    import org.elasticsearch.common.xcontent.XContentBuilder;<a name="line.19"></a>
-<FONT color="green">020</FONT>    <a name="line.20"></a>
-<FONT color="green">021</FONT>    import java.io.IOException;<a name="line.21"></a>
-<FONT color="green">022</FONT>    import java.io.InputStream;<a name="line.22"></a>
-<FONT color="green">023</FONT>    import java.io.UnsupportedEncodingException;<a name="line.23"></a>
-<FONT color="green">024</FONT>    import java.net.Inet4Address;<a name="line.24"></a>
-<FONT color="green">025</FONT>    import java.net.Inet6Address;<a name="line.25"></a>
-<FONT color="green">026</FONT>    import java.net.InetAddress;<a name="line.26"></a>
-<FONT color="green">027</FONT>    import java.net.NetworkInterface;<a name="line.27"></a>
-<FONT color="green">028</FONT>    import java.net.SocketException;<a name="line.28"></a>
-<FONT color="green">029</FONT>    import java.net.URI;<a name="line.29"></a>
-<FONT color="green">030</FONT>    import java.net.URL;<a name="line.30"></a>
-<FONT color="green">031</FONT>    import java.net.UnknownHostException;<a name="line.31"></a>
-<FONT color="green">032</FONT>    import java.util.Collections;<a name="line.32"></a>
-<FONT color="green">033</FONT>    import java.util.Enumeration;<a name="line.33"></a>
-<FONT color="green">034</FONT>    import java.util.HashMap;<a name="line.34"></a>
-<FONT color="green">035</FONT>    import java.util.List;<a name="line.35"></a>
-<FONT color="green">036</FONT>    import java.util.Map;<a name="line.36"></a>
-<FONT color="green">037</FONT>    import java.util.Properties;<a name="line.37"></a>
-<FONT color="green">038</FONT>    import java.util.Set;<a name="line.38"></a>
-<FONT color="green">039</FONT>    import java.util.StringTokenizer;<a name="line.39"></a>
-<FONT color="green">040</FONT>    <a name="line.40"></a>
-<FONT color="green">041</FONT>    import static org.elasticsearch.common.collect.Lists.newLinkedList;<a name="line.41"></a>
-<FONT color="green">042</FONT>    import static org.elasticsearch.common.collect.Sets.newHashSet;<a name="line.42"></a>
-<FONT color="green">043</FONT>    import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;<a name="line.43"></a>
-<FONT color="green">044</FONT>    import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;<a name="line.44"></a>
-<FONT color="green">045</FONT>    <a name="line.45"></a>
-<FONT color="green">046</FONT>    public abstract class AbstractTransportClient implements ClientBuilder {<a name="line.46"></a>
-<FONT color="green">047</FONT>    <a name="line.47"></a>
-<FONT color="green">048</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());<a name="line.48"></a>
-<FONT color="green">049</FONT>    <a name="line.49"></a>
-<FONT color="green">050</FONT>        private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";<a name="line.50"></a>
-<FONT color="green">051</FONT>    <a name="line.51"></a>
-<FONT color="green">052</FONT>        private final Set&lt;InetSocketTransportAddress&gt; addresses = newHashSet();<a name="line.52"></a>
-<FONT color="green">053</FONT>    <a name="line.53"></a>
-<FONT color="green">054</FONT>        protected TransportClient client;<a name="line.54"></a>
-<FONT color="green">055</FONT>    <a name="line.55"></a>
-<FONT color="green">056</FONT>        protected String clustername;<a name="line.56"></a>
-<FONT color="green">057</FONT>    <a name="line.57"></a>
-<FONT color="green">058</FONT>        public AbstractTransportClient newClient(URI uri, Settings settings) {<a name="line.58"></a>
-<FONT color="green">059</FONT>            if (client != null) {<a name="line.59"></a>
-<FONT color="green">060</FONT>                client.close();<a name="line.60"></a>
-<FONT color="green">061</FONT>                client.threadPool().shutdown();<a name="line.61"></a>
-<FONT color="green">062</FONT>                client = null;<a name="line.62"></a>
-<FONT color="green">063</FONT>            }<a name="line.63"></a>
-<FONT color="green">064</FONT>            if (settings != null) {<a name="line.64"></a>
-<FONT color="green">065</FONT>                logger.info("creating new client, effective settings = {}", settings.getAsMap());<a name="line.65"></a>
-<FONT color="green">066</FONT>                this.client = new TransportClient(settings);<a name="line.66"></a>
-<FONT color="green">067</FONT>            } else {<a name="line.67"></a>
-<FONT color="green">068</FONT>                logger.info("creating new client, no settings, using default");<a name="line.68"></a>
-<FONT color="green">069</FONT>                this.client = new TransportClient();<a name="line.69"></a>
-<FONT color="green">070</FONT>            }<a name="line.70"></a>
-<FONT color="green">071</FONT>            try {<a name="line.71"></a>
-<FONT color="green">072</FONT>                connect(uri);<a name="line.72"></a>
-<FONT color="green">073</FONT>            } catch (UnknownHostException e) {<a name="line.73"></a>
-<FONT color="green">074</FONT>                logger.error(e.getMessage(), e);<a name="line.74"></a>
-<FONT color="green">075</FONT>            } catch (SocketException e) {<a name="line.75"></a>
-<FONT color="green">076</FONT>                logger.error(e.getMessage(), e);<a name="line.76"></a>
-<FONT color="green">077</FONT>            } catch (IOException e) {<a name="line.77"></a>
-<FONT color="green">078</FONT>                logger.error(e.getMessage(), e);<a name="line.78"></a>
-<FONT color="green">079</FONT>            }<a name="line.79"></a>
-<FONT color="green">080</FONT>            return this;<a name="line.80"></a>
-<FONT color="green">081</FONT>        }<a name="line.81"></a>
-<FONT color="green">082</FONT>    <a name="line.82"></a>
-<FONT color="green">083</FONT>        public Settings defaultSettings(URI uri) {<a name="line.83"></a>
-<FONT color="green">084</FONT>            return settingsBuilder()<a name="line.84"></a>
-<FONT color="green">085</FONT>                    .put("cluster.name", findClusterName(uri))<a name="line.85"></a>
-<FONT color="green">086</FONT>                    .put("network.server", false)<a name="line.86"></a>
-<FONT color="green">087</FONT>                    .put("node.client", true)<a name="line.87"></a>
-<FONT color="green">088</FONT>                    .put("client.transport.sniff", false)<a name="line.88"></a>
-<FONT color="green">089</FONT>                    .put("client.transport.ignore_cluster_name", false)<a name="line.89"></a>
-<FONT color="green">090</FONT>                    .put("client.transport.ping_timeout", "30s")<a name="line.90"></a>
-<FONT color="green">091</FONT>                    .put("client.transport.nodes_sampler_interval", "30s")<a name="line.91"></a>
-<FONT color="green">092</FONT>                    .build();<a name="line.92"></a>
-<FONT color="green">093</FONT>        }<a name="line.93"></a>
-<FONT color="green">094</FONT>    <a name="line.94"></a>
-<FONT color="green">095</FONT>        public Client client() {<a name="line.95"></a>
-<FONT color="green">096</FONT>            return client;<a name="line.96"></a>
-<FONT color="green">097</FONT>        }<a name="line.97"></a>
-<FONT color="green">098</FONT>    <a name="line.98"></a>
-<FONT color="green">099</FONT>        public void waitForCluster() throws IOException {<a name="line.99"></a>
-<FONT color="green">100</FONT>            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));<a name="line.100"></a>
-<FONT color="green">101</FONT>        }<a name="line.101"></a>
-<FONT color="green">102</FONT>    <a name="line.102"></a>
-<FONT color="green">103</FONT>        public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.103"></a>
-<FONT color="green">104</FONT>            try {<a name="line.104"></a>
-<FONT color="green">105</FONT>                logger.info("waiting for cluster state {}", status.name());<a name="line.105"></a>
-<FONT color="green">106</FONT>                ClusterHealthResponse healthResponse =<a name="line.106"></a>
-<FONT color="green">107</FONT>                        client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();<a name="line.107"></a>
-<FONT color="green">108</FONT>                if (healthResponse.isTimedOut()) {<a name="line.108"></a>
-<FONT color="green">109</FONT>                    throw new IOException("cluster state is " + healthResponse.getStatus().name()<a name="line.109"></a>
-<FONT color="green">110</FONT>                            + " and not " + status.name()<a name="line.110"></a>
-<FONT color="green">111</FONT>                            + ", cowardly refusing to continue with operations");<a name="line.111"></a>
-<FONT color="green">112</FONT>                } else {<a name="line.112"></a>
-<FONT color="green">113</FONT>                    logger.info("... cluster state ok");<a name="line.113"></a>
-<FONT color="green">114</FONT>                }<a name="line.114"></a>
-<FONT color="green">115</FONT>            } catch (ElasticsearchTimeoutException e) {<a name="line.115"></a>
-<FONT color="green">116</FONT>                throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");<a name="line.116"></a>
-<FONT color="green">117</FONT>            }<a name="line.117"></a>
-<FONT color="green">118</FONT>        }<a name="line.118"></a>
-<FONT color="green">119</FONT>    <a name="line.119"></a>
-<FONT color="green">120</FONT>        public String clusterName() {<a name="line.120"></a>
-<FONT color="green">121</FONT>            return clustername;<a name="line.121"></a>
-<FONT color="green">122</FONT>        }<a name="line.122"></a>
-<FONT color="green">123</FONT>    <a name="line.123"></a>
-<FONT color="green">124</FONT>        public String healthColor() {<a name="line.124"></a>
-<FONT color="green">125</FONT>            ClusterHealthResponse healthResponse =<a name="line.125"></a>
-<FONT color="green">126</FONT>                    client.admin().cluster().prepareHealth().setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();<a name="line.126"></a>
-<FONT color="green">127</FONT>            ClusterHealthStatus status = healthResponse.getStatus();<a name="line.127"></a>
-<FONT color="green">128</FONT>            return status.name();<a name="line.128"></a>
-<FONT color="green">129</FONT>        }<a name="line.129"></a>
-<FONT color="green">130</FONT>    <a name="line.130"></a>
-<FONT color="green">131</FONT>        public List&lt;String&gt; connectNodes() {<a name="line.131"></a>
-<FONT color="green">132</FONT>            List&lt;String&gt; nodes = newLinkedList();<a name="line.132"></a>
-<FONT color="green">133</FONT>            if (client.connectedNodes() != null) {<a name="line.133"></a>
-<FONT color="green">134</FONT>                for (DiscoveryNode discoveryNode : client.connectedNodes()) {<a name="line.134"></a>
-<FONT color="green">135</FONT>                    nodes.add(discoveryNode.toString());<a name="line.135"></a>
-<FONT color="green">136</FONT>                }<a name="line.136"></a>
-<FONT color="green">137</FONT>            }<a name="line.137"></a>
-<FONT color="green">138</FONT>            return nodes;<a name="line.138"></a>
-<FONT color="green">139</FONT>        }<a name="line.139"></a>
-<FONT color="green">140</FONT>    <a name="line.140"></a>
-<FONT color="green">141</FONT>        public String stats() throws IOException {<a name="line.141"></a>
-<FONT color="green">142</FONT>            XContentBuilder builder = jsonBuilder();<a name="line.142"></a>
-<FONT color="green">143</FONT>            builder.startObject();<a name="line.143"></a>
-<FONT color="green">144</FONT>            client.threadPool().stats().toXContent(builder, ToXContent.EMPTY_PARAMS);<a name="line.144"></a>
-<FONT color="green">145</FONT>            builder.endObject();<a name="line.145"></a>
-<FONT color="green">146</FONT>            return builder.string();<a name="line.146"></a>
-<FONT color="green">147</FONT>        }<a name="line.147"></a>
-<FONT color="green">148</FONT>    <a name="line.148"></a>
-<FONT color="green">149</FONT>        public synchronized void shutdown() {<a name="line.149"></a>
-<FONT color="green">150</FONT>            if (client != null) {<a name="line.150"></a>
-<FONT color="green">151</FONT>                client.close();<a name="line.151"></a>
-<FONT color="green">152</FONT>                client.threadPool().shutdown();<a name="line.152"></a>
-<FONT color="green">153</FONT>                client = null;<a name="line.153"></a>
-<FONT color="green">154</FONT>            }<a name="line.154"></a>
-<FONT color="green">155</FONT>            addresses.clear();<a name="line.155"></a>
-<FONT color="green">156</FONT>        }<a name="line.156"></a>
-<FONT color="green">157</FONT>    <a name="line.157"></a>
-<FONT color="green">158</FONT>        protected URI findURI() {<a name="line.158"></a>
-<FONT color="green">159</FONT>            URI uri = null;<a name="line.159"></a>
-<FONT color="green">160</FONT>            String hostname = "localhost";<a name="line.160"></a>
-<FONT color="green">161</FONT>            try {<a name="line.161"></a>
-<FONT color="green">162</FONT>                hostname = InetAddress.getLocalHost().getHostName();<a name="line.162"></a>
-<FONT color="green">163</FONT>                logger.debug("the hostname is {}", hostname);<a name="line.163"></a>
-<FONT color="green">164</FONT>                uri = URI.create("es://"+hostname+":9300");<a name="line.164"></a>
-<FONT color="green">165</FONT>                // custom?<a name="line.165"></a>
-<FONT color="green">166</FONT>                URL url = getClass().getResource("/org/xbib/elasticsearch/cluster.properties");<a name="line.166"></a>
-<FONT color="green">167</FONT>                if (url != null) {<a name="line.167"></a>
-<FONT color="green">168</FONT>                    InputStream in = url.openStream();<a name="line.168"></a>
-<FONT color="green">169</FONT>                    Properties p = new Properties();<a name="line.169"></a>
-<FONT color="green">170</FONT>                    p.load(in);<a name="line.170"></a>
-<FONT color="green">171</FONT>                    in.close();<a name="line.171"></a>
-<FONT color="green">172</FONT>                    // the properties contains default URIs per hostname<a name="line.172"></a>
-<FONT color="green">173</FONT>                    if (p.containsKey(hostname)) {<a name="line.173"></a>
-<FONT color="green">174</FONT>                        uri = URI.create(p.getProperty(hostname));<a name="line.174"></a>
-<FONT color="green">175</FONT>                        logger.debug("custom URI found in cluster.properties for hostname {}: {}", hostname, uri);<a name="line.175"></a>
-<FONT color="green">176</FONT>                        return uri;<a name="line.176"></a>
-<FONT color="green">177</FONT>                    }<a name="line.177"></a>
-<FONT color="green">178</FONT>                }<a name="line.178"></a>
-<FONT color="green">179</FONT>            } catch (UnknownHostException e) {<a name="line.179"></a>
-<FONT color="green">180</FONT>                logger.warn("can't resolve host name, probably something wrong with network config: " + e.getMessage(), e);<a name="line.180"></a>
-<FONT color="green">181</FONT>            } catch (Exception e) {<a name="line.181"></a>
-<FONT color="green">182</FONT>                logger.warn(e.getMessage(), e);<a name="line.182"></a>
-<FONT color="green">183</FONT>            }<a name="line.183"></a>
-<FONT color="green">184</FONT>            logger.debug("URI for hostname {}: {}", hostname, uri);<a name="line.184"></a>
-<FONT color="green">185</FONT>            return uri;<a name="line.185"></a>
-<FONT color="green">186</FONT>        }<a name="line.186"></a>
-<FONT color="green">187</FONT>    <a name="line.187"></a>
-<FONT color="green">188</FONT>        protected String findClusterName(URI uri) {<a name="line.188"></a>
-<FONT color="green">189</FONT>            try {<a name="line.189"></a>
-<FONT color="green">190</FONT>                Map&lt;String, String&gt; map = parseQueryString(uri, "UTF-8");<a name="line.190"></a>
-<FONT color="green">191</FONT>                clustername = map.get("es.cluster.name");<a name="line.191"></a>
-<FONT color="green">192</FONT>                if (clustername != null) {<a name="line.192"></a>
-<FONT color="green">193</FONT>                    logger.info("cluster name found in URI {}: {}", uri, clustername);<a name="line.193"></a>
-<FONT color="green">194</FONT>                    return clustername;<a name="line.194"></a>
-<FONT color="green">195</FONT>                }<a name="line.195"></a>
-<FONT color="green">196</FONT>                clustername = map.get("cluster.name");<a name="line.196"></a>
-<FONT color="green">197</FONT>                if (clustername != null) {<a name="line.197"></a>
-<FONT color="green">198</FONT>                    logger.info("cluster name found in URI {}: {}", uri, clustername);<a name="line.198"></a>
-<FONT color="green">199</FONT>                    return clustername;<a name="line.199"></a>
-<FONT color="green">200</FONT>                }<a name="line.200"></a>
-<FONT color="green">201</FONT>            } catch (UnsupportedEncodingException ex) {<a name="line.201"></a>
-<FONT color="green">202</FONT>                logger.warn(ex.getMessage(), ex);<a name="line.202"></a>
-<FONT color="green">203</FONT>            }<a name="line.203"></a>
-<FONT color="green">204</FONT>            logger.info("cluster name not found in URI {}, parameter es.cluster.name", uri);<a name="line.204"></a>
-<FONT color="green">205</FONT>            clustername = System.getProperty("es.cluster.name");<a name="line.205"></a>
-<FONT color="green">206</FONT>            if (clustername != null) {<a name="line.206"></a>
-<FONT color="green">207</FONT>                logger.info("cluster name found in es.cluster.name system property: {}", clustername);<a name="line.207"></a>
-<FONT color="green">208</FONT>                return clustername;<a name="line.208"></a>
-<FONT color="green">209</FONT>            }<a name="line.209"></a>
-<FONT color="green">210</FONT>            clustername = System.getProperty("cluster.name");<a name="line.210"></a>
-<FONT color="green">211</FONT>            if (clustername != null) {<a name="line.211"></a>
-<FONT color="green">212</FONT>                logger.info("cluster name found in cluster.name system property: {}", clustername);<a name="line.212"></a>
-<FONT color="green">213</FONT>                return clustername;<a name="line.213"></a>
-<FONT color="green">214</FONT>            }<a name="line.214"></a>
-<FONT color="green">215</FONT>            logger.info("cluster name not found, falling back to default: {}", DEFAULT_CLUSTER_NAME);<a name="line.215"></a>
-<FONT color="green">216</FONT>            clustername = DEFAULT_CLUSTER_NAME;<a name="line.216"></a>
-<FONT color="green">217</FONT>            return clustername;<a name="line.217"></a>
-<FONT color="green">218</FONT>        }<a name="line.218"></a>
-<FONT color="green">219</FONT>    <a name="line.219"></a>
-<FONT color="green">220</FONT>        protected void connect(URI uri) throws IOException {<a name="line.220"></a>
-<FONT color="green">221</FONT>            String hostname = uri.getHost();<a name="line.221"></a>
-<FONT color="green">222</FONT>            int port = uri.getPort();<a name="line.222"></a>
-<FONT color="green">223</FONT>            boolean newaddresses = false;<a name="line.223"></a>
-<FONT color="green">224</FONT>            if (!"es".equals(uri.getScheme())) {<a name="line.224"></a>
-<FONT color="green">225</FONT>                logger.warn("please specify URI scheme 'es'");<a name="line.225"></a>
-<FONT color="green">226</FONT>            }<a name="line.226"></a>
-<FONT color="green">227</FONT>            if ("hostname".equals(hostname)) {<a name="line.227"></a>
-<FONT color="green">228</FONT>                InetSocketTransportAddress address = new InetSocketTransportAddress(InetAddress.getLocalHost().getHostName(), port);<a name="line.228"></a>
-<FONT color="green">229</FONT>                if (!addresses.contains(address)) {<a name="line.229"></a>
-<FONT color="green">230</FONT>                    logger.info("adding hostname address for transport client: {}", address);<a name="line.230"></a>
-<FONT color="green">231</FONT>                    client.addTransportAddress(address);<a name="line.231"></a>
-<FONT color="green">232</FONT>                    addresses.add(address);<a name="line.232"></a>
-<FONT color="green">233</FONT>                    newaddresses = true;<a name="line.233"></a>
-<FONT color="green">234</FONT>                }<a name="line.234"></a>
-<FONT color="green">235</FONT>            } else if ("interfaces".equals(hostname)) {<a name="line.235"></a>
-<FONT color="green">236</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.236"></a>
-<FONT color="green">237</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.237"></a>
-<FONT color="green">238</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.238"></a>
-<FONT color="green">239</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.239"></a>
-<FONT color="green">240</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.240"></a>
-<FONT color="green">241</FONT>                        logger.info("checking address = {}", addr.getHostAddress());<a name="line.241"></a>
-<FONT color="green">242</FONT>                        InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.242"></a>
-<FONT color="green">243</FONT>                        if (!addresses.contains(address)) {<a name="line.243"></a>
-<FONT color="green">244</FONT>                            logger.info("adding address to transport client: {}", address);<a name="line.244"></a>
-<FONT color="green">245</FONT>                            client.addTransportAddress(address);<a name="line.245"></a>
-<FONT color="green">246</FONT>                            addresses.add(address);<a name="line.246"></a>
-<FONT color="green">247</FONT>                            newaddresses = true;<a name="line.247"></a>
-<FONT color="green">248</FONT>                        }<a name="line.248"></a>
-<FONT color="green">249</FONT>                    }<a name="line.249"></a>
-<FONT color="green">250</FONT>                }<a name="line.250"></a>
-<FONT color="green">251</FONT>            } else if ("inet4".equals(hostname)) {<a name="line.251"></a>
-<FONT color="green">252</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.252"></a>
-<FONT color="green">253</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.253"></a>
-<FONT color="green">254</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.254"></a>
-<FONT color="green">255</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.255"></a>
-<FONT color="green">256</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.256"></a>
-<FONT color="green">257</FONT>                        if (addr instanceof Inet4Address) {<a name="line.257"></a>
-<FONT color="green">258</FONT>                            logger.info("checking address = {}", addr.getHostAddress());<a name="line.258"></a>
-<FONT color="green">259</FONT>                            InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.259"></a>
-<FONT color="green">260</FONT>                            if (!addresses.contains(address)) {<a name="line.260"></a>
-<FONT color="green">261</FONT>                                logger.info("adding address for transport client: {}", address);<a name="line.261"></a>
-<FONT color="green">262</FONT>                                client.addTransportAddress(address);<a name="line.262"></a>
-<FONT color="green">263</FONT>                                addresses.add(address);<a name="line.263"></a>
-<FONT color="green">264</FONT>                                newaddresses = true;<a name="line.264"></a>
-<FONT color="green">265</FONT>                            }<a name="line.265"></a>
-<FONT color="green">266</FONT>                        }<a name="line.266"></a>
-<FONT color="green">267</FONT>                    }<a name="line.267"></a>
-<FONT color="green">268</FONT>                }<a name="line.268"></a>
-<FONT color="green">269</FONT>            } else if ("inet6".equals(hostname)) {<a name="line.269"></a>
-<FONT color="green">270</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.270"></a>
-<FONT color="green">271</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.271"></a>
-<FONT color="green">272</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.272"></a>
-<FONT color="green">273</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.273"></a>
-<FONT color="green">274</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.274"></a>
-<FONT color="green">275</FONT>                        if (addr instanceof Inet6Address) {<a name="line.275"></a>
-<FONT color="green">276</FONT>                            logger.info("checking address = {}", addr.getHostAddress());<a name="line.276"></a>
-<FONT color="green">277</FONT>                            InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.277"></a>
-<FONT color="green">278</FONT>                            if (!addresses.contains(address)) {<a name="line.278"></a>
-<FONT color="green">279</FONT>                                logger.info("adding address for transport client: {}", address);<a name="line.279"></a>
-<FONT color="green">280</FONT>                                client.addTransportAddress(address);<a name="line.280"></a>
-<FONT color="green">281</FONT>                                addresses.add(address);<a name="line.281"></a>
-<FONT color="green">282</FONT>                                newaddresses = true;<a name="line.282"></a>
-<FONT color="green">283</FONT>                            }<a name="line.283"></a>
-<FONT color="green">284</FONT>                        }<a name="line.284"></a>
-<FONT color="green">285</FONT>                    }<a name="line.285"></a>
-<FONT color="green">286</FONT>                }<a name="line.286"></a>
-<FONT color="green">287</FONT>            } else {<a name="line.287"></a>
-<FONT color="green">288</FONT>                InetSocketTransportAddress address = new InetSocketTransportAddress(hostname, port);<a name="line.288"></a>
-<FONT color="green">289</FONT>                if (!addresses.contains(address)) {<a name="line.289"></a>
-<FONT color="green">290</FONT>                    logger.info("adding custom address for transport client: {}", address);<a name="line.290"></a>
-<FONT color="green">291</FONT>                    client.addTransportAddress(address);<a name="line.291"></a>
-<FONT color="green">292</FONT>                    addresses.add(address);<a name="line.292"></a>
-<FONT color="green">293</FONT>                    newaddresses = true;<a name="line.293"></a>
-<FONT color="green">294</FONT>                }<a name="line.294"></a>
-<FONT color="green">295</FONT>            }<a name="line.295"></a>
-<FONT color="green">296</FONT>            logger.info("configured addresses to connect: {}", addresses);<a name="line.296"></a>
-<FONT color="green">297</FONT>            if (client.connectedNodes() != null) {<a name="line.297"></a>
-<FONT color="green">298</FONT>                List&lt;DiscoveryNode&gt; nodes = client.connectedNodes().asList();<a name="line.298"></a>
-<FONT color="green">299</FONT>                logger.info("connected nodes = {}", nodes);<a name="line.299"></a>
-<FONT color="green">300</FONT>                if (newaddresses) {<a name="line.300"></a>
-<FONT color="green">301</FONT>                    for (DiscoveryNode node : nodes) {<a name="line.301"></a>
-<FONT color="green">302</FONT>                        logger.info("new connection to {}", node);<a name="line.302"></a>
-<FONT color="green">303</FONT>                    }<a name="line.303"></a>
-<FONT color="green">304</FONT>                    if (!nodes.isEmpty()) {<a name="line.304"></a>
-<FONT color="green">305</FONT>                        try {<a name="line.305"></a>
-<FONT color="green">306</FONT>                            connectMore();<a name="line.306"></a>
-<FONT color="green">307</FONT>                        } catch (Exception e) {<a name="line.307"></a>
-<FONT color="green">308</FONT>                            logger.error("error while connecting to more nodes", e);<a name="line.308"></a>
-<FONT color="green">309</FONT>                        }<a name="line.309"></a>
-<FONT color="green">310</FONT>                    }<a name="line.310"></a>
-<FONT color="green">311</FONT>                }<a name="line.311"></a>
-<FONT color="green">312</FONT>            }<a name="line.312"></a>
-<FONT color="green">313</FONT>        }<a name="line.313"></a>
-<FONT color="green">314</FONT>    <a name="line.314"></a>
-<FONT color="green">315</FONT>        private void connectMore() throws IOException {<a name="line.315"></a>
-<FONT color="green">316</FONT>            logger.info("trying to discover more nodes...");<a name="line.316"></a>
-<FONT color="green">317</FONT>            ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();<a name="line.317"></a>
-<FONT color="green">318</FONT>            DiscoveryNodes nodes = clusterStateResponse.getState().getNodes();<a name="line.318"></a>
-<FONT color="green">319</FONT>            for (DiscoveryNode node : nodes) {<a name="line.319"></a>
-<FONT color="green">320</FONT>                logger.info("adding discovered node {}", node);<a name="line.320"></a>
-<FONT color="green">321</FONT>                try {<a name="line.321"></a>
-<FONT color="green">322</FONT>                    client.addTransportAddress(node.address());<a name="line.322"></a>
-<FONT color="green">323</FONT>                } catch (Exception e) {<a name="line.323"></a>
-<FONT color="green">324</FONT>                    logger.warn("can't add node " + node, e);<a name="line.324"></a>
+<FONT color="green">010</FONT>    import org.elasticsearch.client.transport.NoNodeAvailableException;<a name="line.10"></a>
+<FONT color="green">011</FONT>    import org.elasticsearch.client.transport.TransportClient;<a name="line.11"></a>
+<FONT color="green">012</FONT>    import org.elasticsearch.cluster.node.DiscoveryNode;<a name="line.12"></a>
+<FONT color="green">013</FONT>    import org.elasticsearch.cluster.node.DiscoveryNodes;<a name="line.13"></a>
+<FONT color="green">014</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.14"></a>
+<FONT color="green">015</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.15"></a>
+<FONT color="green">016</FONT>    import org.elasticsearch.common.settings.Settings;<a name="line.16"></a>
+<FONT color="green">017</FONT>    import org.elasticsearch.common.transport.InetSocketTransportAddress;<a name="line.17"></a>
+<FONT color="green">018</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.18"></a>
+<FONT color="green">019</FONT>    import org.elasticsearch.common.xcontent.ToXContent;<a name="line.19"></a>
+<FONT color="green">020</FONT>    import org.elasticsearch.common.xcontent.XContentBuilder;<a name="line.20"></a>
+<FONT color="green">021</FONT>    <a name="line.21"></a>
+<FONT color="green">022</FONT>    import java.io.IOException;<a name="line.22"></a>
+<FONT color="green">023</FONT>    import java.io.InputStream;<a name="line.23"></a>
+<FONT color="green">024</FONT>    import java.io.UnsupportedEncodingException;<a name="line.24"></a>
+<FONT color="green">025</FONT>    import java.net.Inet4Address;<a name="line.25"></a>
+<FONT color="green">026</FONT>    import java.net.Inet6Address;<a name="line.26"></a>
+<FONT color="green">027</FONT>    import java.net.InetAddress;<a name="line.27"></a>
+<FONT color="green">028</FONT>    import java.net.NetworkInterface;<a name="line.28"></a>
+<FONT color="green">029</FONT>    import java.net.SocketException;<a name="line.29"></a>
+<FONT color="green">030</FONT>    import java.net.URI;<a name="line.30"></a>
+<FONT color="green">031</FONT>    import java.net.URL;<a name="line.31"></a>
+<FONT color="green">032</FONT>    import java.net.UnknownHostException;<a name="line.32"></a>
+<FONT color="green">033</FONT>    import java.util.Collections;<a name="line.33"></a>
+<FONT color="green">034</FONT>    import java.util.Enumeration;<a name="line.34"></a>
+<FONT color="green">035</FONT>    import java.util.HashMap;<a name="line.35"></a>
+<FONT color="green">036</FONT>    import java.util.List;<a name="line.36"></a>
+<FONT color="green">037</FONT>    import java.util.Map;<a name="line.37"></a>
+<FONT color="green">038</FONT>    import java.util.Properties;<a name="line.38"></a>
+<FONT color="green">039</FONT>    import java.util.Set;<a name="line.39"></a>
+<FONT color="green">040</FONT>    import java.util.StringTokenizer;<a name="line.40"></a>
+<FONT color="green">041</FONT>    <a name="line.41"></a>
+<FONT color="green">042</FONT>    import static org.elasticsearch.common.collect.Lists.newLinkedList;<a name="line.42"></a>
+<FONT color="green">043</FONT>    import static org.elasticsearch.common.collect.Sets.newHashSet;<a name="line.43"></a>
+<FONT color="green">044</FONT>    import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;<a name="line.44"></a>
+<FONT color="green">045</FONT>    import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;<a name="line.45"></a>
+<FONT color="green">046</FONT>    <a name="line.46"></a>
+<FONT color="green">047</FONT>    public abstract class AbstractTransportClient implements ClientBuilder {<a name="line.47"></a>
+<FONT color="green">048</FONT>    <a name="line.48"></a>
+<FONT color="green">049</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());<a name="line.49"></a>
+<FONT color="green">050</FONT>    <a name="line.50"></a>
+<FONT color="green">051</FONT>        private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";<a name="line.51"></a>
+<FONT color="green">052</FONT>    <a name="line.52"></a>
+<FONT color="green">053</FONT>        private final Set&lt;InetSocketTransportAddress&gt; addresses = newHashSet();<a name="line.53"></a>
+<FONT color="green">054</FONT>    <a name="line.54"></a>
+<FONT color="green">055</FONT>        protected TransportClient client;<a name="line.55"></a>
+<FONT color="green">056</FONT>    <a name="line.56"></a>
+<FONT color="green">057</FONT>        protected String clustername;<a name="line.57"></a>
+<FONT color="green">058</FONT>    <a name="line.58"></a>
+<FONT color="green">059</FONT>        public AbstractTransportClient newClient(URI uri, Settings settings) {<a name="line.59"></a>
+<FONT color="green">060</FONT>            if (client != null) {<a name="line.60"></a>
+<FONT color="green">061</FONT>                logger.warn("client is open, closing...");<a name="line.61"></a>
+<FONT color="green">062</FONT>                client.close();<a name="line.62"></a>
+<FONT color="green">063</FONT>                client.threadPool().shutdown();<a name="line.63"></a>
+<FONT color="green">064</FONT>                logger.warn("client is closed");<a name="line.64"></a>
+<FONT color="green">065</FONT>                client = null;<a name="line.65"></a>
+<FONT color="green">066</FONT>            }<a name="line.66"></a>
+<FONT color="green">067</FONT>            if (settings != null) {<a name="line.67"></a>
+<FONT color="green">068</FONT>                logger.info("creating transport client, java version {}, effective settings {}",<a name="line.68"></a>
+<FONT color="green">069</FONT>                        System.getProperty("java.version"), settings.getAsMap());<a name="line.69"></a>
+<FONT color="green">070</FONT>                // false = do not load config settings from environment<a name="line.70"></a>
+<FONT color="green">071</FONT>                this.client = new TransportClient(settings, false);<a name="line.71"></a>
+<FONT color="green">072</FONT>            } else {<a name="line.72"></a>
+<FONT color="green">073</FONT>                logger.info("creating transport client, java version {}, using default settings",<a name="line.73"></a>
+<FONT color="green">074</FONT>                        System.getProperty("java.version"));<a name="line.74"></a>
+<FONT color="green">075</FONT>                this.client = new TransportClient();<a name="line.75"></a>
+<FONT color="green">076</FONT>            }<a name="line.76"></a>
+<FONT color="green">077</FONT>            try {<a name="line.77"></a>
+<FONT color="green">078</FONT>                connect(uri);<a name="line.78"></a>
+<FONT color="green">079</FONT>            } catch (UnknownHostException e) {<a name="line.79"></a>
+<FONT color="green">080</FONT>                logger.error(e.getMessage(), e);<a name="line.80"></a>
+<FONT color="green">081</FONT>            } catch (SocketException e) {<a name="line.81"></a>
+<FONT color="green">082</FONT>                logger.error(e.getMessage(), e);<a name="line.82"></a>
+<FONT color="green">083</FONT>            } catch (IOException e) {<a name="line.83"></a>
+<FONT color="green">084</FONT>                logger.error(e.getMessage(), e);<a name="line.84"></a>
+<FONT color="green">085</FONT>            }<a name="line.85"></a>
+<FONT color="green">086</FONT>            return this;<a name="line.86"></a>
+<FONT color="green">087</FONT>        }<a name="line.87"></a>
+<FONT color="green">088</FONT>    <a name="line.88"></a>
+<FONT color="green">089</FONT>        public Settings defaultSettings(URI uri) {<a name="line.89"></a>
+<FONT color="green">090</FONT>            return settingsBuilder()<a name="line.90"></a>
+<FONT color="green">091</FONT>                    .put("cluster.name", findClusterName(uri))<a name="line.91"></a>
+<FONT color="green">092</FONT>                    .put("network.server", false)<a name="line.92"></a>
+<FONT color="green">093</FONT>                    .put("node.client", true)<a name="line.93"></a>
+<FONT color="green">094</FONT>                    .put("client.transport.sniff", false)<a name="line.94"></a>
+<FONT color="green">095</FONT>                    .put("client.transport.ignore_cluster_name", false)<a name="line.95"></a>
+<FONT color="green">096</FONT>                    .put("client.transport.ping_timeout", "30s")<a name="line.96"></a>
+<FONT color="green">097</FONT>                    .put("client.transport.nodes_sampler_interval", "30s")<a name="line.97"></a>
+<FONT color="green">098</FONT>                    .build();<a name="line.98"></a>
+<FONT color="green">099</FONT>        }<a name="line.99"></a>
+<FONT color="green">100</FONT>    <a name="line.100"></a>
+<FONT color="green">101</FONT>        public Client client() {<a name="line.101"></a>
+<FONT color="green">102</FONT>            return client;<a name="line.102"></a>
+<FONT color="green">103</FONT>        }<a name="line.103"></a>
+<FONT color="green">104</FONT>    <a name="line.104"></a>
+<FONT color="green">105</FONT>        public void waitForCluster() throws IOException {<a name="line.105"></a>
+<FONT color="green">106</FONT>            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));<a name="line.106"></a>
+<FONT color="green">107</FONT>        }<a name="line.107"></a>
+<FONT color="green">108</FONT>    <a name="line.108"></a>
+<FONT color="green">109</FONT>        public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.109"></a>
+<FONT color="green">110</FONT>            try {<a name="line.110"></a>
+<FONT color="green">111</FONT>                logger.info("waiting for cluster state {}", status.name());<a name="line.111"></a>
+<FONT color="green">112</FONT>                ClusterHealthResponse healthResponse =<a name="line.112"></a>
+<FONT color="green">113</FONT>                        client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();<a name="line.113"></a>
+<FONT color="green">114</FONT>                if (healthResponse.isTimedOut()) {<a name="line.114"></a>
+<FONT color="green">115</FONT>                    throw new IOException("cluster state is " + healthResponse.getStatus().name()<a name="line.115"></a>
+<FONT color="green">116</FONT>                            + " and not " + status.name()<a name="line.116"></a>
+<FONT color="green">117</FONT>                            + ", cowardly refusing to continue with operations");<a name="line.117"></a>
+<FONT color="green">118</FONT>                } else {<a name="line.118"></a>
+<FONT color="green">119</FONT>                    logger.info("... cluster state ok");<a name="line.119"></a>
+<FONT color="green">120</FONT>                }<a name="line.120"></a>
+<FONT color="green">121</FONT>            } catch (ElasticsearchTimeoutException e) {<a name="line.121"></a>
+<FONT color="green">122</FONT>                throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");<a name="line.122"></a>
+<FONT color="green">123</FONT>            }<a name="line.123"></a>
+<FONT color="green">124</FONT>        }<a name="line.124"></a>
+<FONT color="green">125</FONT>    <a name="line.125"></a>
+<FONT color="green">126</FONT>        public String clusterName() {<a name="line.126"></a>
+<FONT color="green">127</FONT>            return clustername;<a name="line.127"></a>
+<FONT color="green">128</FONT>        }<a name="line.128"></a>
+<FONT color="green">129</FONT>    <a name="line.129"></a>
+<FONT color="green">130</FONT>        public String healthColor() {<a name="line.130"></a>
+<FONT color="green">131</FONT>            try {<a name="line.131"></a>
+<FONT color="green">132</FONT>                ClusterHealthResponse healthResponse =<a name="line.132"></a>
+<FONT color="green">133</FONT>                    client.admin().cluster().prepareHealth().setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();<a name="line.133"></a>
+<FONT color="green">134</FONT>                ClusterHealthStatus status = healthResponse.getStatus();<a name="line.134"></a>
+<FONT color="green">135</FONT>                return status.name();<a name="line.135"></a>
+<FONT color="green">136</FONT>            } catch (ElasticsearchTimeoutException e) {<a name="line.136"></a>
+<FONT color="green">137</FONT>                return "TIMEOUT";<a name="line.137"></a>
+<FONT color="green">138</FONT>            } catch (NoNodeAvailableException e) {<a name="line.138"></a>
+<FONT color="green">139</FONT>                return "DISCONNECTED";<a name="line.139"></a>
+<FONT color="green">140</FONT>            } catch (Throwable t) {<a name="line.140"></a>
+<FONT color="green">141</FONT>                return "[" + t.getMessage() + "]";<a name="line.141"></a>
+<FONT color="green">142</FONT>            }<a name="line.142"></a>
+<FONT color="green">143</FONT>        }<a name="line.143"></a>
+<FONT color="green">144</FONT>    <a name="line.144"></a>
+<FONT color="green">145</FONT>        public List&lt;String&gt; connectNodes() {<a name="line.145"></a>
+<FONT color="green">146</FONT>            List&lt;String&gt; nodes = newLinkedList();<a name="line.146"></a>
+<FONT color="green">147</FONT>            if (client.connectedNodes() != null) {<a name="line.147"></a>
+<FONT color="green">148</FONT>                for (DiscoveryNode discoveryNode : client.connectedNodes()) {<a name="line.148"></a>
+<FONT color="green">149</FONT>                    nodes.add(discoveryNode.toString());<a name="line.149"></a>
+<FONT color="green">150</FONT>                }<a name="line.150"></a>
+<FONT color="green">151</FONT>            }<a name="line.151"></a>
+<FONT color="green">152</FONT>            return nodes;<a name="line.152"></a>
+<FONT color="green">153</FONT>        }<a name="line.153"></a>
+<FONT color="green">154</FONT>    <a name="line.154"></a>
+<FONT color="green">155</FONT>        public String stats() throws IOException {<a name="line.155"></a>
+<FONT color="green">156</FONT>            XContentBuilder builder = jsonBuilder();<a name="line.156"></a>
+<FONT color="green">157</FONT>            builder.startObject();<a name="line.157"></a>
+<FONT color="green">158</FONT>            client.threadPool().stats().toXContent(builder, ToXContent.EMPTY_PARAMS);<a name="line.158"></a>
+<FONT color="green">159</FONT>            builder.endObject();<a name="line.159"></a>
+<FONT color="green">160</FONT>            return builder.string();<a name="line.160"></a>
+<FONT color="green">161</FONT>        }<a name="line.161"></a>
+<FONT color="green">162</FONT>    <a name="line.162"></a>
+<FONT color="green">163</FONT>        public synchronized void shutdown() {<a name="line.163"></a>
+<FONT color="green">164</FONT>            if (client != null) {<a name="line.164"></a>
+<FONT color="green">165</FONT>                client.close();<a name="line.165"></a>
+<FONT color="green">166</FONT>                client.threadPool().shutdown();<a name="line.166"></a>
+<FONT color="green">167</FONT>                client = null;<a name="line.167"></a>
+<FONT color="green">168</FONT>            }<a name="line.168"></a>
+<FONT color="green">169</FONT>            addresses.clear();<a name="line.169"></a>
+<FONT color="green">170</FONT>        }<a name="line.170"></a>
+<FONT color="green">171</FONT>    <a name="line.171"></a>
+<FONT color="green">172</FONT>        protected URI findURI() {<a name="line.172"></a>
+<FONT color="green">173</FONT>            URI uri = null;<a name="line.173"></a>
+<FONT color="green">174</FONT>            String hostname = "localhost";<a name="line.174"></a>
+<FONT color="green">175</FONT>            try {<a name="line.175"></a>
+<FONT color="green">176</FONT>                hostname = InetAddress.getLocalHost().getHostName();<a name="line.176"></a>
+<FONT color="green">177</FONT>                logger.debug("the hostname is {}", hostname);<a name="line.177"></a>
+<FONT color="green">178</FONT>                uri = URI.create("es://"+hostname+":9300");<a name="line.178"></a>
+<FONT color="green">179</FONT>                // custom?<a name="line.179"></a>
+<FONT color="green">180</FONT>                URL url = getClass().getResource("/org/xbib/elasticsearch/cluster.properties");<a name="line.180"></a>
+<FONT color="green">181</FONT>                if (url != null) {<a name="line.181"></a>
+<FONT color="green">182</FONT>                    InputStream in = url.openStream();<a name="line.182"></a>
+<FONT color="green">183</FONT>                    Properties p = new Properties();<a name="line.183"></a>
+<FONT color="green">184</FONT>                    p.load(in);<a name="line.184"></a>
+<FONT color="green">185</FONT>                    in.close();<a name="line.185"></a>
+<FONT color="green">186</FONT>                    // the properties contains default URIs per hostname<a name="line.186"></a>
+<FONT color="green">187</FONT>                    if (p.containsKey(hostname)) {<a name="line.187"></a>
+<FONT color="green">188</FONT>                        uri = URI.create(p.getProperty(hostname));<a name="line.188"></a>
+<FONT color="green">189</FONT>                        logger.debug("custom URI found in cluster.properties for hostname {}: {}", hostname, uri);<a name="line.189"></a>
+<FONT color="green">190</FONT>                        return uri;<a name="line.190"></a>
+<FONT color="green">191</FONT>                    }<a name="line.191"></a>
+<FONT color="green">192</FONT>                }<a name="line.192"></a>
+<FONT color="green">193</FONT>            } catch (UnknownHostException e) {<a name="line.193"></a>
+<FONT color="green">194</FONT>                logger.warn("can't resolve host name, probably something wrong with network config: " + e.getMessage(), e);<a name="line.194"></a>
+<FONT color="green">195</FONT>            } catch (Exception e) {<a name="line.195"></a>
+<FONT color="green">196</FONT>                logger.warn(e.getMessage(), e);<a name="line.196"></a>
+<FONT color="green">197</FONT>            }<a name="line.197"></a>
+<FONT color="green">198</FONT>            logger.debug("URI for hostname {}: {}", hostname, uri);<a name="line.198"></a>
+<FONT color="green">199</FONT>            return uri;<a name="line.199"></a>
+<FONT color="green">200</FONT>        }<a name="line.200"></a>
+<FONT color="green">201</FONT>    <a name="line.201"></a>
+<FONT color="green">202</FONT>        protected String findClusterName(URI uri) {<a name="line.202"></a>
+<FONT color="green">203</FONT>            try {<a name="line.203"></a>
+<FONT color="green">204</FONT>                Map&lt;String, String&gt; map = parseQueryString(uri, "UTF-8");<a name="line.204"></a>
+<FONT color="green">205</FONT>                clustername = map.get("es.cluster.name");<a name="line.205"></a>
+<FONT color="green">206</FONT>                if (clustername != null) {<a name="line.206"></a>
+<FONT color="green">207</FONT>                    logger.info("cluster name found in URI {}: {}", uri, clustername);<a name="line.207"></a>
+<FONT color="green">208</FONT>                    return clustername;<a name="line.208"></a>
+<FONT color="green">209</FONT>                }<a name="line.209"></a>
+<FONT color="green">210</FONT>                clustername = map.get("cluster.name");<a name="line.210"></a>
+<FONT color="green">211</FONT>                if (clustername != null) {<a name="line.211"></a>
+<FONT color="green">212</FONT>                    logger.info("cluster name found in URI {}: {}", uri, clustername);<a name="line.212"></a>
+<FONT color="green">213</FONT>                    return clustername;<a name="line.213"></a>
+<FONT color="green">214</FONT>                }<a name="line.214"></a>
+<FONT color="green">215</FONT>            } catch (UnsupportedEncodingException ex) {<a name="line.215"></a>
+<FONT color="green">216</FONT>                logger.warn(ex.getMessage(), ex);<a name="line.216"></a>
+<FONT color="green">217</FONT>            }<a name="line.217"></a>
+<FONT color="green">218</FONT>            logger.info("cluster name not found in URI {}, parameter es.cluster.name", uri);<a name="line.218"></a>
+<FONT color="green">219</FONT>            clustername = System.getProperty("es.cluster.name");<a name="line.219"></a>
+<FONT color="green">220</FONT>            if (clustername != null) {<a name="line.220"></a>
+<FONT color="green">221</FONT>                logger.info("cluster name found in es.cluster.name system property: {}", clustername);<a name="line.221"></a>
+<FONT color="green">222</FONT>                return clustername;<a name="line.222"></a>
+<FONT color="green">223</FONT>            }<a name="line.223"></a>
+<FONT color="green">224</FONT>            clustername = System.getProperty("cluster.name");<a name="line.224"></a>
+<FONT color="green">225</FONT>            if (clustername != null) {<a name="line.225"></a>
+<FONT color="green">226</FONT>                logger.info("cluster name found in cluster.name system property: {}", clustername);<a name="line.226"></a>
+<FONT color="green">227</FONT>                return clustername;<a name="line.227"></a>
+<FONT color="green">228</FONT>            }<a name="line.228"></a>
+<FONT color="green">229</FONT>            logger.info("cluster name not found, falling back to default: {}", DEFAULT_CLUSTER_NAME);<a name="line.229"></a>
+<FONT color="green">230</FONT>            clustername = DEFAULT_CLUSTER_NAME;<a name="line.230"></a>
+<FONT color="green">231</FONT>            return clustername;<a name="line.231"></a>
+<FONT color="green">232</FONT>        }<a name="line.232"></a>
+<FONT color="green">233</FONT>    <a name="line.233"></a>
+<FONT color="green">234</FONT>        protected void connect(URI uri) throws IOException {<a name="line.234"></a>
+<FONT color="green">235</FONT>            String hostname = uri.getHost();<a name="line.235"></a>
+<FONT color="green">236</FONT>            int port = uri.getPort();<a name="line.236"></a>
+<FONT color="green">237</FONT>            boolean newaddresses = false;<a name="line.237"></a>
+<FONT color="green">238</FONT>            if (!"es".equals(uri.getScheme())) {<a name="line.238"></a>
+<FONT color="green">239</FONT>                logger.warn("please specify URI scheme 'es'");<a name="line.239"></a>
+<FONT color="green">240</FONT>            }<a name="line.240"></a>
+<FONT color="green">241</FONT>            if ("hostname".equals(hostname)) {<a name="line.241"></a>
+<FONT color="green">242</FONT>                InetSocketTransportAddress address = new InetSocketTransportAddress(InetAddress.getLocalHost().getHostName(), port);<a name="line.242"></a>
+<FONT color="green">243</FONT>                if (!addresses.contains(address)) {<a name="line.243"></a>
+<FONT color="green">244</FONT>                    logger.info("adding hostname address for transport client: {}", address);<a name="line.244"></a>
+<FONT color="green">245</FONT>                    client.addTransportAddress(address);<a name="line.245"></a>
+<FONT color="green">246</FONT>                    addresses.add(address);<a name="line.246"></a>
+<FONT color="green">247</FONT>                    newaddresses = true;<a name="line.247"></a>
+<FONT color="green">248</FONT>                }<a name="line.248"></a>
+<FONT color="green">249</FONT>            } else if ("interfaces".equals(hostname)) {<a name="line.249"></a>
+<FONT color="green">250</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.250"></a>
+<FONT color="green">251</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.251"></a>
+<FONT color="green">252</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.252"></a>
+<FONT color="green">253</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.253"></a>
+<FONT color="green">254</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.254"></a>
+<FONT color="green">255</FONT>                        logger.info("checking address = {}", addr.getHostAddress());<a name="line.255"></a>
+<FONT color="green">256</FONT>                        InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.256"></a>
+<FONT color="green">257</FONT>                        if (!addresses.contains(address)) {<a name="line.257"></a>
+<FONT color="green">258</FONT>                            logger.info("adding address to transport client: {}", address);<a name="line.258"></a>
+<FONT color="green">259</FONT>                            client.addTransportAddress(address);<a name="line.259"></a>
+<FONT color="green">260</FONT>                            addresses.add(address);<a name="line.260"></a>
+<FONT color="green">261</FONT>                            newaddresses = true;<a name="line.261"></a>
+<FONT color="green">262</FONT>                        }<a name="line.262"></a>
+<FONT color="green">263</FONT>                    }<a name="line.263"></a>
+<FONT color="green">264</FONT>                }<a name="line.264"></a>
+<FONT color="green">265</FONT>            } else if ("inet4".equals(hostname)) {<a name="line.265"></a>
+<FONT color="green">266</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.266"></a>
+<FONT color="green">267</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.267"></a>
+<FONT color="green">268</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.268"></a>
+<FONT color="green">269</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.269"></a>
+<FONT color="green">270</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.270"></a>
+<FONT color="green">271</FONT>                        if (addr instanceof Inet4Address) {<a name="line.271"></a>
+<FONT color="green">272</FONT>                            logger.info("checking address = {}", addr.getHostAddress());<a name="line.272"></a>
+<FONT color="green">273</FONT>                            InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.273"></a>
+<FONT color="green">274</FONT>                            if (!addresses.contains(address)) {<a name="line.274"></a>
+<FONT color="green">275</FONT>                                logger.info("adding address for transport client: {}", address);<a name="line.275"></a>
+<FONT color="green">276</FONT>                                client.addTransportAddress(address);<a name="line.276"></a>
+<FONT color="green">277</FONT>                                addresses.add(address);<a name="line.277"></a>
+<FONT color="green">278</FONT>                                newaddresses = true;<a name="line.278"></a>
+<FONT color="green">279</FONT>                            }<a name="line.279"></a>
+<FONT color="green">280</FONT>                        }<a name="line.280"></a>
+<FONT color="green">281</FONT>                    }<a name="line.281"></a>
+<FONT color="green">282</FONT>                }<a name="line.282"></a>
+<FONT color="green">283</FONT>            } else if ("inet6".equals(hostname)) {<a name="line.283"></a>
+<FONT color="green">284</FONT>                Enumeration&lt;NetworkInterface&gt; nets = NetworkInterface.getNetworkInterfaces();<a name="line.284"></a>
+<FONT color="green">285</FONT>                for (NetworkInterface netint : Collections.list(nets)) {<a name="line.285"></a>
+<FONT color="green">286</FONT>                    logger.info("checking network interface = {}", netint.getName());<a name="line.286"></a>
+<FONT color="green">287</FONT>                    Enumeration&lt;InetAddress&gt; inetAddresses = netint.getInetAddresses();<a name="line.287"></a>
+<FONT color="green">288</FONT>                    for (InetAddress addr : Collections.list(inetAddresses)) {<a name="line.288"></a>
+<FONT color="green">289</FONT>                        if (addr instanceof Inet6Address) {<a name="line.289"></a>
+<FONT color="green">290</FONT>                            logger.info("checking address = {}", addr.getHostAddress());<a name="line.290"></a>
+<FONT color="green">291</FONT>                            InetSocketTransportAddress address = new InetSocketTransportAddress(addr, port);<a name="line.291"></a>
+<FONT color="green">292</FONT>                            if (!addresses.contains(address)) {<a name="line.292"></a>
+<FONT color="green">293</FONT>                                logger.info("adding address for transport client: {}", address);<a name="line.293"></a>
+<FONT color="green">294</FONT>                                client.addTransportAddress(address);<a name="line.294"></a>
+<FONT color="green">295</FONT>                                addresses.add(address);<a name="line.295"></a>
+<FONT color="green">296</FONT>                                newaddresses = true;<a name="line.296"></a>
+<FONT color="green">297</FONT>                            }<a name="line.297"></a>
+<FONT color="green">298</FONT>                        }<a name="line.298"></a>
+<FONT color="green">299</FONT>                    }<a name="line.299"></a>
+<FONT color="green">300</FONT>                }<a name="line.300"></a>
+<FONT color="green">301</FONT>            } else {<a name="line.301"></a>
+<FONT color="green">302</FONT>                InetSocketTransportAddress address = new InetSocketTransportAddress(hostname, port);<a name="line.302"></a>
+<FONT color="green">303</FONT>                if (!addresses.contains(address)) {<a name="line.303"></a>
+<FONT color="green">304</FONT>                    logger.info("adding custom address for transport client: {}", address);<a name="line.304"></a>
+<FONT color="green">305</FONT>                    client.addTransportAddress(address);<a name="line.305"></a>
+<FONT color="green">306</FONT>                    addresses.add(address);<a name="line.306"></a>
+<FONT color="green">307</FONT>                    newaddresses = true;<a name="line.307"></a>
+<FONT color="green">308</FONT>                }<a name="line.308"></a>
+<FONT color="green">309</FONT>            }<a name="line.309"></a>
+<FONT color="green">310</FONT>            logger.info("configured addresses to connect: {}", addresses);<a name="line.310"></a>
+<FONT color="green">311</FONT>            if (client.connectedNodes() != null) {<a name="line.311"></a>
+<FONT color="green">312</FONT>                List&lt;DiscoveryNode&gt; nodes = client.connectedNodes().asList();<a name="line.312"></a>
+<FONT color="green">313</FONT>                logger.info("connected nodes = {}", nodes);<a name="line.313"></a>
+<FONT color="green">314</FONT>                if (newaddresses) {<a name="line.314"></a>
+<FONT color="green">315</FONT>                    for (DiscoveryNode node : nodes) {<a name="line.315"></a>
+<FONT color="green">316</FONT>                        logger.info("new connection to {}", node);<a name="line.316"></a>
+<FONT color="green">317</FONT>                    }<a name="line.317"></a>
+<FONT color="green">318</FONT>                    if (!nodes.isEmpty()) {<a name="line.318"></a>
+<FONT color="green">319</FONT>                        try {<a name="line.319"></a>
+<FONT color="green">320</FONT>                            connectMore();<a name="line.320"></a>
+<FONT color="green">321</FONT>                        } catch (Exception e) {<a name="line.321"></a>
+<FONT color="green">322</FONT>                            logger.error("error while connecting to more nodes", e);<a name="line.322"></a>
+<FONT color="green">323</FONT>                        }<a name="line.323"></a>
+<FONT color="green">324</FONT>                    }<a name="line.324"></a>
 <FONT color="green">325</FONT>                }<a name="line.325"></a>
 <FONT color="green">326</FONT>            }<a name="line.326"></a>
-<FONT color="green">327</FONT>            logger.info("... discovery done");<a name="line.327"></a>
-<FONT color="green">328</FONT>        }<a name="line.328"></a>
-<FONT color="green">329</FONT>    <a name="line.329"></a>
-<FONT color="green">330</FONT>        private Map&lt;String, String&gt; parseQueryString(URI uri, String encoding)<a name="line.330"></a>
-<FONT color="green">331</FONT>                throws UnsupportedEncodingException {<a name="line.331"></a>
-<FONT color="green">332</FONT>            Map&lt;String, String&gt; m = new HashMap&lt;String, String&gt;();<a name="line.332"></a>
-<FONT color="green">333</FONT>            if (uri == null) {<a name="line.333"></a>
-<FONT color="green">334</FONT>                throw new IllegalArgumentException();<a name="line.334"></a>
-<FONT color="green">335</FONT>            }<a name="line.335"></a>
-<FONT color="green">336</FONT>            if (uri.getRawQuery() == null) {<a name="line.336"></a>
-<FONT color="green">337</FONT>                return m;<a name="line.337"></a>
-<FONT color="green">338</FONT>            }<a name="line.338"></a>
-<FONT color="green">339</FONT>            // getRawQuery() because we do our decoding by ourselves<a name="line.339"></a>
-<FONT color="green">340</FONT>            StringTokenizer st = new StringTokenizer(uri.getRawQuery(), "&amp;");<a name="line.340"></a>
-<FONT color="green">341</FONT>            while (st.hasMoreTokens()) {<a name="line.341"></a>
-<FONT color="green">342</FONT>                String pair = st.nextToken();<a name="line.342"></a>
-<FONT color="green">343</FONT>                int pos = pair.indexOf('=');<a name="line.343"></a>
-<FONT color="green">344</FONT>                if (pos &lt; 0) {<a name="line.344"></a>
-<FONT color="green">345</FONT>                    m.put(pair, null);<a name="line.345"></a>
-<FONT color="green">346</FONT>                } else {<a name="line.346"></a>
-<FONT color="green">347</FONT>                    m.put(pair.substring(0, pos), decode(pair.substring(pos + 1, pair.length()), encoding));<a name="line.347"></a>
-<FONT color="green">348</FONT>                }<a name="line.348"></a>
+<FONT color="green">327</FONT>        }<a name="line.327"></a>
+<FONT color="green">328</FONT>    <a name="line.328"></a>
+<FONT color="green">329</FONT>        private void connectMore() throws IOException {<a name="line.329"></a>
+<FONT color="green">330</FONT>            logger.info("trying to discover more nodes...");<a name="line.330"></a>
+<FONT color="green">331</FONT>            ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();<a name="line.331"></a>
+<FONT color="green">332</FONT>            DiscoveryNodes nodes = clusterStateResponse.getState().getNodes();<a name="line.332"></a>
+<FONT color="green">333</FONT>            for (DiscoveryNode node : nodes) {<a name="line.333"></a>
+<FONT color="green">334</FONT>                logger.info("adding discovered node {}", node);<a name="line.334"></a>
+<FONT color="green">335</FONT>                try {<a name="line.335"></a>
+<FONT color="green">336</FONT>                    client.addTransportAddress(node.address());<a name="line.336"></a>
+<FONT color="green">337</FONT>                } catch (Exception e) {<a name="line.337"></a>
+<FONT color="green">338</FONT>                    logger.warn("can't add node " + node, e);<a name="line.338"></a>
+<FONT color="green">339</FONT>                }<a name="line.339"></a>
+<FONT color="green">340</FONT>            }<a name="line.340"></a>
+<FONT color="green">341</FONT>            logger.info("... discovery done");<a name="line.341"></a>
+<FONT color="green">342</FONT>        }<a name="line.342"></a>
+<FONT color="green">343</FONT>    <a name="line.343"></a>
+<FONT color="green">344</FONT>        private Map&lt;String, String&gt; parseQueryString(URI uri, String encoding)<a name="line.344"></a>
+<FONT color="green">345</FONT>                throws UnsupportedEncodingException {<a name="line.345"></a>
+<FONT color="green">346</FONT>            Map&lt;String, String&gt; m = new HashMap&lt;String, String&gt;();<a name="line.346"></a>
+<FONT color="green">347</FONT>            if (uri == null) {<a name="line.347"></a>
+<FONT color="green">348</FONT>                throw new IllegalArgumentException();<a name="line.348"></a>
 <FONT color="green">349</FONT>            }<a name="line.349"></a>
-<FONT color="green">350</FONT>            return m;<a name="line.350"></a>
-<FONT color="green">351</FONT>        }<a name="line.351"></a>
-<FONT color="green">352</FONT>    <a name="line.352"></a>
-<FONT color="green">353</FONT>        private String decode(String s, String encoding) {<a name="line.353"></a>
-<FONT color="green">354</FONT>            StringBuilder sb = new StringBuilder();<a name="line.354"></a>
-<FONT color="green">355</FONT>            boolean fragment = false;<a name="line.355"></a>
-<FONT color="green">356</FONT>            for (int i = 0; i &lt; s.length(); i++) {<a name="line.356"></a>
-<FONT color="green">357</FONT>                char ch = s.charAt(i);<a name="line.357"></a>
-<FONT color="green">358</FONT>                switch (ch) {<a name="line.358"></a>
-<FONT color="green">359</FONT>                    case '+':<a name="line.359"></a>
-<FONT color="green">360</FONT>                        sb.append(' ');<a name="line.360"></a>
-<FONT color="green">361</FONT>                        break;<a name="line.361"></a>
-<FONT color="green">362</FONT>                    case '#':<a name="line.362"></a>
-<FONT color="green">363</FONT>                        sb.append(ch);<a name="line.363"></a>
-<FONT color="green">364</FONT>                        fragment = true;<a name="line.364"></a>
-<FONT color="green">365</FONT>                        break;<a name="line.365"></a>
-<FONT color="green">366</FONT>                    case '%':<a name="line.366"></a>
-<FONT color="green">367</FONT>                        if (!fragment) {<a name="line.367"></a>
-<FONT color="green">368</FONT>                            // fast hex decode<a name="line.368"></a>
-<FONT color="green">369</FONT>                            sb.append((char) ((Character.digit(s.charAt(++i), 16) &lt;&lt; 4)<a name="line.369"></a>
-<FONT color="green">370</FONT>                                    | Character.digit(s.charAt(++i), 16)));<a name="line.370"></a>
-<FONT color="green">371</FONT>                        } else {<a name="line.371"></a>
-<FONT color="green">372</FONT>                            sb.append(ch);<a name="line.372"></a>
-<FONT color="green">373</FONT>                        }<a name="line.373"></a>
-<FONT color="green">374</FONT>                        break;<a name="line.374"></a>
-<FONT color="green">375</FONT>                    default:<a name="line.375"></a>
-<FONT color="green">376</FONT>                        sb.append(ch);<a name="line.376"></a>
-<FONT color="green">377</FONT>                        break;<a name="line.377"></a>
-<FONT color="green">378</FONT>                }<a name="line.378"></a>
-<FONT color="green">379</FONT>            }<a name="line.379"></a>
-<FONT color="green">380</FONT>            try {<a name="line.380"></a>
-<FONT color="green">381</FONT>                // URL default encoding is ISO-8859-1<a name="line.381"></a>
-<FONT color="green">382</FONT>                return new String(sb.toString().getBytes("ISO-8859-1"), encoding);<a name="line.382"></a>
-<FONT color="green">383</FONT>            } catch (UnsupportedEncodingException e) {<a name="line.383"></a>
-<FONT color="green">384</FONT>                throw new Error("encoding " + encoding + " not supported");<a name="line.384"></a>
-<FONT color="green">385</FONT>            }<a name="line.385"></a>
-<FONT color="green">386</FONT>        }<a name="line.386"></a>
-<FONT color="green">387</FONT>    <a name="line.387"></a>
-<FONT color="green">388</FONT>    }<a name="line.388"></a>
+<FONT color="green">350</FONT>            if (uri.getRawQuery() == null) {<a name="line.350"></a>
+<FONT color="green">351</FONT>                return m;<a name="line.351"></a>
+<FONT color="green">352</FONT>            }<a name="line.352"></a>
+<FONT color="green">353</FONT>            // getRawQuery() because we do our decoding by ourselves<a name="line.353"></a>
+<FONT color="green">354</FONT>            StringTokenizer st = new StringTokenizer(uri.getRawQuery(), "&amp;");<a name="line.354"></a>
+<FONT color="green">355</FONT>            while (st.hasMoreTokens()) {<a name="line.355"></a>
+<FONT color="green">356</FONT>                String pair = st.nextToken();<a name="line.356"></a>
+<FONT color="green">357</FONT>                int pos = pair.indexOf('=');<a name="line.357"></a>
+<FONT color="green">358</FONT>                if (pos &lt; 0) {<a name="line.358"></a>
+<FONT color="green">359</FONT>                    m.put(pair, null);<a name="line.359"></a>
+<FONT color="green">360</FONT>                } else {<a name="line.360"></a>
+<FONT color="green">361</FONT>                    m.put(pair.substring(0, pos), decode(pair.substring(pos + 1, pair.length()), encoding));<a name="line.361"></a>
+<FONT color="green">362</FONT>                }<a name="line.362"></a>
+<FONT color="green">363</FONT>            }<a name="line.363"></a>
+<FONT color="green">364</FONT>            return m;<a name="line.364"></a>
+<FONT color="green">365</FONT>        }<a name="line.365"></a>
+<FONT color="green">366</FONT>    <a name="line.366"></a>
+<FONT color="green">367</FONT>        private String decode(String s, String encoding) {<a name="line.367"></a>
+<FONT color="green">368</FONT>            StringBuilder sb = new StringBuilder();<a name="line.368"></a>
+<FONT color="green">369</FONT>            boolean fragment = false;<a name="line.369"></a>
+<FONT color="green">370</FONT>            for (int i = 0; i &lt; s.length(); i++) {<a name="line.370"></a>
+<FONT color="green">371</FONT>                char ch = s.charAt(i);<a name="line.371"></a>
+<FONT color="green">372</FONT>                switch (ch) {<a name="line.372"></a>
+<FONT color="green">373</FONT>                    case '+':<a name="line.373"></a>
+<FONT color="green">374</FONT>                        sb.append(' ');<a name="line.374"></a>
+<FONT color="green">375</FONT>                        break;<a name="line.375"></a>
+<FONT color="green">376</FONT>                    case '#':<a name="line.376"></a>
+<FONT color="green">377</FONT>                        sb.append(ch);<a name="line.377"></a>
+<FONT color="green">378</FONT>                        fragment = true;<a name="line.378"></a>
+<FONT color="green">379</FONT>                        break;<a name="line.379"></a>
+<FONT color="green">380</FONT>                    case '%':<a name="line.380"></a>
+<FONT color="green">381</FONT>                        if (!fragment) {<a name="line.381"></a>
+<FONT color="green">382</FONT>                            // fast hex decode<a name="line.382"></a>
+<FONT color="green">383</FONT>                            sb.append((char) ((Character.digit(s.charAt(++i), 16) &lt;&lt; 4)<a name="line.383"></a>
+<FONT color="green">384</FONT>                                    | Character.digit(s.charAt(++i), 16)));<a name="line.384"></a>
+<FONT color="green">385</FONT>                        } else {<a name="line.385"></a>
+<FONT color="green">386</FONT>                            sb.append(ch);<a name="line.386"></a>
+<FONT color="green">387</FONT>                        }<a name="line.387"></a>
+<FONT color="green">388</FONT>                        break;<a name="line.388"></a>
+<FONT color="green">389</FONT>                    default:<a name="line.389"></a>
+<FONT color="green">390</FONT>                        sb.append(ch);<a name="line.390"></a>
+<FONT color="green">391</FONT>                        break;<a name="line.391"></a>
+<FONT color="green">392</FONT>                }<a name="line.392"></a>
+<FONT color="green">393</FONT>            }<a name="line.393"></a>
+<FONT color="green">394</FONT>            try {<a name="line.394"></a>
+<FONT color="green">395</FONT>                // URL default encoding is ISO-8859-1<a name="line.395"></a>
+<FONT color="green">396</FONT>                return new String(sb.toString().getBytes("ISO-8859-1"), encoding);<a name="line.396"></a>
+<FONT color="green">397</FONT>            } catch (UnsupportedEncodingException e) {<a name="line.397"></a>
+<FONT color="green">398</FONT>                throw new Error("encoding " + encoding + " not supported");<a name="line.398"></a>
+<FONT color="green">399</FONT>            }<a name="line.399"></a>
+<FONT color="green">400</FONT>        }<a name="line.400"></a>
+<FONT color="green">401</FONT>    <a name="line.401"></a>
+<FONT color="green">402</FONT>    }<a name="line.402"></a>
 
 
 
