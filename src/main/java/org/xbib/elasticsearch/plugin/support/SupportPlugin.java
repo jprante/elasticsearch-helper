@@ -20,7 +20,9 @@ public class SupportPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "support-" + Build.getInstance().getVersion();
+        return "support-"
+                + Build.getInstance().getVersion() + "-"
+                + Build.getInstance().getShortHash();
     }
 
     @Override

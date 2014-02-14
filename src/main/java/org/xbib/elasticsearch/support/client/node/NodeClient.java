@@ -14,7 +14,6 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -36,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class NodeClient implements Feeder {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getName());
 
     private int maxActionsPerBulkRequest = 100;
 
@@ -178,9 +177,12 @@ public class NodeClient implements Feeder {
     }
 
     @Override
-    public NodeClient index(String index, String type, String id, BytesReference source) {
+    public NodeClient index(String index, String type, String id, String source) {
         return index(Requests.indexRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id).create(false).source(source, false));
+                .type(type != null ? type : getType())
+                .id(id)
+                .create(false)
+                .source(source));
     }
 
     @Override
@@ -204,7 +206,8 @@ public class NodeClient implements Feeder {
     @Override
     public NodeClient delete(String index, String type, String id) {
         return delete(Requests.deleteRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id));
+                .type(type != null ? type : getType())
+                .id(id));
     }
 
     @Override
@@ -231,7 +234,7 @@ public class NodeClient implements Feeder {
         }
         // we simply wait long enough for BulkProcessor flush
         try {
-            Thread.sleep(flushInterval.getMillis() + 1000L);
+            Thread.sleep(2 * flushInterval.getMillis());
         } catch (InterruptedException e) {
             logger.error("interrupted", e);
         }
