@@ -46,7 +46,7 @@ public class IngestShardResponse implements ActionResponse {
         successSize = in.readVInt();
         failure = Lists.newLinkedList();
         for (int i = 0; i < in.readVInt(); i++) {
-            failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
+            failure.add(new IngestItemFailure(in.readVInt(), in.readUTF()));
         }
     }
 
@@ -57,7 +57,7 @@ public class IngestShardResponse implements ActionResponse {
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
             out.writeVInt(f.pos());
-            out.writeString(f.message());
+            out.writeUTF(f.message());
         }
     }
 }

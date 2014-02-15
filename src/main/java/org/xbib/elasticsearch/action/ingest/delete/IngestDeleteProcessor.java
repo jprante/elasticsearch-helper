@@ -123,8 +123,8 @@ public class IngestDeleteProcessor {
             }
         } else {
             if (ingestRequest.numberOfActions() > 0
-                    && maxVolume.bytesAsInt() > 0
-                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
+                    && maxVolume.bytes() > 0
+                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytes()) {
                 process(ingestRequest.takeAll(), listener);
             }
         }

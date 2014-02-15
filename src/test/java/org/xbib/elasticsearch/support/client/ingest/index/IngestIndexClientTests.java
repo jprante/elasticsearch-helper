@@ -2,7 +2,6 @@
 package org.xbib.elasticsearch.support.client.ingest.index;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -65,7 +64,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
         try {
             es.deleteIndex();
             es.newIndex();
-            es.index("test", "test", "1", new BytesArray("{ \"name\" : \"Jörg Prante\"}")); // single doc ingest
+            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
             logger.info("stats={}", es.stats());
         } catch (IOException e) {
@@ -93,7 +92,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
                 .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("test", "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -126,7 +125,7 @@ public class IngestIndexClientTests extends AbstractNodeRandomTest {
                 pool.execute(new Runnable() {
                     public void run() {
                         for (int i = 0; i < 12345; i++) {
-                            es.index("test", "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                            es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                         }
                         latch.countDown();
                     }

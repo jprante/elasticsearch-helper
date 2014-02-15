@@ -1,7 +1,6 @@
 
 package org.xbib.elasticsearch.support.client.node;
 
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -37,11 +36,12 @@ public class NodeClientTests extends AbstractNodeRandomTest {
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
                 .setIndex(INDEX)
-                .setType("test");
+                .setType("test")
+                .newIndex();
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index(null, null, null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index(INDEX, "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");

@@ -23,7 +23,7 @@ public class Build {
 
         try {
             String pluginName = SupportPlugin.class.getName();
-            Enumeration<URL> e = SupportPlugin.class.getClassLoader().getResources("/es-plugin.properties");
+            Enumeration<URL> e = SupportPlugin.class.getClassLoader().getResources("es-plugin.properties");
             while (e.hasMoreElements()) {
                 URL url = e.nextElement();
                 InputStream in = url.openStream();

@@ -14,7 +14,6 @@ import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.collect.Tuple;
@@ -32,14 +31,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
-import javax.management.Notification;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationListener;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.List;
 import java.util.Set;
 
@@ -57,38 +49,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                                       MappingUpdatedAction mappingUpdatedAction) {
         super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.mappingUpdatedAction = mappingUpdatedAction;
-        long threshold = settings.getAsLong("watchdog.memory.threshold", 99L);
-        //enableMemoryWatchdog(threshold);
     }
-
-    /*private void enableMemoryWatchdog(final long threshold) {
-        final MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
-        final NotificationEmitter ne = (NotificationEmitter) memBean;
-        ne.addNotificationListener(memoryWatcher, null, null);
-        final List<MemoryPoolMXBean> memPools = ManagementFactory.getMemoryPoolMXBeans();
-        for (final MemoryPoolMXBean mp : memPools) {
-            if (mp.isUsageThresholdSupported()) {
-                final MemoryUsage mu = mp.getUsage();
-                final long max = mu.getMax();
-                final long alert = (max * threshold) / 100;
-                mp.setUsageThreshold(alert);
-            }
-        }
-    }
-
-    private final MemoryWatcher memoryWatcher = new MemoryWatcher();
-
-    private class MemoryWatcher implements NotificationListener {
-        @Override
-        public void handleNotification(Notification notification, Object o) {
-            logger.warn("memory notification: seq = {} type = {} message = {} user data = {}",
-                    notification.getSequenceNumber(),
-                    notification.getType(), // java.management.memory.threshold.exceeded
-                    notification.getMessage(), // Memory usage exceeds usage threshold
-                    notification.getUserData()
-            );
-        }
-    }*/
 
     @Override
     protected String executor() {
@@ -182,7 +143,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     indexRequest.version(version);
 
                     // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
-                    if (op.parsedDoc().mappingsModified()) {
+                    if (op.parsedDoc().mappersAdded()) {
                         if (mappingsToUpdate == null) {
                             mappingsToUpdate = newHashSet();
                         }

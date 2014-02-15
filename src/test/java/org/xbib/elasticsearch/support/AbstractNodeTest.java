@@ -1,6 +1,7 @@
 
 package org.xbib.elasticsearch.support;
 
+import java.net.URI;
 import java.util.Map;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
@@ -40,7 +41,7 @@ public abstract class AbstractNodeTest extends Assert {
             .put("cluster.name", CLUSTER)
                     // default for queue_size for bulk thread pool is only 50 since 0.90.7
                     // enlarge queue for this unit test because we are on a single machine
-            .put("threadpool.bulk.queue_size", 1000)
+            .put("threadpool.bulk.queue_size", 100)
             .build();
 
     private Map<String, Node> nodes = newHashMap();
@@ -48,6 +49,10 @@ public abstract class AbstractNodeTest extends Assert {
     private Map<String, Client> clients = newHashMap();
 
     private Map<String, InetSocketTransportAddress> addresses = newHashMap();
+
+    protected URI getAddress() {
+        return URI.create("es://localhost:" + PORT + "?es.cluster.name=" + CLUSTER);
+    }
 
     @BeforeMethod
     public void createIndex() throws Exception {
@@ -126,7 +131,9 @@ public abstract class AbstractNodeTest extends Assert {
         }
         clients.clear();
         for (Node node : nodes.values()) {
-            node.close();
+            if (node != null) {
+                node.close();
+            }
         }
         nodes.clear();
     }

@@ -10,7 +10,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -111,10 +110,10 @@ public class IngestProcessor {
      * @return this processor
      * @throws Exception
      */
-    public IngestProcessor add(BytesReference data, boolean contentUnsafe,
+    public IngestProcessor add(byte[] data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                Listener listener) throws Exception {
-        ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
+        ingestRequest.add(data, 0, data.length, contentUnsafe, defaultIndex, defaultType);
         flushIfNeeded(listener);
         return this;
     }
@@ -155,8 +154,8 @@ public class IngestProcessor {
             }
         } else {
             while (ingestRequest.numberOfActions() > 0
-                    && maxVolume.bytesAsInt() > 0
-                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
+                    && maxVolume.bytes() > 0
+                    && ingestRequest.estimatedSizeInBytes() > maxVolume.bytes()) {
                 process(ingestRequest.takeAll(), listener);
             }
         }

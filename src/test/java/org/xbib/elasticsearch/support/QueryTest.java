@@ -32,7 +32,7 @@ public class QueryTest {
             Client client = node.client();
             SearchResponse response = client.prepareSearch().setIndices(index).
                     setTypes(type).
-                    setFrom(0).setSize(10).setQuery(matchQuery("_all", "test")).execute().actionGet();
+                    setFrom(0).setSize(10).setQuery(textQuery("_all", "test")).execute().actionGet();
         } catch (Exception e) {
             logger.warn(e.getMessage());
         } finally {

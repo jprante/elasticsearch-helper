@@ -58,16 +58,20 @@ public abstract class AbstractTransportClient implements ClientBuilder {
 
     public AbstractTransportClient newClient(URI uri, Settings settings) {
         if (client != null) {
+            logger.warn("client is open, closing...");
             client.close();
             client.threadPool().shutdown();
+            logger.warn("client is closed");
             client = null;
         }
         if (settings != null) {
-            logger.info("creating new client, effective settings = {}", settings.getAsMap());
+            logger.info("creating transport client, java version {}, effective settings {}",
+                    System.getProperty("java.version"), settings.getAsMap());
             // false = do not load config settings from environment
             this.client = new TransportClient(settings, false);
         } else {
-            logger.info("creating new client, using default");
+            logger.info("creating transport client, java version {}, using default settings",
+                    System.getProperty("java.version"));
             this.client = new TransportClient();
         }
         try {

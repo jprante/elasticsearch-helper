@@ -91,7 +91,7 @@ public class IngestResponse implements ActionResponse {
         failure = newLinkedList();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
-            failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
+            failure.add(new IngestItemFailure(in.readVInt(), in.readUTF()));
         }
         tookInMillis = in.readVLong();
     }
@@ -102,7 +102,7 @@ public class IngestResponse implements ActionResponse {
         out.writeVInt(failure.size());
         for (IngestItemFailure f : failure) {
             out.writeVInt(f.pos());
-            out.writeString(f.message());
+            out.writeUTF(f.message());
         }
         out.writeVLong(tookInMillis);
     }

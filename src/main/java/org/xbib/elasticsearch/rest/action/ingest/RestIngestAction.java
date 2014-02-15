@@ -120,7 +120,7 @@ public class RestIngestAction extends BaseRestHandler {
         }
         try {
             long t0 = System.currentTimeMillis();
-            ingestProcessor.add(request.content(),
+            ingestProcessor.add(request.contentByteArray(),
                     request.contentUnsafe(),
                     request.param("index"),
                     request.param("type"),

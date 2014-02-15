@@ -2,7 +2,6 @@
 package org.xbib.elasticsearch.support;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.testng.annotations.Test;
@@ -36,7 +35,7 @@ public class ReplicaLevelTests extends AbstractNodeRandomTest {
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("replicatest", "replicatest", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
             shardsAfterReplica = es.updateReplicaLevel(replicaLevel);

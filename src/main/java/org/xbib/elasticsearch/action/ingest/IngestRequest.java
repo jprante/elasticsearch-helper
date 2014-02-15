@@ -9,8 +9,6 @@ import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -21,10 +19,10 @@ import org.elasticsearch.index.VersionType;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestRequest implements ActionRequest {
 
@@ -43,7 +41,7 @@ public class IngestRequest implements ActionRequest {
     private TimeValue timeout = IngestShardRequest.DEFAULT_TIMEOUT;
 
     public Queue<ActionRequest> newQueue() {
-        return newConcurrentLinkedQueue();
+        return new ConcurrentLinkedQueue();
     }
 
     protected Queue<ActionRequest> requests() {
@@ -99,7 +97,7 @@ public class IngestRequest implements ActionRequest {
 
     IngestRequest internalAdd(IndexRequest request) {
         requests.offer(request);
-        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+        long length = request.source() != null ? request.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
         sizeInBytes.addAndGet(length);
         return this;
     }
@@ -139,16 +137,7 @@ public class IngestRequest implements ActionRequest {
      * Adds a framed data in binary format
      */
     public IngestRequest add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
-        return add(new BytesArray(data, from, length), contentUnsafe, defaultIndex, defaultType);
-    }
-
-    /**
-     * Adds a framed data in binary format
-     */
-    public IngestRequest add(BytesReference data, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
-        XContent xContent = XContentFactory.xContent(data);
-        int from = 0;
-        int length = data.length();
+        XContent xContent = XContentFactory.xContent(data, from, length);
         byte marker = xContent.streamSeparator();
         while (true) {
             int nextMarker = findNextMarker(marker, from, data, length);
@@ -156,7 +145,7 @@ public class IngestRequest implements ActionRequest {
                 break;
             }
             // now parse the move
-            XContentParser parser = xContent.createParser(data.slice(from, nextMarker - from));
+            XContentParser parser = xContent.createParser(data, from, nextMarker - from);
 
             try {
                 // move pointers
@@ -233,16 +222,16 @@ public class IngestRequest implements ActionRequest {
                     if ("index".equals(action)) {
                         if (opType == null) {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                    .source(data, from, nextMarker - from, contentUnsafe));
                         } else {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                     .create("create".equals(opType))
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                    .source(data, from, nextMarker - from, contentUnsafe));
                         }
                     } else if ("create".equals(action)) {
                         internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                 .create(true)
-                                .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                .source(data, from, nextMarker - from, contentUnsafe));
                     }
                     // move pointers
                     from = nextMarker + 1;
@@ -303,7 +292,7 @@ public class IngestRequest implements ActionRequest {
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest)actionRequest;
-                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);
@@ -327,7 +316,7 @@ public class IngestRequest implements ActionRequest {
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest)actionRequest;
-                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);
@@ -336,9 +325,9 @@ public class IngestRequest implements ActionRequest {
         return request;
     }
 
-    private int findNextMarker(byte marker, int from, BytesReference data, int length) {
+    private int findNextMarker(byte marker, int from, byte[] data, int length) {
         for (int i = from; i < length; i++) {
-            if (data.get(i) == marker) {
+            if (data[i] == marker) {
                 return i;
             }
         }
