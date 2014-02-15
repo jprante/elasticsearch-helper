@@ -97,7 +97,7 @@ public class IngestRequest implements ActionRequest {
 
     IngestRequest internalAdd(IndexRequest request) {
         requests.offer(request);
-        long length = request.source() != null ? request.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
         sizeInBytes.addAndGet(length);
         return this;
     }
@@ -292,7 +292,7 @@ public class IngestRequest implements ActionRequest {
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest)actionRequest;
-                long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);
@@ -316,7 +316,7 @@ public class IngestRequest implements ActionRequest {
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest)actionRequest;
-                long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+                long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);

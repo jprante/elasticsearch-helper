@@ -92,7 +92,7 @@ public class IngestIndexRequest implements ActionRequest {
 
     IngestIndexRequest internalAdd(IndexRequest request) {
         requests.offer(request);
-        sizeInBytes.addAndGet(request.source().length + REQUEST_OVERHEAD);
+        sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
         return this;
     }
 
@@ -159,7 +159,7 @@ public class IngestIndexRequest implements ActionRequest {
         while (!requests.isEmpty()) {
             IndexRequest indexRequest = requests.poll();
             request.add(indexRequest);
-            long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+            long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
             sizeInBytes.addAndGet(-length);
         }
         return request;
@@ -179,7 +179,7 @@ public class IngestIndexRequest implements ActionRequest {
         for (int i = 0; i < numRequests; i++) {
             IndexRequest indexRequest = requests.poll();
             request.add(indexRequest);
-            long length = indexRequest.source() != null ? indexRequest.source().length + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+            long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
             sizeInBytes.addAndGet(-length);
         }
         return request;
