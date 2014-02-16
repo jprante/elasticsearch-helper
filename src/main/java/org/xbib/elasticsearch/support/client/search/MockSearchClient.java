@@ -2,7 +2,8 @@
 package org.xbib.elasticsearch.support.client.search;
 
 import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
+import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
+import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -48,8 +49,12 @@ public class MockSearchClient extends SearchClient {
     public synchronized void shutdown() {
     }
 
-    public BasicRequest newRequest() {
-        return new BasicRequest();
+    public BasicSearchRequest newSearchRequest() {
+        return new BasicSearchRequest();
+    }
+
+    public BasicGetRequest newGetRequest() {
+        return new BasicGetRequest();
     }
 
     /**

@@ -1,10 +1,9 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.xbib.elasticsearch.action.search.support.BasicRequest;
 import org.elasticsearch.client.Client;
-
-import java.net.URI;
+import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
+import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 
 /**
  * Search support
@@ -35,12 +34,12 @@ public interface Search {
     /**
      * Create new search request
      */
-    BasicRequest newSearchRequest();
+    BasicSearchRequest newSearchRequest();
 
     /**
      * Create new get request
      */
-    BasicRequest newGetRequest();
+    BasicGetRequest newGetRequest();
 
     /**
      * Shutdown and release all resources

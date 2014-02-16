@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.plugin;
+package org.xbib.elasticsearch.plugin.support;
 
 import org.elasticsearch.action.ActionModule;
 import org.elasticsearch.plugins.AbstractPlugin;
@@ -20,7 +20,9 @@ public class SupportPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "support";
+        return "support-" +
+                Build.getInstance().getVersion() + "-" +
+                Build.getInstance().getShortHash();
     }
 
     @Override
