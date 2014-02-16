@@ -12,14 +12,16 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestIndexRequest extends ActionRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
+
+    private boolean listenerThreaded = false;
 
     private final Queue<IndexRequest> requests = newQueue();
 
@@ -36,7 +38,7 @@ public class IngestIndexRequest extends ActionRequest {
     private String defaultType;
 
     protected Queue<IndexRequest> newQueue() {
-        return newConcurrentLinkedQueue();
+        return new ConcurrentLinkedQueue();
     }
 
     public IngestIndexRequest setIndex(String index) {

@@ -2,13 +2,11 @@
 package org.xbib.elasticsearch.support.client.ingest.index;
 
 import org.elasticsearch.ElasticSearchIllegalStateException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -285,8 +283,8 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient index(String index, String type, String id, BytesReference source) {
-        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source, false));
+    public IngestIndexClient index(String index, String type, String id, byte[] source) {
+        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source));
     }
 
     @Override

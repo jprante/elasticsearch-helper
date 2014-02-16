@@ -18,7 +18,4 @@ public class AbstractNodeRandomTest extends AbstractNodeTest {
         return new String(buf);
     }
 
-    protected URI getAddress() {
-        return URI.create("es://localhost:" + PORT + "?es.cluster.name=" + CLUSTER);
-    }
 }

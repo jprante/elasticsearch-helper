@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.support.client.ingest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 
 import java.io.IOException;
@@ -112,7 +111,7 @@ public class MockIngestClient extends IngestClient {
     }
 
     @Override
-    public MockIngestClient index(String index, String type, String id, BytesReference source) {
+    public MockIngestClient index(String index, String type, String id, byte[] source) {
         return this;
     }
 

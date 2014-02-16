@@ -36,7 +36,7 @@ public class ReplicaLevelTests extends AbstractNodeRandomTest {
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("replicatest", "replicatest", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index("replicatest", "replicatest", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}").array());
             }
             es.flush();
             shardsAfterReplica = es.updateReplicaLevel(replicaLevel);

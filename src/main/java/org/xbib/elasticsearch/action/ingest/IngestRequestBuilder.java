@@ -21,7 +21,7 @@ import org.elasticsearch.common.unit.TimeValue;
  * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
  * it in a single batch.
  */
-public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
+public class IngestRequestBuilder  extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
     public IngestRequestBuilder(Client client) {
         this(client, new IngestRequest());

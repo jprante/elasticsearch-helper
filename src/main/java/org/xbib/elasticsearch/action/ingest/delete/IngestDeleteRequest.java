@@ -13,14 +13,16 @@ import org.xbib.elasticsearch.action.ingest.index.IngestIndexShardRequest;
 
 import java.io.IOException;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
 public class IngestDeleteRequest extends ActionRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
+
+    private boolean listenerThreaded = false;
 
     private final Queue<DeleteRequest> requests = newQueue();
 
@@ -37,7 +39,7 @@ public class IngestDeleteRequest extends ActionRequest {
     private String defaultType;
 
     protected Queue<DeleteRequest> newQueue() {
-        return newConcurrentLinkedQueue();
+        return new ConcurrentLinkedQueue();
     }
 
     public IngestDeleteRequest setIndex(String index) {

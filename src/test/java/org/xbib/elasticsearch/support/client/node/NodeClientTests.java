@@ -37,11 +37,12 @@ public class NodeClientTests extends AbstractNodeRandomTest {
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
                 .setIndex(INDEX)
-                .setType("test");
+                .setType("test")
+                .newIndex();
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index(null, null, null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index(INDEX, "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}").array());
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");

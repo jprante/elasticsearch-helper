@@ -69,7 +69,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
         try {
             es.deleteIndex();
             es.newIndex();
-            es.index("test", "test", "1", new BytesArray("{ \"name\" : \"Jörg Prante\"}")); // single doc ingest
+            es.index("test", "test", "1", new BytesArray("{ \"name\" : \"Jörg Prante\"}").array()); // single doc ingest
             es.flush();
             logger.info("stats={}", es.stats());
         } catch (IOException e) {
@@ -98,7 +98,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
                 .newIndex();
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("test", "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                es.index("test", "test", null,  new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}").array());
             }
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -132,7 +132,7 @@ public class BulkClientTests extends AbstractNodeRandomTest {
                 pool.execute(new Runnable() {
                     public void run() {
                         for (int i = 0; i < 12345; i++) {
-                            client.index("test", "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}"));
+                            client.index("test", "test", null, new BytesArray("{ \"name\" : \"" + randomString(32) + "\"}").array());
                         }
                         latch.countDown();
                     }

@@ -14,9 +14,7 @@ import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
@@ -33,14 +31,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
-import javax.management.Notification;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationListener;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.List;
 import java.util.Set;
 
@@ -58,38 +49,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                                       MappingUpdatedAction mappingUpdatedAction) {
         super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.mappingUpdatedAction = mappingUpdatedAction;
-        long threshold = settings.getAsLong("watchdog.memory.threshold", 99L);
-        //enableMemoryWatchdog(threshold);
     }
-
-    /*private void enableMemoryWatchdog(final long threshold) {
-        final MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
-        final NotificationEmitter ne = (NotificationEmitter) memBean;
-        ne.addNotificationListener(memoryWatcher, null, null);
-        final List<MemoryPoolMXBean> memPools = ManagementFactory.getMemoryPoolMXBeans();
-        for (final MemoryPoolMXBean mp : memPools) {
-            if (mp.isUsageThresholdSupported()) {
-                final MemoryUsage mu = mp.getUsage();
-                final long max = mu.getMax();
-                final long alert = (max * threshold) / 100;
-                mp.setUsageThreshold(alert);
-            }
-        }
-    }
-
-    private final MemoryWatcher memoryWatcher = new MemoryWatcher();
-
-    private class MemoryWatcher implements NotificationListener {
-        @Override
-        public void handleNotification(Notification notification, Object o) {
-            logger.warn("memory notification: seq = {} type = {} message = {} user data = {}",
-                    notification.getSequenceNumber(),
-                    notification.getType(), // java.management.memory.threshold.exceeded
-                    notification.getMessage(), // Memory usage exceeds usage threshold
-                    notification.getUserData()
-            );
-        }
-    }*/
 
     @Override
     protected String executor() {
@@ -163,10 +123,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                             throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
                         }
                     }
-
                     SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
-
                     long version;
                     Engine.IndexingOperation op;
                     if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
@@ -267,7 +225,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                 try {
                     SourceToParse sourceToParse = SourceToParse.source(indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
-
                     if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
                         Engine.Index index = indexShard.prepareIndex(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
                         indexShard.index(index);
@@ -297,13 +254,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
             if (documentMapper == null) { // should not happen
                 return;
             }
-            IndexMetaData metaData = clusterService.state().metaData().index(index);
-            if (metaData == null) {
-                return;
-            }
             documentMapper.refreshSource();
 
-            DiscoveryNode node = clusterService.localNode();
             final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, type, documentMapper.mappingSource());
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
                 @Override

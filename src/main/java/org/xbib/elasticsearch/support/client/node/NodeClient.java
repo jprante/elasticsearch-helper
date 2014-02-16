@@ -7,14 +7,12 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -23,6 +21,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.client.bulk.BulkProcessor;
 import org.xbib.elasticsearch.support.config.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Feeder;
 
@@ -36,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class NodeClient implements Feeder {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getName());
 
     private int maxActionsPerBulkRequest = 100;
 
@@ -99,10 +98,9 @@ public class NodeClient implements Feeder {
             public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingBulkRequests.getAndIncrement();
                 currentIngestNumDocs.inc(request.numberOfActions());
-                totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
-                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
+                    logger.debug("before bulk [{}] of {} items, {} outstanding bulk requests",
+                        executionId, request.numberOfActions(), l);
                 }
             }
 
@@ -178,9 +176,12 @@ public class NodeClient implements Feeder {
     }
 
     @Override
-    public NodeClient index(String index, String type, String id, BytesReference source) {
+    public NodeClient index(String index, String type, String id, byte[] source) {
         return index(Requests.indexRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id).create(false).source(source, false));
+                .type(type != null ? type : getType())
+                .id(id)
+                .create(false)
+                .source(source));
     }
 
     @Override
@@ -204,7 +205,8 @@ public class NodeClient implements Feeder {
     @Override
     public NodeClient delete(String index, String type, String id) {
         return delete(Requests.deleteRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType()).id(id));
+                .type(type != null ? type : getType())
+                .id(id));
     }
 
     @Override
@@ -231,7 +233,7 @@ public class NodeClient implements Feeder {
         }
         // we simply wait long enough for BulkProcessor flush
         try {
-            Thread.sleep(flushInterval.getMillis() + 1000L);
+            Thread.sleep(2 * flushInterval.getMillis());
         } catch (InterruptedException e) {
             logger.error("interrupted", e);
         }

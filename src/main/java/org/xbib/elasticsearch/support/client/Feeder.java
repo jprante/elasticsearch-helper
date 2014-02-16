@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.bytes.BytesReference;
 
 /**
  * Minimal API for feed
@@ -22,7 +21,7 @@ public interface Feeder {
      * @param source the source
      * @return this
      */
-    Feeder index(String index, String type, String id, BytesReference source);
+    Feeder index(String index, String type, String id, byte[] source);
 
     /**
      * Index document
