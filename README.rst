@@ -11,15 +11,11 @@ Installation
 
 .. image:: https://travis-ci.org/jprante/elasticsearch-support.png
 
-Prerequisites::
-
-  Elasticsearch 0.90.x
-
 =============  ==============  =================  ==========================================================
 ES version     Plugin          Release date       Command
 -------------  --------------  -----------------  ----------------------------------------------------------
 0.90.9         0.90.9.2        Jan 4, 2014        ./bin/plugin --install support --url http://bit.ly/19Vek2x
-1.0.0.Beta2    1.0.0.Beta2.6   Jan 4, 2014        ./bin/plugin --install support --url http://bit.ly/19VdJ0T
+0.90.11        0.90.11.1       Feb 16,2014        ./bin/plugin --install support --url
 =============  ==============  =================  ==========================================================
 
 Do not forget to restart the node after installing.

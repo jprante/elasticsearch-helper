@@ -35,6 +35,8 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
      */
     private String type;
 
+    private boolean disableRefresh;
+
     private ConfigHelper configHelper = new ConfigHelper();
 
     @Override
@@ -100,10 +102,6 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
 
     @Override
     public int updateReplicaLevel(int level) throws IOException {
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return -1;
-        }
         waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
         update("number_of_replicas", level);
         return waitForRecovery();
@@ -198,13 +196,19 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
         return configHelper.mappings();
     }
 
-    protected AbstractIngestClient enableRefreshInterval() {
-        update("refresh_interval", 1000);
+    public AbstractIngestClient enableRefreshInterval() {
+        if (disableRefresh) {
+            update("refresh_interval", 1000);
+            disableRefresh = false;
+        }
         return this;
     }
 
-    protected AbstractIngestClient disableRefreshInterval() {
-        update("refresh_interval", -1);
+    public AbstractIngestClient disableRefreshInterval() {
+        if (!disableRefresh) {
+            update("refresh_interval", -1);
+            disableRefresh = true;
+        }
         return this;
     }
 
@@ -274,14 +278,17 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
     }
 
 
-    protected void update(String key, Object value) {
+    public void update(String key, Object value) {
         if (client == null) {
+            logger.warn("no client");
             return;
         }
         if (value == null) {
+            logger.warn("no value");
             return;
         }
         if (getIndex() == null) {
+            logger.warn("no index give");
             return;
         }
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
