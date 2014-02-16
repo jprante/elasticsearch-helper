@@ -411,7 +411,6 @@ public class BulkClient extends AbstractIngestClient {
                 flush();
                 bulkProcessor.close();
             }
-            logger.info("enabling refresh interval...");
             enableRefreshInterval();
             logger.info("shutting down...");
             super.shutdown();

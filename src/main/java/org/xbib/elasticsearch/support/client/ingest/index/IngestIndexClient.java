@@ -368,7 +368,6 @@ public class IngestIndexClient extends AbstractIngestClient {
                 logger.info("closing ingest processor...");
                 ingestProcessor.close();
             }
-            logger.info("enabling refresh interval...");
             enableRefreshInterval();
             logger.info("shutting down...");
             super.shutdown();
