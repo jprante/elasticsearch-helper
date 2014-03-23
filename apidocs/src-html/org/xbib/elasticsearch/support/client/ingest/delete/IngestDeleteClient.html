@@ -353,47 +353,46 @@
 <FONT color="green">350</FONT>                    logger.info("closing ingest processor...");<a name="line.350"></a>
 <FONT color="green">351</FONT>                    ingestProcessor.close();<a name="line.351"></a>
 <FONT color="green">352</FONT>                }<a name="line.352"></a>
-<FONT color="green">353</FONT>                logger.info("enabling refresh interval...");<a name="line.353"></a>
-<FONT color="green">354</FONT>                enableRefreshInterval();<a name="line.354"></a>
-<FONT color="green">355</FONT>                logger.info("shutting down...");<a name="line.355"></a>
-<FONT color="green">356</FONT>                super.shutdown();<a name="line.356"></a>
-<FONT color="green">357</FONT>                logger.info("shutting down completed");<a name="line.357"></a>
-<FONT color="green">358</FONT>            } catch (Exception e) {<a name="line.358"></a>
-<FONT color="green">359</FONT>                logger.error(e.getMessage(), e);<a name="line.359"></a>
-<FONT color="green">360</FONT>            }<a name="line.360"></a>
-<FONT color="green">361</FONT>        }<a name="line.361"></a>
-<FONT color="green">362</FONT>    <a name="line.362"></a>
-<FONT color="green">363</FONT>        @Override<a name="line.363"></a>
-<FONT color="green">364</FONT>        public long getTotalSizeInBytes() {<a name="line.364"></a>
-<FONT color="green">365</FONT>            return totalIngestSizeInBytes.count();<a name="line.365"></a>
-<FONT color="green">366</FONT>        }<a name="line.366"></a>
-<FONT color="green">367</FONT>    <a name="line.367"></a>
-<FONT color="green">368</FONT>        @Override<a name="line.368"></a>
-<FONT color="green">369</FONT>        public long getTotalBulkRequestTime() {<a name="line.369"></a>
-<FONT color="green">370</FONT>            return totalIngest.sum();<a name="line.370"></a>
-<FONT color="green">371</FONT>        }<a name="line.371"></a>
-<FONT color="green">372</FONT>    <a name="line.372"></a>
-<FONT color="green">373</FONT>        @Override<a name="line.373"></a>
-<FONT color="green">374</FONT>        public long getTotalBulkRequests() {<a name="line.374"></a>
-<FONT color="green">375</FONT>            return totalIngest.count();<a name="line.375"></a>
-<FONT color="green">376</FONT>        }<a name="line.376"></a>
-<FONT color="green">377</FONT>    <a name="line.377"></a>
-<FONT color="green">378</FONT>        @Override<a name="line.378"></a>
-<FONT color="green">379</FONT>        public long getTotalDocuments() {<a name="line.379"></a>
-<FONT color="green">380</FONT>            return totalIngestNumDocs.count();<a name="line.380"></a>
-<FONT color="green">381</FONT>        }<a name="line.381"></a>
-<FONT color="green">382</FONT>    <a name="line.382"></a>
-<FONT color="green">383</FONT>        @Override<a name="line.383"></a>
-<FONT color="green">384</FONT>        public boolean hasErrors() {<a name="line.384"></a>
-<FONT color="green">385</FONT>            return throwable != null;<a name="line.385"></a>
-<FONT color="green">386</FONT>        }<a name="line.386"></a>
-<FONT color="green">387</FONT>    <a name="line.387"></a>
-<FONT color="green">388</FONT>        @Override<a name="line.388"></a>
-<FONT color="green">389</FONT>        public Throwable getThrowable() {<a name="line.389"></a>
-<FONT color="green">390</FONT>            return throwable;<a name="line.390"></a>
-<FONT color="green">391</FONT>        }<a name="line.391"></a>
-<FONT color="green">392</FONT>    <a name="line.392"></a>
-<FONT color="green">393</FONT>    }<a name="line.393"></a>
+<FONT color="green">353</FONT>                enableRefreshInterval();<a name="line.353"></a>
+<FONT color="green">354</FONT>                logger.info("shutting down...");<a name="line.354"></a>
+<FONT color="green">355</FONT>                super.shutdown();<a name="line.355"></a>
+<FONT color="green">356</FONT>                logger.info("shutting down completed");<a name="line.356"></a>
+<FONT color="green">357</FONT>            } catch (Exception e) {<a name="line.357"></a>
+<FONT color="green">358</FONT>                logger.error(e.getMessage(), e);<a name="line.358"></a>
+<FONT color="green">359</FONT>            }<a name="line.359"></a>
+<FONT color="green">360</FONT>        }<a name="line.360"></a>
+<FONT color="green">361</FONT>    <a name="line.361"></a>
+<FONT color="green">362</FONT>        @Override<a name="line.362"></a>
+<FONT color="green">363</FONT>        public long getTotalSizeInBytes() {<a name="line.363"></a>
+<FONT color="green">364</FONT>            return totalIngestSizeInBytes.count();<a name="line.364"></a>
+<FONT color="green">365</FONT>        }<a name="line.365"></a>
+<FONT color="green">366</FONT>    <a name="line.366"></a>
+<FONT color="green">367</FONT>        @Override<a name="line.367"></a>
+<FONT color="green">368</FONT>        public long getTotalBulkRequestTime() {<a name="line.368"></a>
+<FONT color="green">369</FONT>            return totalIngest.sum();<a name="line.369"></a>
+<FONT color="green">370</FONT>        }<a name="line.370"></a>
+<FONT color="green">371</FONT>    <a name="line.371"></a>
+<FONT color="green">372</FONT>        @Override<a name="line.372"></a>
+<FONT color="green">373</FONT>        public long getTotalBulkRequests() {<a name="line.373"></a>
+<FONT color="green">374</FONT>            return totalIngest.count();<a name="line.374"></a>
+<FONT color="green">375</FONT>        }<a name="line.375"></a>
+<FONT color="green">376</FONT>    <a name="line.376"></a>
+<FONT color="green">377</FONT>        @Override<a name="line.377"></a>
+<FONT color="green">378</FONT>        public long getTotalDocuments() {<a name="line.378"></a>
+<FONT color="green">379</FONT>            return totalIngestNumDocs.count();<a name="line.379"></a>
+<FONT color="green">380</FONT>        }<a name="line.380"></a>
+<FONT color="green">381</FONT>    <a name="line.381"></a>
+<FONT color="green">382</FONT>        @Override<a name="line.382"></a>
+<FONT color="green">383</FONT>        public boolean hasErrors() {<a name="line.383"></a>
+<FONT color="green">384</FONT>            return throwable != null;<a name="line.384"></a>
+<FONT color="green">385</FONT>        }<a name="line.385"></a>
+<FONT color="green">386</FONT>    <a name="line.386"></a>
+<FONT color="green">387</FONT>        @Override<a name="line.387"></a>
+<FONT color="green">388</FONT>        public Throwable getThrowable() {<a name="line.388"></a>
+<FONT color="green">389</FONT>            return throwable;<a name="line.389"></a>
+<FONT color="green">390</FONT>        }<a name="line.390"></a>
+<FONT color="green">391</FONT>    <a name="line.391"></a>
+<FONT color="green">392</FONT>    }<a name="line.392"></a>
 
 
 
