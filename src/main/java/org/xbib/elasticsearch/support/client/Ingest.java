@@ -189,7 +189,11 @@ public interface Ingest extends ClientBuilder, Feeder {
      * Get total documents that have been ingested
      * @return the total number of documents
      */
-    long getTotalDocuments();
+    long getTotalSubmitted();
+
+    long getTotalSucceeded();
+
+    long getTotalFailed();
 
     /**
      * Get the total ingested data size in bytes so far.

@@ -2,9 +2,7 @@
 package org.xbib.elasticsearch.plugin.support;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.StringReader;
 import java.net.URL;
 import java.util.Enumeration;

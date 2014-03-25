@@ -33,14 +33,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
 
-import javax.management.Notification;
-import javax.management.NotificationEmitter;
-import javax.management.NotificationListener;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
 import java.util.List;
 import java.util.Set;
 
@@ -58,38 +51,7 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                                       MappingUpdatedAction mappingUpdatedAction) {
         super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.mappingUpdatedAction = mappingUpdatedAction;
-        long threshold = settings.getAsLong("watchdog.memory.threshold", 99L);
-        //enableMemoryWatchdog(threshold);
     }
-
-    /*private void enableMemoryWatchdog(final long threshold) {
-        final MemoryMXBean memBean = ManagementFactory.getMemoryMXBean();
-        final NotificationEmitter ne = (NotificationEmitter) memBean;
-        ne.addNotificationListener(memoryWatcher, null, null);
-        final List<MemoryPoolMXBean> memPools = ManagementFactory.getMemoryPoolMXBeans();
-        for (final MemoryPoolMXBean mp : memPools) {
-            if (mp.isUsageThresholdSupported()) {
-                final MemoryUsage mu = mp.getUsage();
-                final long max = mu.getMax();
-                final long alert = (max * threshold) / 100;
-                mp.setUsageThreshold(alert);
-            }
-        }
-    }
-
-    private final MemoryWatcher memoryWatcher = new MemoryWatcher();
-
-    private class MemoryWatcher implements NotificationListener {
-        @Override
-        public void handleNotification(Notification notification, Object o) {
-            logger.warn("memory notification: seq = {} type = {} message = {} user data = {}",
-                    notification.getSequenceNumber(),
-                    notification.getType(), // java.management.memory.threshold.exceeded
-                    notification.getMessage(), // Memory usage exceeds usage threshold
-                    notification.getUserData()
-            );
-        }
-    }*/
 
     @Override
     protected String executor() {
@@ -146,7 +108,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
         final IngestShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
         Set<Tuple<String, String>> mappingsToUpdate = null;
-
         int successSize = 0;
         List<IngestItemFailure> failure = newLinkedList();
         int size = request.items().size();
@@ -163,10 +124,8 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                             throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
                         }
                     }
-
                     SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
-
                     long version;
                     Engine.IndexingOperation op;
                     if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
@@ -183,7 +142,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     versions[i] = indexRequest.version();
                     // update the version on request so it will happen on the replicas
                     indexRequest.version(version);
-
                     // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
                     if (op.parsedDoc().mappingsModified()) {
                         if (mappingsToUpdate == null) {
@@ -191,17 +149,16 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                         }
                         mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                     }
-
                     successSize++;
-
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
                         // restore updated versions...
                         for (int j = 0; j < i; j++) {
                             applyVersion(request.items().get(j), versions[j]);
                         }
-                        throw (ElasticsearchException) e;
+                        logger.error(e.getMessage(), e);
+                        throw new ElasticsearchException(e.getMessage());
                     }
                     if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
                         logger.trace("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
@@ -219,16 +176,16 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     indexShard.delete(delete);
                     // update the request with teh version so it will go to the replicas
                     deleteRequest.version(delete.version());
-
                     successSize++;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
                         // restore updated versions...
                         for (int j = 0; j < i; j++) {
                             applyVersion(request.items().get(j), versions[j]);
                         }
-                        throw (ElasticsearchException) e;
+                        logger.error(e.getMessage(), e);
+                        throw new ElasticsearchException(e.getMessage());
                     }
                     if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
                         logger.trace("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);
@@ -247,7 +204,6 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                 updateMappingOnMaster(mappingToUpdate.v1(), mappingToUpdate.v2());
             }
         }
-
         IngestShardResponse response = new IngestShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
         return new PrimaryResponse<IngestShardResponse, IngestShardRequest>(shardRequest.request, response, null);
     }

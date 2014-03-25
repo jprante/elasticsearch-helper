@@ -107,7 +107,6 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
         final IngestIndexShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
         Set<Tuple<String, String>> mappingsToUpdate = null;
-
         int successSize = 0;
         List<IngestItemFailure> failure = Lists.newLinkedList();
         int size = request.items().size();
@@ -149,14 +148,15 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                     mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
                 }
                 successSize++;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                 if (retryPrimaryException(e)) {
                     // restore updated versions...
                     for (int j = 0; j < i; j++) {
                         ((IndexRequest) request.items().get(j).request()).version(versions[j]);
                     }
-                    throw (ElasticsearchException) e;
+                    logger.error(e.getMessage(), e);
+                    throw new ElasticsearchException(e.getMessage());
                 }
                 if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
                     logger.trace("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
@@ -199,7 +199,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                     Engine.Create create = indexShard.prepareCreate(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
                     indexShard.create(create);
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // ignore, we are on backup
             }
         }
@@ -218,7 +218,6 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
             }
             long orderId = mappingUpdatedAction.generateNextMappingUpdateOrder();
             documentMapper.refreshSource();
-
             DiscoveryNode node = clusterService.localNode();
             final MappingUpdatedAction.MappingUpdatedRequest request = new MappingUpdatedAction.MappingUpdatedRequest(index, metaData.uuid(), type, documentMapper.mappingSource(), orderId, node != null ? node.id() : null);
             mappingUpdatedAction.execute(request, new ActionListener<MappingUpdatedAction.MappingUpdatedResponse>() {
@@ -236,7 +235,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                     }
                 }
             });
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.warn("failed to update master on updated mapping for index [{}], type [{}]", e, index, type);
         }
     }

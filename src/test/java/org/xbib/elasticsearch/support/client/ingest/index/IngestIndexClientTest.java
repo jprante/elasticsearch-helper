@@ -5,18 +5,21 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.testng.annotations.Test;
 
-import org.xbib.elasticsearch.support.AbstractNodeRandomTest;
+import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class IngestIndexClientTests extends AbstractNodeRandomTest {
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestIndexClientTests.class.getSimpleName());
+public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
+
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestIndexClientTest.class.getSimpleName());
 
     @Test
     public void testNewIndexIngest() {

@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class NodeClient implements Feeder {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
 
     private int maxActionsPerBulkRequest = 100;
 

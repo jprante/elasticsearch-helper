@@ -11,8 +11,6 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -27,13 +25,15 @@ import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.support.client.AbstractIngestClient;
+import org.xbib.elasticsearch.support.metrics.CounterMetric;
+import org.xbib.elasticsearch.support.metrics.MeanMetric;
 
 /**
  * Ingest client
  */
 public class IngestClient extends AbstractIngestClient {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestClient.class.getSimpleName());
 
     private int maxActionsPerBulkRequest = 100;
 
@@ -45,13 +45,17 @@ public class IngestClient extends AbstractIngestClient {
 
     private final MeanMetric totalIngest = new MeanMetric();
 
-    private final CounterMetric totalIngestNumDocs = new CounterMetric();
-
     private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
 
     private final CounterMetric currentIngest = new CounterMetric();
 
     private final CounterMetric currentIngestNumDocs = new CounterMetric();
+
+    private final CounterMetric submitted = new CounterMetric();
+
+    private final CounterMetric succeeded = new CounterMetric();
+
+    private final CounterMetric failed = new CounterMetric();
 
     private IngestProcessor ingestProcessor;
 
@@ -108,20 +112,24 @@ public class IngestClient extends AbstractIngestClient {
         IngestProcessor.Listener listener = new IngestProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestRequest request) {
-                currentIngestNumDocs.inc(request.numberOfActions());
+                int n = request.numberOfActions();
+                submitted.inc(n);
+                currentIngestNumDocs.inc(n);
                 totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                            executionId, request.numberOfActions(), request.estimatedSizeInBytes(), concurrency);
+                            executionId, n, request.estimatedSizeInBytes(), concurrency);
                 }
             }
 
             @Override
             public void afterBulk(long executionId, int concurrency, IngestResponse response) {
+                succeeded.inc(response.successSize());
+                failed.inc(response.failureSize());
                 totalIngest.inc(response.tookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                            executionId, response.successSize(), response.failure().size(), response.tookInMillis());
+                            executionId, response.successSize(), response.failureSize(), response.tookInMillis());
                 }
                 if (!response.failure().isEmpty()) {
                     closed = true;
@@ -130,7 +138,6 @@ public class IngestClient extends AbstractIngestClient {
                     }
                 } else {
                     currentIngestNumDocs.dec(response.successSize());
-                    totalIngestNumDocs.inc(response.successSize());
                 }
             }
 
@@ -387,8 +394,18 @@ public class IngestClient extends AbstractIngestClient {
     }
 
     @Override
-    public long getTotalDocuments() {
-        return totalIngestNumDocs.count();
+    public long getTotalSubmitted() {
+        return submitted.count();
+    }
+
+    @Override
+    public long getTotalSucceeded() {
+        return succeeded.count();
+    }
+
+    @Override
+    public long getTotalFailed() {
+        return failed.count();
     }
 
     @Override

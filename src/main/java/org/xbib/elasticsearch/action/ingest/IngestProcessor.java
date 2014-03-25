@@ -14,6 +14,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.metrics.CounterMetric;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -142,6 +143,38 @@ public class IngestProcessor {
     }
 
     /**
+     * Wait for responses of outstanding requests.
+     *
+     * @return true if all requests answered within the waiting time, false if not
+     * @throws InterruptedException
+     */
+    public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
+        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
+        return semaphore.availablePermits() == concurrency;
+    }
+
+    /**
+     * A listener for the execution.
+     */
+    public static interface Listener {
+
+        /**
+         * Callback before the bulk request is executed.
+         */
+        void beforeBulk(long bulkId, int concurrency, IngestRequest request);
+
+        /**
+         * Callback after a successful execution of a bulk request.
+         */
+        void afterBulk(long bulkId, int concurrency, IngestResponse response);
+
+        /**
+         * Callback after a failed execution of a bulk request.
+         */
+        void afterBulk(long bulkId, int concurrency, Throwable failure);
+    }
+
+    /**
      * Critical phase, check if flushing condition is met and
      * push the part of the bulk requests that is required to push
      */
@@ -207,36 +240,5 @@ public class IngestProcessor {
         }
     }
 
-    /**
-     * Wait for responses of outstanding requests.
-     *
-     * @return true if all requests answered within the waiting time, false if not
-     * @throws InterruptedException
-     */
-    public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
-        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
-        return semaphore.availablePermits() == concurrency;
-    }
-
-    /**
-     * A listener for the execution.
-     */
-    public static interface Listener {
-
-        /**
-         * Callback before the bulk request is executed.
-         */
-        void beforeBulk(long bulkId, int concurrency, IngestRequest request);
-
-        /**
-         * Callback after a successful execution of a bulk request.
-         */
-        void afterBulk(long bulkId, int concurrency, IngestResponse response);
-
-        /**
-         * Callback after a failed execution of a bulk request.
-         */
-        void afterBulk(long bulkId, int concurrency, Throwable failure);
-    }
 
 }

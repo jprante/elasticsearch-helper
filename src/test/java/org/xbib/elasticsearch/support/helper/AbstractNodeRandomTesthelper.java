@@ -1,9 +1,8 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.helper;
 
-import java.net.URI;
 import java.util.Random;
 
-public class AbstractNodeRandomTest extends AbstractNodeTest {
+public class AbstractNodeRandomTestHelper extends AbstractNodeTestHelper {
 
     private static Random random = new Random();
 

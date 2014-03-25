@@ -13,7 +13,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -21,6 +21,7 @@ public class AliasTest {
 
     private static final ESLogger logger = ESLoggerFactory.getLogger(AliasTest.class.getName());
 
+    @Test
     public void testAlias() {
         Node node = null;
         try {

@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.helper;
 
 import java.net.URI;
 import java.util.Map;
@@ -17,16 +17,16 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
 import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
-public abstract class AbstractNodeTest extends Assert {
+import org.junit.After;
+import org.junit.Before;
+
+public abstract class AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
@@ -40,8 +40,8 @@ public abstract class AbstractNodeTest extends Assert {
             .settingsBuilder()
             .put("cluster.name", CLUSTER)
                     // default for queue_size for bulk thread pool is only 50 since 0.90.7
-                    // enlarge queue for this unit test because we are on a single machine
-            .put("threadpool.bulk.queue_size", 100)
+                    // enlarge queue for this unit test because we are on a single machine with SSD...
+            .put("threadpool.bulk.queue_size", 200)
             .build();
 
     private Map<String, Node> nodes = newHashMap();
@@ -54,8 +54,8 @@ public abstract class AbstractNodeTest extends Assert {
         return URI.create("es://localhost:" + PORT + "?es.cluster.name=" + CLUSTER);
     }
 
-    @BeforeMethod
-    public void createIndex() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         startNode("1");
         // find node address
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
@@ -69,7 +69,7 @@ public abstract class AbstractNodeTest extends Assert {
         logger.info("index {} created", INDEX);
     }
 
-    @AfterMethod
+    @After
     public void deleteIndices() {
         logger.info("deleting index {}", INDEX);
         try {

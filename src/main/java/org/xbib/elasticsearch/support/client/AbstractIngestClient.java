@@ -79,7 +79,8 @@ public abstract class AbstractIngestClient extends AbstractTransportClient
     @Override
     public int updateReplicaLevel(int level) throws IOException {
         waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-        update("number_of_replicas", level);
+        waitForRecovery();
+        update("index.number_of_replicas", level);
         return waitForRecovery();
     }
 

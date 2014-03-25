@@ -9,8 +9,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -21,6 +19,8 @@ import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexProcessor;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexRequest;
 import org.xbib.elasticsearch.support.client.AbstractIngestClient;
+import org.xbib.elasticsearch.support.metrics.CounterMetric;
+import org.xbib.elasticsearch.support.metrics.MeanMetric;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,13 +54,17 @@ public class IngestIndexClient extends AbstractIngestClient {
 
     private final MeanMetric totalIngest = new MeanMetric();
 
-    private final CounterMetric totalIngestNumDocs = new CounterMetric();
-
     private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
 
     private final CounterMetric currentIngest = new CounterMetric();
 
     private final CounterMetric currentIngestNumDocs = new CounterMetric();
+
+    private final CounterMetric submitted = new CounterMetric();
+
+    private final CounterMetric succeeded = new CounterMetric();
+
+    private final CounterMetric failed = new CounterMetric();
 
     /**
      * The processor
@@ -123,6 +127,7 @@ public class IngestIndexClient extends AbstractIngestClient {
         IngestIndexProcessor.Listener listener = new IngestIndexProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestIndexRequest request) {
+                submitted.inc(request.numberOfActions());
                 currentIngestNumDocs.inc(request.numberOfActions());
                 totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
@@ -133,10 +138,12 @@ public class IngestIndexClient extends AbstractIngestClient {
 
             @Override
             public void afterBulk(long executionId, int concurrency, IngestResponse response) {
+                succeeded.inc(response.successSize());
+                failed.inc(response.failureSize());
                 totalIngest.inc(response.tookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms] {} outstanding bulk requests",
-                        executionId, response.successSize(), response.failure().size(), response.took().millis(), concurrency);
+                        executionId, response.successSize(), response.failureSize(), response.took().millis(), concurrency);
                 }
                 if (!response.failure().isEmpty()) {
                     for (IngestItemFailure f: response.failure()) {
@@ -144,7 +151,6 @@ public class IngestIndexClient extends AbstractIngestClient {
                     }
                 } else {
                     currentIngestNumDocs.dec(response.successSize());
-                    totalIngestNumDocs.inc(response.successSize());
                 }
             }
 
@@ -392,8 +398,18 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public long getTotalDocuments() {
-        return totalIngestNumDocs.count();
+    public long getTotalSubmitted() {
+        return submitted.count();
+    }
+
+    @Override
+    public long getTotalSucceeded() {
+        return succeeded.count();
+    }
+
+    @Override
+    public long getTotalFailed() {
+        return failed.count();
     }
 
     @Override

@@ -106,14 +106,15 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
                     // update the request with the version so it will go to the replicas
                     deleteRequest.version(delete.version());
                     successSize++;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
                     if (retryPrimaryException(e)) {
                         // restore updated versions...
                         for (int j = 0; j < i; j++) {
                             ((DeleteRequest)request.items().get(j).request()).version(versions[j]);
                         }
-                        throw (ElasticsearchException) e;
+                        logger.error(e.getMessage(), e);
+                        throw new ElasticsearchException(e.getMessage());
                     }
                     if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
                         logger.trace("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);
@@ -125,7 +126,6 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
                     request.items().set(i, null);
                 }
         }
-
         IngestDeleteShardResponse response = new IngestDeleteShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);
         return new PrimaryResponse<IngestDeleteShardResponse, IngestDeleteShardRequest>(shardRequest.request, response, null);
     }
@@ -144,7 +144,7 @@ public class TransportShardIngestDeleteAction extends TransportShardReplicationO
             try {
                 Engine.Delete delete = indexShard.prepareDelete(deleteRequest.type(), deleteRequest.id(), deleteRequest.version()).origin(Engine.Operation.Origin.REPLICA);
                 indexShard.delete(delete);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 // ignore, we are on backup
             }
         }

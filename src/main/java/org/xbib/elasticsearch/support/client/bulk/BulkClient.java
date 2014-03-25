@@ -12,14 +12,14 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.AbstractIngestClient;
 import org.xbib.elasticsearch.support.config.ConfigHelper;
+import org.xbib.elasticsearch.support.metrics.CounterMetric;
+import org.xbib.elasticsearch.support.metrics.MeanMetric;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,13 +55,18 @@ public class BulkClient extends AbstractIngestClient {
 
     private final MeanMetric totalIngest = new MeanMetric();
 
-    private final CounterMetric totalIngestNumDocs = new CounterMetric();
-
     private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
 
     private final CounterMetric currentIngest = new CounterMetric();
 
     private final CounterMetric currentIngestNumDocs = new CounterMetric();
+
+    private final CounterMetric submitted = new CounterMetric();
+
+    private final CounterMetric succeeded = new CounterMetric();
+
+    private final CounterMetric failed = new CounterMetric();
+
     /**
      * The BulkProcessor
      */
@@ -139,6 +144,7 @@ public class BulkClient extends AbstractIngestClient {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingRequests.getAndIncrement();
+                submitted.inc(request.numberOfActions());
                 currentIngestNumDocs.inc(request.numberOfActions());
                 totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
@@ -150,6 +156,8 @@ public class BulkClient extends AbstractIngestClient {
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 outstandingRequests.decrementAndGet();
+                succeeded.inc(response.getItems().length);
+                failed.inc(request.numberOfActions() - response.getItems().length);
                 totalIngest.inc(response.getTookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("bulk [{}] [{} items] [{}] [{}ms]",
@@ -164,7 +172,6 @@ public class BulkClient extends AbstractIngestClient {
                             executionId, response.buildFailureMessage());
                 } else {
                     currentIngestNumDocs.dec(response.getItems().length);
-                    totalIngestNumDocs.inc(response.getItems().length);
                 }
             }
 
@@ -436,8 +443,18 @@ public class BulkClient extends AbstractIngestClient {
     }
 
     @Override
-    public long getTotalDocuments() {
-        return totalIngestNumDocs.count();
+    public long getTotalSubmitted() {
+        return submitted.count();
+    }
+
+    @Override
+    public long getTotalSucceeded() {
+        return succeeded.count();
+    }
+
+    @Override
+    public long getTotalFailed() {
+        return failed.count();
     }
 
     public boolean hasErrors() {

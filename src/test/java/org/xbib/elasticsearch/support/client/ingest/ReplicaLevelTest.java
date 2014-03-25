@@ -1,18 +1,21 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.testng.annotations.Test;
 
-import org.xbib.elasticsearch.support.client.ingest.IngestClient;
+import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.io.IOException;
 
-public class ReplicaLevelTests extends AbstractNodeRandomTest {
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTests.class.getSimpleName());
+public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {
+
+    private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTest.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws IOException {

@@ -64,7 +64,7 @@ public class ConfigHelper {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
-        this.settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);
+        settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);
         return this;
     }
 
@@ -76,8 +76,7 @@ public class ConfigHelper {
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }
-        return !settingsBuilder.internalMap().isEmpty() ?
-                settingsBuilder.build() : null;
+        return settingsBuilder.build();
     }
 
     public ConfigHelper mapping(String type, InputStream in) throws IOException {
