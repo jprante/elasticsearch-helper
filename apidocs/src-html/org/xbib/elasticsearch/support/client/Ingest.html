@@ -192,28 +192,32 @@
 <FONT color="green">189</FONT>         * Get total documents that have been ingested<a name="line.189"></a>
 <FONT color="green">190</FONT>         * @return the total number of documents<a name="line.190"></a>
 <FONT color="green">191</FONT>         */<a name="line.191"></a>
-<FONT color="green">192</FONT>        long getTotalDocuments();<a name="line.192"></a>
+<FONT color="green">192</FONT>        long getTotalSubmitted();<a name="line.192"></a>
 <FONT color="green">193</FONT>    <a name="line.193"></a>
-<FONT color="green">194</FONT>        /**<a name="line.194"></a>
-<FONT color="green">195</FONT>         * Get the total ingested data size in bytes so far.<a name="line.195"></a>
-<FONT color="green">196</FONT>         *<a name="line.196"></a>
-<FONT color="green">197</FONT>         * @return the total size in bytes<a name="line.197"></a>
-<FONT color="green">198</FONT>         */<a name="line.198"></a>
-<FONT color="green">199</FONT>        long getTotalSizeInBytes();<a name="line.199"></a>
-<FONT color="green">200</FONT>    <a name="line.200"></a>
-<FONT color="green">201</FONT>        boolean hasErrors();<a name="line.201"></a>
-<FONT color="green">202</FONT>    <a name="line.202"></a>
-<FONT color="green">203</FONT>        /**<a name="line.203"></a>
-<FONT color="green">204</FONT>         * Return last throwable if exists.<a name="line.204"></a>
-<FONT color="green">205</FONT>         * @return last throwable<a name="line.205"></a>
-<FONT color="green">206</FONT>         */<a name="line.206"></a>
-<FONT color="green">207</FONT>        Throwable getThrowable();<a name="line.207"></a>
-<FONT color="green">208</FONT>    <a name="line.208"></a>
-<FONT color="green">209</FONT>        /**<a name="line.209"></a>
-<FONT color="green">210</FONT>         * Shutdown the ingesting<a name="line.210"></a>
-<FONT color="green">211</FONT>         */<a name="line.211"></a>
-<FONT color="green">212</FONT>        void shutdown();<a name="line.212"></a>
-<FONT color="green">213</FONT>    }<a name="line.213"></a>
+<FONT color="green">194</FONT>        long getTotalSucceeded();<a name="line.194"></a>
+<FONT color="green">195</FONT>    <a name="line.195"></a>
+<FONT color="green">196</FONT>        long getTotalFailed();<a name="line.196"></a>
+<FONT color="green">197</FONT>    <a name="line.197"></a>
+<FONT color="green">198</FONT>        /**<a name="line.198"></a>
+<FONT color="green">199</FONT>         * Get the total ingested data size in bytes so far.<a name="line.199"></a>
+<FONT color="green">200</FONT>         *<a name="line.200"></a>
+<FONT color="green">201</FONT>         * @return the total size in bytes<a name="line.201"></a>
+<FONT color="green">202</FONT>         */<a name="line.202"></a>
+<FONT color="green">203</FONT>        long getTotalSizeInBytes();<a name="line.203"></a>
+<FONT color="green">204</FONT>    <a name="line.204"></a>
+<FONT color="green">205</FONT>        boolean hasErrors();<a name="line.205"></a>
+<FONT color="green">206</FONT>    <a name="line.206"></a>
+<FONT color="green">207</FONT>        /**<a name="line.207"></a>
+<FONT color="green">208</FONT>         * Return last throwable if exists.<a name="line.208"></a>
+<FONT color="green">209</FONT>         * @return last throwable<a name="line.209"></a>
+<FONT color="green">210</FONT>         */<a name="line.210"></a>
+<FONT color="green">211</FONT>        Throwable getThrowable();<a name="line.211"></a>
+<FONT color="green">212</FONT>    <a name="line.212"></a>
+<FONT color="green">213</FONT>        /**<a name="line.213"></a>
+<FONT color="green">214</FONT>         * Shutdown the ingesting<a name="line.214"></a>
+<FONT color="green">215</FONT>         */<a name="line.215"></a>
+<FONT color="green">216</FONT>        void shutdown();<a name="line.216"></a>
+<FONT color="green">217</FONT>    }<a name="line.217"></a>
 
 
 

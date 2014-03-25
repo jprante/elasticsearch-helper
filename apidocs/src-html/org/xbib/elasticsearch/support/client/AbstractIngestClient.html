@@ -82,203 +82,204 @@
 <FONT color="green">079</FONT>        @Override<a name="line.79"></a>
 <FONT color="green">080</FONT>        public int updateReplicaLevel(int level) throws IOException {<a name="line.80"></a>
 <FONT color="green">081</FONT>            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));<a name="line.81"></a>
-<FONT color="green">082</FONT>            update("number_of_replicas", level);<a name="line.82"></a>
-<FONT color="green">083</FONT>            return waitForRecovery();<a name="line.83"></a>
-<FONT color="green">084</FONT>        }<a name="line.84"></a>
-<FONT color="green">085</FONT>    <a name="line.85"></a>
-<FONT color="green">086</FONT>        @Override<a name="line.86"></a>
-<FONT color="green">087</FONT>        public AbstractIngestClient shards(int shards) {<a name="line.87"></a>
-<FONT color="green">088</FONT>            return setting("index.number_of_shards", shards);<a name="line.88"></a>
-<FONT color="green">089</FONT>        }<a name="line.89"></a>
-<FONT color="green">090</FONT>    <a name="line.90"></a>
-<FONT color="green">091</FONT>        @Override<a name="line.91"></a>
-<FONT color="green">092</FONT>        public AbstractIngestClient replica(int replica) {<a name="line.92"></a>
-<FONT color="green">093</FONT>            return setting("index.number_of_replicas", replica);<a name="line.93"></a>
-<FONT color="green">094</FONT>        }<a name="line.94"></a>
-<FONT color="green">095</FONT>    <a name="line.95"></a>
-<FONT color="green">096</FONT>        public AbstractIngestClient resetSettings() {<a name="line.96"></a>
-<FONT color="green">097</FONT>            configHelper.reset();<a name="line.97"></a>
-<FONT color="green">098</FONT>            return this;<a name="line.98"></a>
-<FONT color="green">099</FONT>        }<a name="line.99"></a>
-<FONT color="green">100</FONT>    <a name="line.100"></a>
-<FONT color="green">101</FONT>        public AbstractIngestClient setting(String key, String value) {<a name="line.101"></a>
-<FONT color="green">102</FONT>            configHelper.setting(key, value);<a name="line.102"></a>
-<FONT color="green">103</FONT>            return this;<a name="line.103"></a>
-<FONT color="green">104</FONT>        }<a name="line.104"></a>
-<FONT color="green">105</FONT>    <a name="line.105"></a>
-<FONT color="green">106</FONT>        public AbstractIngestClient setting(String key, Boolean value) {<a name="line.106"></a>
-<FONT color="green">107</FONT>            configHelper.setting(key, value);<a name="line.107"></a>
-<FONT color="green">108</FONT>            return this;<a name="line.108"></a>
-<FONT color="green">109</FONT>        }<a name="line.109"></a>
-<FONT color="green">110</FONT>    <a name="line.110"></a>
-<FONT color="green">111</FONT>        public AbstractIngestClient setting(String key, Integer value) {<a name="line.111"></a>
-<FONT color="green">112</FONT>            configHelper.setting(key, value);<a name="line.112"></a>
-<FONT color="green">113</FONT>            return this;<a name="line.113"></a>
-<FONT color="green">114</FONT>        }<a name="line.114"></a>
-<FONT color="green">115</FONT>    <a name="line.115"></a>
-<FONT color="green">116</FONT>        public AbstractIngestClient setting(InputStream in) throws IOException {<a name="line.116"></a>
-<FONT color="green">117</FONT>            configHelper.setting(in);<a name="line.117"></a>
-<FONT color="green">118</FONT>            return this;<a name="line.118"></a>
-<FONT color="green">119</FONT>        }<a name="line.119"></a>
-<FONT color="green">120</FONT>    <a name="line.120"></a>
-<FONT color="green">121</FONT>        public ImmutableSettings.Builder settingsBuilder() {<a name="line.121"></a>
-<FONT color="green">122</FONT>            return configHelper.settingsBuilder();<a name="line.122"></a>
-<FONT color="green">123</FONT>        }<a name="line.123"></a>
-<FONT color="green">124</FONT>    <a name="line.124"></a>
-<FONT color="green">125</FONT>        public Settings settings() {<a name="line.125"></a>
-<FONT color="green">126</FONT>            return configHelper.settings();<a name="line.126"></a>
-<FONT color="green">127</FONT>        }<a name="line.127"></a>
-<FONT color="green">128</FONT>    <a name="line.128"></a>
-<FONT color="green">129</FONT>        public AbstractIngestClient mapping(String type, InputStream in) throws IOException {<a name="line.129"></a>
-<FONT color="green">130</FONT>            configHelper.mapping(type, in);<a name="line.130"></a>
-<FONT color="green">131</FONT>            return this;<a name="line.131"></a>
-<FONT color="green">132</FONT>        }<a name="line.132"></a>
-<FONT color="green">133</FONT>    <a name="line.133"></a>
-<FONT color="green">134</FONT>        public AbstractIngestClient mapping(String type, String mapping) {<a name="line.134"></a>
-<FONT color="green">135</FONT>            configHelper.mapping(type, mapping);<a name="line.135"></a>
-<FONT color="green">136</FONT>            return this;<a name="line.136"></a>
-<FONT color="green">137</FONT>        }<a name="line.137"></a>
-<FONT color="green">138</FONT>    <a name="line.138"></a>
-<FONT color="green">139</FONT>        public AbstractIngestClient dateDetection(boolean dateDetection) {<a name="line.139"></a>
-<FONT color="green">140</FONT>            configHelper.dateDetection(dateDetection);<a name="line.140"></a>
-<FONT color="green">141</FONT>            return this;<a name="line.141"></a>
-<FONT color="green">142</FONT>        }<a name="line.142"></a>
-<FONT color="green">143</FONT>    <a name="line.143"></a>
-<FONT color="green">144</FONT>        public boolean dateDetection() {<a name="line.144"></a>
-<FONT color="green">145</FONT>            return configHelper.dateDetection();<a name="line.145"></a>
-<FONT color="green">146</FONT>        }<a name="line.146"></a>
-<FONT color="green">147</FONT>    <a name="line.147"></a>
-<FONT color="green">148</FONT>        public AbstractIngestClient timeStampField(String timeStampField) {<a name="line.148"></a>
-<FONT color="green">149</FONT>            configHelper.timeStampField(timeStampField);<a name="line.149"></a>
-<FONT color="green">150</FONT>            return this;<a name="line.150"></a>
-<FONT color="green">151</FONT>        }<a name="line.151"></a>
-<FONT color="green">152</FONT>    <a name="line.152"></a>
-<FONT color="green">153</FONT>        public String timeStampField() {<a name="line.153"></a>
-<FONT color="green">154</FONT>            return configHelper.timeStampField();<a name="line.154"></a>
-<FONT color="green">155</FONT>        }<a name="line.155"></a>
-<FONT color="green">156</FONT>    <a name="line.156"></a>
-<FONT color="green">157</FONT>        public AbstractIngestClient timeStampFieldEnabled(boolean enable) {<a name="line.157"></a>
-<FONT color="green">158</FONT>            configHelper.timeStampFieldEnabled(enable);<a name="line.158"></a>
-<FONT color="green">159</FONT>            return this;<a name="line.159"></a>
-<FONT color="green">160</FONT>        }<a name="line.160"></a>
-<FONT color="green">161</FONT>    <a name="line.161"></a>
-<FONT color="green">162</FONT>        public AbstractIngestClient kibanaEnabled(boolean enable) {<a name="line.162"></a>
-<FONT color="green">163</FONT>            configHelper.kibanaEnabled(enable);<a name="line.163"></a>
-<FONT color="green">164</FONT>            return this;<a name="line.164"></a>
-<FONT color="green">165</FONT>        }<a name="line.165"></a>
-<FONT color="green">166</FONT>    <a name="line.166"></a>
-<FONT color="green">167</FONT>        public String defaultMapping() throws IOException {<a name="line.167"></a>
-<FONT color="green">168</FONT>            return configHelper.defaultMapping();<a name="line.168"></a>
-<FONT color="green">169</FONT>        }<a name="line.169"></a>
-<FONT color="green">170</FONT>    <a name="line.170"></a>
-<FONT color="green">171</FONT>        public Map&lt;String,String&gt; mappings() {<a name="line.171"></a>
-<FONT color="green">172</FONT>            return configHelper.mappings();<a name="line.172"></a>
-<FONT color="green">173</FONT>        }<a name="line.173"></a>
-<FONT color="green">174</FONT>    <a name="line.174"></a>
-<FONT color="green">175</FONT>        public AbstractIngestClient enableRefreshInterval() {<a name="line.175"></a>
-<FONT color="green">176</FONT>            if (refreshDisabled) {<a name="line.176"></a>
-<FONT color="green">177</FONT>                update("refresh_interval", 1000);<a name="line.177"></a>
-<FONT color="green">178</FONT>                refreshDisabled = false;<a name="line.178"></a>
-<FONT color="green">179</FONT>            }<a name="line.179"></a>
-<FONT color="green">180</FONT>            return this;<a name="line.180"></a>
-<FONT color="green">181</FONT>        }<a name="line.181"></a>
-<FONT color="green">182</FONT>    <a name="line.182"></a>
-<FONT color="green">183</FONT>        public AbstractIngestClient disableRefreshInterval() {<a name="line.183"></a>
-<FONT color="green">184</FONT>            if (!refreshDisabled) {<a name="line.184"></a>
-<FONT color="green">185</FONT>                update("refresh_interval", -1);<a name="line.185"></a>
-<FONT color="green">186</FONT>                refreshDisabled = true;<a name="line.186"></a>
-<FONT color="green">187</FONT>            }<a name="line.187"></a>
-<FONT color="green">188</FONT>            return this;<a name="line.188"></a>
-<FONT color="green">189</FONT>        }<a name="line.189"></a>
-<FONT color="green">190</FONT>    <a name="line.190"></a>
-<FONT color="green">191</FONT>        @Override<a name="line.191"></a>
-<FONT color="green">192</FONT>        public AbstractIngestClient newIndex() {<a name="line.192"></a>
-<FONT color="green">193</FONT>            if (client == null) {<a name="line.193"></a>
-<FONT color="green">194</FONT>                logger.warn("no client for create index");<a name="line.194"></a>
-<FONT color="green">195</FONT>                return this;<a name="line.195"></a>
-<FONT color="green">196</FONT>            }<a name="line.196"></a>
-<FONT color="green">197</FONT>            if (getIndex() == null) {<a name="line.197"></a>
-<FONT color="green">198</FONT>                logger.warn("no index name given to create index");<a name="line.198"></a>
-<FONT color="green">199</FONT>                return this;<a name="line.199"></a>
-<FONT color="green">200</FONT>            }<a name="line.200"></a>
-<FONT color="green">201</FONT>            CreateIndexRequest request = new CreateIndexRequest(getIndex());<a name="line.201"></a>
-<FONT color="green">202</FONT>            if (settings() != null) {<a name="line.202"></a>
-<FONT color="green">203</FONT>                request.settings(settings());<a name="line.203"></a>
-<FONT color="green">204</FONT>            }<a name="line.204"></a>
-<FONT color="green">205</FONT>            if (mappings() != null) {<a name="line.205"></a>
-<FONT color="green">206</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings().entrySet()) {<a name="line.206"></a>
-<FONT color="green">207</FONT>                    request.mapping(me.getKey(), me.getValue());<a name="line.207"></a>
-<FONT color="green">208</FONT>                }<a name="line.208"></a>
-<FONT color="green">209</FONT>            }<a name="line.209"></a>
-<FONT color="green">210</FONT>            logger.info("creating index {} with settings = {}, mappings = {}",<a name="line.210"></a>
-<FONT color="green">211</FONT>                    getIndex(), settings() != null ? settings().getAsMap() : null, mappings());<a name="line.211"></a>
-<FONT color="green">212</FONT>            try {<a name="line.212"></a>
-<FONT color="green">213</FONT>                client.admin().indices().create(request).actionGet();<a name="line.213"></a>
-<FONT color="green">214</FONT>            } catch (Exception e) {<a name="line.214"></a>
-<FONT color="green">215</FONT>                logger.error(e.getMessage(), e);<a name="line.215"></a>
-<FONT color="green">216</FONT>            }<a name="line.216"></a>
-<FONT color="green">217</FONT>            return this;<a name="line.217"></a>
-<FONT color="green">218</FONT>        }<a name="line.218"></a>
-<FONT color="green">219</FONT>    <a name="line.219"></a>
-<FONT color="green">220</FONT>        @Override<a name="line.220"></a>
-<FONT color="green">221</FONT>        public synchronized AbstractIngestClient deleteIndex() {<a name="line.221"></a>
-<FONT color="green">222</FONT>            if (client == null) {<a name="line.222"></a>
-<FONT color="green">223</FONT>                logger.warn("no client for delete index");<a name="line.223"></a>
-<FONT color="green">224</FONT>                return this;<a name="line.224"></a>
-<FONT color="green">225</FONT>            }<a name="line.225"></a>
-<FONT color="green">226</FONT>            if (getIndex() == null) {<a name="line.226"></a>
-<FONT color="green">227</FONT>                logger.warn("no index name given to delete index");<a name="line.227"></a>
-<FONT color="green">228</FONT>                return this;<a name="line.228"></a>
-<FONT color="green">229</FONT>            }<a name="line.229"></a>
-<FONT color="green">230</FONT>            try {<a name="line.230"></a>
-<FONT color="green">231</FONT>                client.admin().indices().delete(new DeleteIndexRequest(getIndex())).actionGet();<a name="line.231"></a>
-<FONT color="green">232</FONT>            } catch (Exception e) {<a name="line.232"></a>
-<FONT color="green">233</FONT>                logger.error(e.getMessage(), e);<a name="line.233"></a>
-<FONT color="green">234</FONT>            }<a name="line.234"></a>
-<FONT color="green">235</FONT>            return this;<a name="line.235"></a>
-<FONT color="green">236</FONT>        }<a name="line.236"></a>
-<FONT color="green">237</FONT>    <a name="line.237"></a>
-<FONT color="green">238</FONT>        public AbstractIngestClient putMapping(String index) {<a name="line.238"></a>
-<FONT color="green">239</FONT>            if (client == null) {<a name="line.239"></a>
-<FONT color="green">240</FONT>                logger.warn("no client for put mapping");<a name="line.240"></a>
-<FONT color="green">241</FONT>                return this;<a name="line.241"></a>
-<FONT color="green">242</FONT>            }<a name="line.242"></a>
-<FONT color="green">243</FONT>            configHelper.putMapping(client, index);<a name="line.243"></a>
-<FONT color="green">244</FONT>            return this;<a name="line.244"></a>
-<FONT color="green">245</FONT>        }<a name="line.245"></a>
-<FONT color="green">246</FONT>    <a name="line.246"></a>
-<FONT color="green">247</FONT>        public AbstractIngestClient deleteMapping(String index, String type) {<a name="line.247"></a>
-<FONT color="green">248</FONT>            if (client == null) {<a name="line.248"></a>
-<FONT color="green">249</FONT>                logger.warn("no client for delete mapping");<a name="line.249"></a>
-<FONT color="green">250</FONT>                return this;<a name="line.250"></a>
-<FONT color="green">251</FONT>            }<a name="line.251"></a>
-<FONT color="green">252</FONT>            configHelper.deleteMapping(client, index, type);<a name="line.252"></a>
-<FONT color="green">253</FONT>            return this;<a name="line.253"></a>
-<FONT color="green">254</FONT>        }<a name="line.254"></a>
-<FONT color="green">255</FONT>    <a name="line.255"></a>
-<FONT color="green">256</FONT>        public void update(String key, Object value) {<a name="line.256"></a>
-<FONT color="green">257</FONT>            if (client == null) {<a name="line.257"></a>
-<FONT color="green">258</FONT>                logger.warn("no client");<a name="line.258"></a>
-<FONT color="green">259</FONT>                return;<a name="line.259"></a>
-<FONT color="green">260</FONT>            }<a name="line.260"></a>
-<FONT color="green">261</FONT>            if (value == null) {<a name="line.261"></a>
-<FONT color="green">262</FONT>                logger.warn("no value given");<a name="line.262"></a>
-<FONT color="green">263</FONT>                return;<a name="line.263"></a>
-<FONT color="green">264</FONT>            }<a name="line.264"></a>
-<FONT color="green">265</FONT>            if (getIndex() == null) {<a name="line.265"></a>
-<FONT color="green">266</FONT>                logger.warn("no index name given");<a name="line.266"></a>
-<FONT color="green">267</FONT>                return;<a name="line.267"></a>
-<FONT color="green">268</FONT>            }<a name="line.268"></a>
-<FONT color="green">269</FONT>            ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();<a name="line.269"></a>
-<FONT color="green">270</FONT>            settingsBuilder.put(key, value.toString());<a name="line.270"></a>
-<FONT color="green">271</FONT>            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(getIndex())<a name="line.271"></a>
-<FONT color="green">272</FONT>                    .settings(settingsBuilder);<a name="line.272"></a>
-<FONT color="green">273</FONT>            client.admin().indices()<a name="line.273"></a>
-<FONT color="green">274</FONT>                    .updateSettings(updateSettingsRequest)<a name="line.274"></a>
-<FONT color="green">275</FONT>                    .actionGet();<a name="line.275"></a>
-<FONT color="green">276</FONT>        }<a name="line.276"></a>
-<FONT color="green">277</FONT>    <a name="line.277"></a>
-<FONT color="green">278</FONT>    }<a name="line.278"></a>
+<FONT color="green">082</FONT>            waitForRecovery();<a name="line.82"></a>
+<FONT color="green">083</FONT>            update("index.number_of_replicas", level);<a name="line.83"></a>
+<FONT color="green">084</FONT>            return waitForRecovery();<a name="line.84"></a>
+<FONT color="green">085</FONT>        }<a name="line.85"></a>
+<FONT color="green">086</FONT>    <a name="line.86"></a>
+<FONT color="green">087</FONT>        @Override<a name="line.87"></a>
+<FONT color="green">088</FONT>        public AbstractIngestClient shards(int shards) {<a name="line.88"></a>
+<FONT color="green">089</FONT>            return setting("index.number_of_shards", shards);<a name="line.89"></a>
+<FONT color="green">090</FONT>        }<a name="line.90"></a>
+<FONT color="green">091</FONT>    <a name="line.91"></a>
+<FONT color="green">092</FONT>        @Override<a name="line.92"></a>
+<FONT color="green">093</FONT>        public AbstractIngestClient replica(int replica) {<a name="line.93"></a>
+<FONT color="green">094</FONT>            return setting("index.number_of_replicas", replica);<a name="line.94"></a>
+<FONT color="green">095</FONT>        }<a name="line.95"></a>
+<FONT color="green">096</FONT>    <a name="line.96"></a>
+<FONT color="green">097</FONT>        public AbstractIngestClient resetSettings() {<a name="line.97"></a>
+<FONT color="green">098</FONT>            configHelper.reset();<a name="line.98"></a>
+<FONT color="green">099</FONT>            return this;<a name="line.99"></a>
+<FONT color="green">100</FONT>        }<a name="line.100"></a>
+<FONT color="green">101</FONT>    <a name="line.101"></a>
+<FONT color="green">102</FONT>        public AbstractIngestClient setting(String key, String value) {<a name="line.102"></a>
+<FONT color="green">103</FONT>            configHelper.setting(key, value);<a name="line.103"></a>
+<FONT color="green">104</FONT>            return this;<a name="line.104"></a>
+<FONT color="green">105</FONT>        }<a name="line.105"></a>
+<FONT color="green">106</FONT>    <a name="line.106"></a>
+<FONT color="green">107</FONT>        public AbstractIngestClient setting(String key, Boolean value) {<a name="line.107"></a>
+<FONT color="green">108</FONT>            configHelper.setting(key, value);<a name="line.108"></a>
+<FONT color="green">109</FONT>            return this;<a name="line.109"></a>
+<FONT color="green">110</FONT>        }<a name="line.110"></a>
+<FONT color="green">111</FONT>    <a name="line.111"></a>
+<FONT color="green">112</FONT>        public AbstractIngestClient setting(String key, Integer value) {<a name="line.112"></a>
+<FONT color="green">113</FONT>            configHelper.setting(key, value);<a name="line.113"></a>
+<FONT color="green">114</FONT>            return this;<a name="line.114"></a>
+<FONT color="green">115</FONT>        }<a name="line.115"></a>
+<FONT color="green">116</FONT>    <a name="line.116"></a>
+<FONT color="green">117</FONT>        public AbstractIngestClient setting(InputStream in) throws IOException {<a name="line.117"></a>
+<FONT color="green">118</FONT>            configHelper.setting(in);<a name="line.118"></a>
+<FONT color="green">119</FONT>            return this;<a name="line.119"></a>
+<FONT color="green">120</FONT>        }<a name="line.120"></a>
+<FONT color="green">121</FONT>    <a name="line.121"></a>
+<FONT color="green">122</FONT>        public ImmutableSettings.Builder settingsBuilder() {<a name="line.122"></a>
+<FONT color="green">123</FONT>            return configHelper.settingsBuilder();<a name="line.123"></a>
+<FONT color="green">124</FONT>        }<a name="line.124"></a>
+<FONT color="green">125</FONT>    <a name="line.125"></a>
+<FONT color="green">126</FONT>        public Settings settings() {<a name="line.126"></a>
+<FONT color="green">127</FONT>            return configHelper.settings();<a name="line.127"></a>
+<FONT color="green">128</FONT>        }<a name="line.128"></a>
+<FONT color="green">129</FONT>    <a name="line.129"></a>
+<FONT color="green">130</FONT>        public AbstractIngestClient mapping(String type, InputStream in) throws IOException {<a name="line.130"></a>
+<FONT color="green">131</FONT>            configHelper.mapping(type, in);<a name="line.131"></a>
+<FONT color="green">132</FONT>            return this;<a name="line.132"></a>
+<FONT color="green">133</FONT>        }<a name="line.133"></a>
+<FONT color="green">134</FONT>    <a name="line.134"></a>
+<FONT color="green">135</FONT>        public AbstractIngestClient mapping(String type, String mapping) {<a name="line.135"></a>
+<FONT color="green">136</FONT>            configHelper.mapping(type, mapping);<a name="line.136"></a>
+<FONT color="green">137</FONT>            return this;<a name="line.137"></a>
+<FONT color="green">138</FONT>        }<a name="line.138"></a>
+<FONT color="green">139</FONT>    <a name="line.139"></a>
+<FONT color="green">140</FONT>        public AbstractIngestClient dateDetection(boolean dateDetection) {<a name="line.140"></a>
+<FONT color="green">141</FONT>            configHelper.dateDetection(dateDetection);<a name="line.141"></a>
+<FONT color="green">142</FONT>            return this;<a name="line.142"></a>
+<FONT color="green">143</FONT>        }<a name="line.143"></a>
+<FONT color="green">144</FONT>    <a name="line.144"></a>
+<FONT color="green">145</FONT>        public boolean dateDetection() {<a name="line.145"></a>
+<FONT color="green">146</FONT>            return configHelper.dateDetection();<a name="line.146"></a>
+<FONT color="green">147</FONT>        }<a name="line.147"></a>
+<FONT color="green">148</FONT>    <a name="line.148"></a>
+<FONT color="green">149</FONT>        public AbstractIngestClient timeStampField(String timeStampField) {<a name="line.149"></a>
+<FONT color="green">150</FONT>            configHelper.timeStampField(timeStampField);<a name="line.150"></a>
+<FONT color="green">151</FONT>            return this;<a name="line.151"></a>
+<FONT color="green">152</FONT>        }<a name="line.152"></a>
+<FONT color="green">153</FONT>    <a name="line.153"></a>
+<FONT color="green">154</FONT>        public String timeStampField() {<a name="line.154"></a>
+<FONT color="green">155</FONT>            return configHelper.timeStampField();<a name="line.155"></a>
+<FONT color="green">156</FONT>        }<a name="line.156"></a>
+<FONT color="green">157</FONT>    <a name="line.157"></a>
+<FONT color="green">158</FONT>        public AbstractIngestClient timeStampFieldEnabled(boolean enable) {<a name="line.158"></a>
+<FONT color="green">159</FONT>            configHelper.timeStampFieldEnabled(enable);<a name="line.159"></a>
+<FONT color="green">160</FONT>            return this;<a name="line.160"></a>
+<FONT color="green">161</FONT>        }<a name="line.161"></a>
+<FONT color="green">162</FONT>    <a name="line.162"></a>
+<FONT color="green">163</FONT>        public AbstractIngestClient kibanaEnabled(boolean enable) {<a name="line.163"></a>
+<FONT color="green">164</FONT>            configHelper.kibanaEnabled(enable);<a name="line.164"></a>
+<FONT color="green">165</FONT>            return this;<a name="line.165"></a>
+<FONT color="green">166</FONT>        }<a name="line.166"></a>
+<FONT color="green">167</FONT>    <a name="line.167"></a>
+<FONT color="green">168</FONT>        public String defaultMapping() throws IOException {<a name="line.168"></a>
+<FONT color="green">169</FONT>            return configHelper.defaultMapping();<a name="line.169"></a>
+<FONT color="green">170</FONT>        }<a name="line.170"></a>
+<FONT color="green">171</FONT>    <a name="line.171"></a>
+<FONT color="green">172</FONT>        public Map&lt;String,String&gt; mappings() {<a name="line.172"></a>
+<FONT color="green">173</FONT>            return configHelper.mappings();<a name="line.173"></a>
+<FONT color="green">174</FONT>        }<a name="line.174"></a>
+<FONT color="green">175</FONT>    <a name="line.175"></a>
+<FONT color="green">176</FONT>        public AbstractIngestClient enableRefreshInterval() {<a name="line.176"></a>
+<FONT color="green">177</FONT>            if (refreshDisabled) {<a name="line.177"></a>
+<FONT color="green">178</FONT>                update("refresh_interval", 1000);<a name="line.178"></a>
+<FONT color="green">179</FONT>                refreshDisabled = false;<a name="line.179"></a>
+<FONT color="green">180</FONT>            }<a name="line.180"></a>
+<FONT color="green">181</FONT>            return this;<a name="line.181"></a>
+<FONT color="green">182</FONT>        }<a name="line.182"></a>
+<FONT color="green">183</FONT>    <a name="line.183"></a>
+<FONT color="green">184</FONT>        public AbstractIngestClient disableRefreshInterval() {<a name="line.184"></a>
+<FONT color="green">185</FONT>            if (!refreshDisabled) {<a name="line.185"></a>
+<FONT color="green">186</FONT>                update("refresh_interval", -1);<a name="line.186"></a>
+<FONT color="green">187</FONT>                refreshDisabled = true;<a name="line.187"></a>
+<FONT color="green">188</FONT>            }<a name="line.188"></a>
+<FONT color="green">189</FONT>            return this;<a name="line.189"></a>
+<FONT color="green">190</FONT>        }<a name="line.190"></a>
+<FONT color="green">191</FONT>    <a name="line.191"></a>
+<FONT color="green">192</FONT>        @Override<a name="line.192"></a>
+<FONT color="green">193</FONT>        public AbstractIngestClient newIndex() {<a name="line.193"></a>
+<FONT color="green">194</FONT>            if (client == null) {<a name="line.194"></a>
+<FONT color="green">195</FONT>                logger.warn("no client for create index");<a name="line.195"></a>
+<FONT color="green">196</FONT>                return this;<a name="line.196"></a>
+<FONT color="green">197</FONT>            }<a name="line.197"></a>
+<FONT color="green">198</FONT>            if (getIndex() == null) {<a name="line.198"></a>
+<FONT color="green">199</FONT>                logger.warn("no index name given to create index");<a name="line.199"></a>
+<FONT color="green">200</FONT>                return this;<a name="line.200"></a>
+<FONT color="green">201</FONT>            }<a name="line.201"></a>
+<FONT color="green">202</FONT>            CreateIndexRequest request = new CreateIndexRequest(getIndex());<a name="line.202"></a>
+<FONT color="green">203</FONT>            if (settings() != null) {<a name="line.203"></a>
+<FONT color="green">204</FONT>                request.settings(settings());<a name="line.204"></a>
+<FONT color="green">205</FONT>            }<a name="line.205"></a>
+<FONT color="green">206</FONT>            if (mappings() != null) {<a name="line.206"></a>
+<FONT color="green">207</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings().entrySet()) {<a name="line.207"></a>
+<FONT color="green">208</FONT>                    request.mapping(me.getKey(), me.getValue());<a name="line.208"></a>
+<FONT color="green">209</FONT>                }<a name="line.209"></a>
+<FONT color="green">210</FONT>            }<a name="line.210"></a>
+<FONT color="green">211</FONT>            logger.info("creating index {} with settings = {}, mappings = {}",<a name="line.211"></a>
+<FONT color="green">212</FONT>                    getIndex(), settings() != null ? settings().getAsMap() : null, mappings());<a name="line.212"></a>
+<FONT color="green">213</FONT>            try {<a name="line.213"></a>
+<FONT color="green">214</FONT>                client.admin().indices().create(request).actionGet();<a name="line.214"></a>
+<FONT color="green">215</FONT>            } catch (Exception e) {<a name="line.215"></a>
+<FONT color="green">216</FONT>                logger.error(e.getMessage(), e);<a name="line.216"></a>
+<FONT color="green">217</FONT>            }<a name="line.217"></a>
+<FONT color="green">218</FONT>            return this;<a name="line.218"></a>
+<FONT color="green">219</FONT>        }<a name="line.219"></a>
+<FONT color="green">220</FONT>    <a name="line.220"></a>
+<FONT color="green">221</FONT>        @Override<a name="line.221"></a>
+<FONT color="green">222</FONT>        public synchronized AbstractIngestClient deleteIndex() {<a name="line.222"></a>
+<FONT color="green">223</FONT>            if (client == null) {<a name="line.223"></a>
+<FONT color="green">224</FONT>                logger.warn("no client for delete index");<a name="line.224"></a>
+<FONT color="green">225</FONT>                return this;<a name="line.225"></a>
+<FONT color="green">226</FONT>            }<a name="line.226"></a>
+<FONT color="green">227</FONT>            if (getIndex() == null) {<a name="line.227"></a>
+<FONT color="green">228</FONT>                logger.warn("no index name given to delete index");<a name="line.228"></a>
+<FONT color="green">229</FONT>                return this;<a name="line.229"></a>
+<FONT color="green">230</FONT>            }<a name="line.230"></a>
+<FONT color="green">231</FONT>            try {<a name="line.231"></a>
+<FONT color="green">232</FONT>                client.admin().indices().delete(new DeleteIndexRequest(getIndex())).actionGet();<a name="line.232"></a>
+<FONT color="green">233</FONT>            } catch (Exception e) {<a name="line.233"></a>
+<FONT color="green">234</FONT>                logger.error(e.getMessage(), e);<a name="line.234"></a>
+<FONT color="green">235</FONT>            }<a name="line.235"></a>
+<FONT color="green">236</FONT>            return this;<a name="line.236"></a>
+<FONT color="green">237</FONT>        }<a name="line.237"></a>
+<FONT color="green">238</FONT>    <a name="line.238"></a>
+<FONT color="green">239</FONT>        public AbstractIngestClient putMapping(String index) {<a name="line.239"></a>
+<FONT color="green">240</FONT>            if (client == null) {<a name="line.240"></a>
+<FONT color="green">241</FONT>                logger.warn("no client for put mapping");<a name="line.241"></a>
+<FONT color="green">242</FONT>                return this;<a name="line.242"></a>
+<FONT color="green">243</FONT>            }<a name="line.243"></a>
+<FONT color="green">244</FONT>            configHelper.putMapping(client, index);<a name="line.244"></a>
+<FONT color="green">245</FONT>            return this;<a name="line.245"></a>
+<FONT color="green">246</FONT>        }<a name="line.246"></a>
+<FONT color="green">247</FONT>    <a name="line.247"></a>
+<FONT color="green">248</FONT>        public AbstractIngestClient deleteMapping(String index, String type) {<a name="line.248"></a>
+<FONT color="green">249</FONT>            if (client == null) {<a name="line.249"></a>
+<FONT color="green">250</FONT>                logger.warn("no client for delete mapping");<a name="line.250"></a>
+<FONT color="green">251</FONT>                return this;<a name="line.251"></a>
+<FONT color="green">252</FONT>            }<a name="line.252"></a>
+<FONT color="green">253</FONT>            configHelper.deleteMapping(client, index, type);<a name="line.253"></a>
+<FONT color="green">254</FONT>            return this;<a name="line.254"></a>
+<FONT color="green">255</FONT>        }<a name="line.255"></a>
+<FONT color="green">256</FONT>    <a name="line.256"></a>
+<FONT color="green">257</FONT>        public void update(String key, Object value) {<a name="line.257"></a>
+<FONT color="green">258</FONT>            if (client == null) {<a name="line.258"></a>
+<FONT color="green">259</FONT>                logger.warn("no client");<a name="line.259"></a>
+<FONT color="green">260</FONT>                return;<a name="line.260"></a>
+<FONT color="green">261</FONT>            }<a name="line.261"></a>
+<FONT color="green">262</FONT>            if (value == null) {<a name="line.262"></a>
+<FONT color="green">263</FONT>                logger.warn("no value given");<a name="line.263"></a>
+<FONT color="green">264</FONT>                return;<a name="line.264"></a>
+<FONT color="green">265</FONT>            }<a name="line.265"></a>
+<FONT color="green">266</FONT>            if (getIndex() == null) {<a name="line.266"></a>
+<FONT color="green">267</FONT>                logger.warn("no index name given");<a name="line.267"></a>
+<FONT color="green">268</FONT>                return;<a name="line.268"></a>
+<FONT color="green">269</FONT>            }<a name="line.269"></a>
+<FONT color="green">270</FONT>            ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();<a name="line.270"></a>
+<FONT color="green">271</FONT>            settingsBuilder.put(key, value.toString());<a name="line.271"></a>
+<FONT color="green">272</FONT>            UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(getIndex())<a name="line.272"></a>
+<FONT color="green">273</FONT>                    .settings(settingsBuilder);<a name="line.273"></a>
+<FONT color="green">274</FONT>            client.admin().indices()<a name="line.274"></a>
+<FONT color="green">275</FONT>                    .updateSettings(updateSettingsRequest)<a name="line.275"></a>
+<FONT color="green">276</FONT>                    .actionGet();<a name="line.276"></a>
+<FONT color="green">277</FONT>        }<a name="line.277"></a>
+<FONT color="green">278</FONT>    <a name="line.278"></a>
+<FONT color="green">279</FONT>    }<a name="line.279"></a>
 
 
 

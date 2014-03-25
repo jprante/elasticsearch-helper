@@ -109,26 +109,26 @@
 <FONT color="green">106</FONT>                        // update the request with the version so it will go to the replicas<a name="line.106"></a>
 <FONT color="green">107</FONT>                        deleteRequest.version(delete.version());<a name="line.107"></a>
 <FONT color="green">108</FONT>                        successSize++;<a name="line.108"></a>
-<FONT color="green">109</FONT>                    } catch (Exception e) {<a name="line.109"></a>
+<FONT color="green">109</FONT>                    } catch (Throwable e) {<a name="line.109"></a>
 <FONT color="green">110</FONT>                        // rethrow the failure if we are going to retry on primary and let parent failure to handle it<a name="line.110"></a>
 <FONT color="green">111</FONT>                        if (retryPrimaryException(e)) {<a name="line.111"></a>
 <FONT color="green">112</FONT>                            // restore updated versions...<a name="line.112"></a>
 <FONT color="green">113</FONT>                            for (int j = 0; j &lt; i; j++) {<a name="line.113"></a>
 <FONT color="green">114</FONT>                                ((DeleteRequest)request.items().get(j).request()).version(versions[j]);<a name="line.114"></a>
 <FONT color="green">115</FONT>                            }<a name="line.115"></a>
-<FONT color="green">116</FONT>                            throw (ElasticsearchException) e;<a name="line.116"></a>
-<FONT color="green">117</FONT>                        }<a name="line.117"></a>
-<FONT color="green">118</FONT>                        if (e instanceof ElasticsearchException &amp;&amp; ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {<a name="line.118"></a>
-<FONT color="green">119</FONT>                            logger.trace("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);<a name="line.119"></a>
-<FONT color="green">120</FONT>                        } else {<a name="line.120"></a>
-<FONT color="green">121</FONT>                            logger.debug("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);<a name="line.121"></a>
-<FONT color="green">122</FONT>                        }<a name="line.122"></a>
-<FONT color="green">123</FONT>                        failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));<a name="line.123"></a>
-<FONT color="green">124</FONT>                        // nullify the request so it won't execute on the replicas<a name="line.124"></a>
-<FONT color="green">125</FONT>                        request.items().set(i, null);<a name="line.125"></a>
-<FONT color="green">126</FONT>                    }<a name="line.126"></a>
-<FONT color="green">127</FONT>            }<a name="line.127"></a>
-<FONT color="green">128</FONT>    <a name="line.128"></a>
+<FONT color="green">116</FONT>                            logger.error(e.getMessage(), e);<a name="line.116"></a>
+<FONT color="green">117</FONT>                            throw new ElasticsearchException(e.getMessage());<a name="line.117"></a>
+<FONT color="green">118</FONT>                        }<a name="line.118"></a>
+<FONT color="green">119</FONT>                        if (e instanceof ElasticsearchException &amp;&amp; ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {<a name="line.119"></a>
+<FONT color="green">120</FONT>                            logger.trace("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);<a name="line.120"></a>
+<FONT color="green">121</FONT>                        } else {<a name="line.121"></a>
+<FONT color="green">122</FONT>                            logger.debug("[{}][{}] failed to execute bulk item (delete) {}", e, shardRequest.request.index(), shardRequest.shardId, deleteRequest);<a name="line.122"></a>
+<FONT color="green">123</FONT>                        }<a name="line.123"></a>
+<FONT color="green">124</FONT>                        failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));<a name="line.124"></a>
+<FONT color="green">125</FONT>                        // nullify the request so it won't execute on the replicas<a name="line.125"></a>
+<FONT color="green">126</FONT>                        request.items().set(i, null);<a name="line.126"></a>
+<FONT color="green">127</FONT>                    }<a name="line.127"></a>
+<FONT color="green">128</FONT>            }<a name="line.128"></a>
 <FONT color="green">129</FONT>            IngestDeleteShardResponse response = new IngestDeleteShardResponse(new ShardId(request.index(), request.shardId()), successSize, failure);<a name="line.129"></a>
 <FONT color="green">130</FONT>            return new PrimaryResponse&lt;IngestDeleteShardResponse, IngestDeleteShardRequest&gt;(shardRequest.request, response, null);<a name="line.130"></a>
 <FONT color="green">131</FONT>        }<a name="line.131"></a>
@@ -147,7 +147,7 @@
 <FONT color="green">144</FONT>                try {<a name="line.144"></a>
 <FONT color="green">145</FONT>                    Engine.Delete delete = indexShard.prepareDelete(deleteRequest.type(), deleteRequest.id(), deleteRequest.version()).origin(Engine.Operation.Origin.REPLICA);<a name="line.145"></a>
 <FONT color="green">146</FONT>                    indexShard.delete(delete);<a name="line.146"></a>
-<FONT color="green">147</FONT>                } catch (Exception e) {<a name="line.147"></a>
+<FONT color="green">147</FONT>                } catch (Throwable e) {<a name="line.147"></a>
 <FONT color="green">148</FONT>                    // ignore, we are on backup<a name="line.148"></a>
 <FONT color="green">149</FONT>                }<a name="line.149"></a>
 <FONT color="green">150</FONT>            }<a name="line.150"></a>

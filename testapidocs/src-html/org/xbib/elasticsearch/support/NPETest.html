@@ -8,44 +8,45 @@
 <FONT color="green">005</FONT>    import org.elasticsearch.action.index.IndexRequestBuilder;<a name="line.5"></a>
 <FONT color="green">006</FONT>    import org.elasticsearch.client.Client;<a name="line.6"></a>
 <FONT color="green">007</FONT>    import org.elasticsearch.client.Requests;<a name="line.7"></a>
-<FONT color="green">008</FONT>    import org.testng.annotations.Test;<a name="line.8"></a>
-<FONT color="green">009</FONT>    <a name="line.9"></a>
-<FONT color="green">010</FONT>    public class NPETest extends AbstractNodeTest {<a name="line.10"></a>
-<FONT color="green">011</FONT>    <a name="line.11"></a>
-<FONT color="green">012</FONT>        @Test(expectedExceptions = NullPointerException.class)<a name="line.12"></a>
-<FONT color="green">013</FONT>        public void testNPE1() throws NullPointerException {<a name="line.13"></a>
-<FONT color="green">014</FONT>            Client client = client("1");<a name="line.14"></a>
-<FONT color="green">015</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.15"></a>
-<FONT color="green">016</FONT>                    .add(Requests.indexRequest());<a name="line.16"></a>
-<FONT color="green">017</FONT>            client.bulk(builder.request()).actionGet();<a name="line.17"></a>
-<FONT color="green">018</FONT>        }<a name="line.18"></a>
-<FONT color="green">019</FONT>    <a name="line.19"></a>
-<FONT color="green">020</FONT>        @Test(expectedExceptions = NullPointerException.class)<a name="line.20"></a>
-<FONT color="green">021</FONT>        public void testNPE2() {<a name="line.21"></a>
-<FONT color="green">022</FONT>            Client client = client("1");<a name="line.22"></a>
-<FONT color="green">023</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.23"></a>
-<FONT color="green">024</FONT>                    .add((IndexRequest)null);<a name="line.24"></a>
-<FONT color="green">025</FONT>            client.bulk(builder.request()).actionGet();<a name="line.25"></a>
-<FONT color="green">026</FONT>        }<a name="line.26"></a>
-<FONT color="green">027</FONT>    <a name="line.27"></a>
-<FONT color="green">028</FONT>        @Test(expectedExceptions = NullPointerException.class)<a name="line.28"></a>
-<FONT color="green">029</FONT>        public void testNPE3() {<a name="line.29"></a>
-<FONT color="green">030</FONT>            Client client = client("1");<a name="line.30"></a>
-<FONT color="green">031</FONT>            IndexRequestBuilder r = new IndexRequestBuilder(client);<a name="line.31"></a>
-<FONT color="green">032</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.32"></a>
-<FONT color="green">033</FONT>                    .add(r.request());<a name="line.33"></a>
-<FONT color="green">034</FONT>            client.bulk(builder.request()).actionGet();<a name="line.34"></a>
-<FONT color="green">035</FONT>        }<a name="line.35"></a>
-<FONT color="green">036</FONT>    <a name="line.36"></a>
-<FONT color="green">037</FONT>        @Test(expectedExceptions = NullPointerException.class)<a name="line.37"></a>
-<FONT color="green">038</FONT>        public void testNPE4() {<a name="line.38"></a>
-<FONT color="green">039</FONT>            Client client = client("1");<a name="line.39"></a>
-<FONT color="green">040</FONT>            client.prepareBulk()<a name="line.40"></a>
-<FONT color="green">041</FONT>                    .add(Requests.indexRequest().index(null).type(null).id(null))<a name="line.41"></a>
-<FONT color="green">042</FONT>                    .execute().actionGet();<a name="line.42"></a>
-<FONT color="green">043</FONT>        }<a name="line.43"></a>
-<FONT color="green">044</FONT>    <a name="line.44"></a>
-<FONT color="green">045</FONT>    }<a name="line.45"></a>
+<FONT color="green">008</FONT>    import org.junit.Test;<a name="line.8"></a>
+<FONT color="green">009</FONT>    import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;<a name="line.9"></a>
+<FONT color="green">010</FONT>    <a name="line.10"></a>
+<FONT color="green">011</FONT>    public class NPETest extends AbstractNodeTestHelper {<a name="line.11"></a>
+<FONT color="green">012</FONT>    <a name="line.12"></a>
+<FONT color="green">013</FONT>        @Test(expected = NullPointerException.class)<a name="line.13"></a>
+<FONT color="green">014</FONT>        public void testNPE1() throws NullPointerException {<a name="line.14"></a>
+<FONT color="green">015</FONT>            Client client = client("1");<a name="line.15"></a>
+<FONT color="green">016</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.16"></a>
+<FONT color="green">017</FONT>                    .add(Requests.indexRequest());<a name="line.17"></a>
+<FONT color="green">018</FONT>            client.bulk(builder.request()).actionGet();<a name="line.18"></a>
+<FONT color="green">019</FONT>        }<a name="line.19"></a>
+<FONT color="green">020</FONT>    <a name="line.20"></a>
+<FONT color="green">021</FONT>        @Test(expected = NullPointerException.class)<a name="line.21"></a>
+<FONT color="green">022</FONT>        public void testNPE2() {<a name="line.22"></a>
+<FONT color="green">023</FONT>            Client client = client("1");<a name="line.23"></a>
+<FONT color="green">024</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.24"></a>
+<FONT color="green">025</FONT>                    .add((IndexRequest)null);<a name="line.25"></a>
+<FONT color="green">026</FONT>            client.bulk(builder.request()).actionGet();<a name="line.26"></a>
+<FONT color="green">027</FONT>        }<a name="line.27"></a>
+<FONT color="green">028</FONT>    <a name="line.28"></a>
+<FONT color="green">029</FONT>        @Test(expected = NullPointerException.class)<a name="line.29"></a>
+<FONT color="green">030</FONT>        public void testNPE3() {<a name="line.30"></a>
+<FONT color="green">031</FONT>            Client client = client("1");<a name="line.31"></a>
+<FONT color="green">032</FONT>            IndexRequestBuilder r = new IndexRequestBuilder(client);<a name="line.32"></a>
+<FONT color="green">033</FONT>            BulkRequestBuilder builder = new BulkRequestBuilder(client)<a name="line.33"></a>
+<FONT color="green">034</FONT>                    .add(r.request());<a name="line.34"></a>
+<FONT color="green">035</FONT>            client.bulk(builder.request()).actionGet();<a name="line.35"></a>
+<FONT color="green">036</FONT>        }<a name="line.36"></a>
+<FONT color="green">037</FONT>    <a name="line.37"></a>
+<FONT color="green">038</FONT>        @Test(expected = NullPointerException.class)<a name="line.38"></a>
+<FONT color="green">039</FONT>        public void testNPE4() {<a name="line.39"></a>
+<FONT color="green">040</FONT>            Client client = client("1");<a name="line.40"></a>
+<FONT color="green">041</FONT>            client.prepareBulk()<a name="line.41"></a>
+<FONT color="green">042</FONT>                    .add(Requests.indexRequest().index(null).type(null).id(null))<a name="line.42"></a>
+<FONT color="green">043</FONT>                    .execute().actionGet();<a name="line.43"></a>
+<FONT color="green">044</FONT>        }<a name="line.44"></a>
+<FONT color="green">045</FONT>    <a name="line.45"></a>
+<FONT color="green">046</FONT>    }<a name="line.46"></a>
 
 
 

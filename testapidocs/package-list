@@ -3,3 +3,5 @@ org.xbib.elasticsearch.support.client.bulk
 org.xbib.elasticsearch.support.client.ingest
 org.xbib.elasticsearch.support.client.ingest.index
 org.xbib.elasticsearch.support.client.node
+org.xbib.elasticsearch.support.config
+org.xbib.elasticsearch.support.helper

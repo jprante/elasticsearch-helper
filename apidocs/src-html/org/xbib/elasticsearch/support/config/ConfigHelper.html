@@ -67,7 +67,7 @@
 <FONT color="green">064</FONT>            if (settingsBuilder == null) {<a name="line.64"></a>
 <FONT color="green">065</FONT>                settingsBuilder = ImmutableSettings.settingsBuilder();<a name="line.65"></a>
 <FONT color="green">066</FONT>            }<a name="line.66"></a>
-<FONT color="green">067</FONT>            this.settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);<a name="line.67"></a>
+<FONT color="green">067</FONT>            settingsBuilder = ImmutableSettings.settingsBuilder().loadFromStream(".json", in);<a name="line.67"></a>
 <FONT color="green">068</FONT>            return this;<a name="line.68"></a>
 <FONT color="green">069</FONT>        }<a name="line.69"></a>
 <FONT color="green">070</FONT>    <a name="line.70"></a>
@@ -79,136 +79,135 @@
 <FONT color="green">076</FONT>            if (settingsBuilder == null) {<a name="line.76"></a>
 <FONT color="green">077</FONT>                settingsBuilder = ImmutableSettings.settingsBuilder();<a name="line.77"></a>
 <FONT color="green">078</FONT>            }<a name="line.78"></a>
-<FONT color="green">079</FONT>            return !settingsBuilder.internalMap().isEmpty() ?<a name="line.79"></a>
-<FONT color="green">080</FONT>                    settingsBuilder.build() : null;<a name="line.80"></a>
-<FONT color="green">081</FONT>        }<a name="line.81"></a>
-<FONT color="green">082</FONT>    <a name="line.82"></a>
-<FONT color="green">083</FONT>        public ConfigHelper mapping(String type, InputStream in) throws IOException {<a name="line.83"></a>
-<FONT color="green">084</FONT>            if (type == null) {<a name="line.84"></a>
-<FONT color="green">085</FONT>                return this;<a name="line.85"></a>
-<FONT color="green">086</FONT>            }<a name="line.86"></a>
-<FONT color="green">087</FONT>            StringWriter sw = new StringWriter();<a name="line.87"></a>
-<FONT color="green">088</FONT>            Streams.copy(new InputStreamReader(in), sw);<a name="line.88"></a>
-<FONT color="green">089</FONT>            mappings.put(type, sw.toString());<a name="line.89"></a>
-<FONT color="green">090</FONT>            return this;<a name="line.90"></a>
-<FONT color="green">091</FONT>        }<a name="line.91"></a>
-<FONT color="green">092</FONT>    <a name="line.92"></a>
-<FONT color="green">093</FONT>        public ConfigHelper mapping(String type, String mapping) {<a name="line.93"></a>
-<FONT color="green">094</FONT>            if (type == null) {<a name="line.94"></a>
-<FONT color="green">095</FONT>                return this;<a name="line.95"></a>
-<FONT color="green">096</FONT>            }<a name="line.96"></a>
-<FONT color="green">097</FONT>            this.mappings.put(type, mapping);<a name="line.97"></a>
-<FONT color="green">098</FONT>            return this;<a name="line.98"></a>
-<FONT color="green">099</FONT>        }<a name="line.99"></a>
-<FONT color="green">100</FONT>    <a name="line.100"></a>
-<FONT color="green">101</FONT>        public ConfigHelper putMapping(Client client, String index) {<a name="line.101"></a>
-<FONT color="green">102</FONT>            if (!mappings.isEmpty()) {<a name="line.102"></a>
-<FONT color="green">103</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings.entrySet()) {<a name="line.103"></a>
-<FONT color="green">104</FONT>                    client.admin().indices().putMapping(new PutMappingRequest(index).type(me.getKey()).source(me.getValue())).actionGet();<a name="line.104"></a>
-<FONT color="green">105</FONT>                }<a name="line.105"></a>
-<FONT color="green">106</FONT>            }<a name="line.106"></a>
-<FONT color="green">107</FONT>            return this;<a name="line.107"></a>
-<FONT color="green">108</FONT>        }<a name="line.108"></a>
-<FONT color="green">109</FONT>    <a name="line.109"></a>
-<FONT color="green">110</FONT>        public ConfigHelper deleteMappings(Client client, String index) {<a name="line.110"></a>
-<FONT color="green">111</FONT>            if (!mappings.isEmpty()) {<a name="line.111"></a>
-<FONT color="green">112</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings.entrySet()) {<a name="line.112"></a>
-<FONT color="green">113</FONT>                    client.admin().indices().deleteMapping(new DeleteMappingRequest(index).types(me.getKey())).actionGet();<a name="line.113"></a>
-<FONT color="green">114</FONT>                }<a name="line.114"></a>
-<FONT color="green">115</FONT>            }<a name="line.115"></a>
-<FONT color="green">116</FONT>            return this;<a name="line.116"></a>
-<FONT color="green">117</FONT>        }<a name="line.117"></a>
-<FONT color="green">118</FONT>    <a name="line.118"></a>
-<FONT color="green">119</FONT>        public ConfigHelper deleteMapping(Client client, String index, String type) {<a name="line.119"></a>
-<FONT color="green">120</FONT>            client.admin().indices().deleteMapping(new DeleteMappingRequest(index).types(type)).actionGet();<a name="line.120"></a>
-<FONT color="green">121</FONT>            return this;<a name="line.121"></a>
-<FONT color="green">122</FONT>        }<a name="line.122"></a>
-<FONT color="green">123</FONT>    <a name="line.123"></a>
-<FONT color="green">124</FONT>        public ConfigHelper dateDetection(boolean dateDetection) {<a name="line.124"></a>
-<FONT color="green">125</FONT>            this.dateDetection = dateDetection;<a name="line.125"></a>
-<FONT color="green">126</FONT>            return this;<a name="line.126"></a>
-<FONT color="green">127</FONT>        }<a name="line.127"></a>
-<FONT color="green">128</FONT>    <a name="line.128"></a>
-<FONT color="green">129</FONT>        public boolean dateDetection() {<a name="line.129"></a>
-<FONT color="green">130</FONT>            return dateDetection;<a name="line.130"></a>
-<FONT color="green">131</FONT>        }<a name="line.131"></a>
-<FONT color="green">132</FONT>    <a name="line.132"></a>
-<FONT color="green">133</FONT>        public ConfigHelper timeStampField(String timeStampField) {<a name="line.133"></a>
-<FONT color="green">134</FONT>            this.timeStampField = timeStampField;<a name="line.134"></a>
-<FONT color="green">135</FONT>            return this;<a name="line.135"></a>
-<FONT color="green">136</FONT>        }<a name="line.136"></a>
-<FONT color="green">137</FONT>    <a name="line.137"></a>
-<FONT color="green">138</FONT>        public String timeStampField() {<a name="line.138"></a>
-<FONT color="green">139</FONT>            return timeStampField;<a name="line.139"></a>
-<FONT color="green">140</FONT>        }<a name="line.140"></a>
-<FONT color="green">141</FONT>    <a name="line.141"></a>
-<FONT color="green">142</FONT>        public ConfigHelper timeStampFieldEnabled(boolean enable) {<a name="line.142"></a>
-<FONT color="green">143</FONT>            this.timeStampFieldEnabled = enable;<a name="line.143"></a>
-<FONT color="green">144</FONT>            return this;<a name="line.144"></a>
-<FONT color="green">145</FONT>        }<a name="line.145"></a>
-<FONT color="green">146</FONT>    <a name="line.146"></a>
-<FONT color="green">147</FONT>        public ConfigHelper kibanaEnabled(boolean enable) {<a name="line.147"></a>
-<FONT color="green">148</FONT>            this.kibanaEnabled = enable;<a name="line.148"></a>
-<FONT color="green">149</FONT>            return this;<a name="line.149"></a>
-<FONT color="green">150</FONT>        }<a name="line.150"></a>
-<FONT color="green">151</FONT>    <a name="line.151"></a>
-<FONT color="green">152</FONT>        public String defaultMapping() throws IOException{<a name="line.152"></a>
-<FONT color="green">153</FONT>                XContentBuilder b = jsonBuilder()<a name="line.153"></a>
-<FONT color="green">154</FONT>                        .startObject()<a name="line.154"></a>
-<FONT color="green">155</FONT>                        .startObject("_default_")<a name="line.155"></a>
-<FONT color="green">156</FONT>                        .field("date_detection", dateDetection);<a name="line.156"></a>
-<FONT color="green">157</FONT>                if (timeStampFieldEnabled) {<a name="line.157"></a>
-<FONT color="green">158</FONT>                    b.startObject("_timestamp")<a name="line.158"></a>
-<FONT color="green">159</FONT>                            .field("enabled", timeStampFieldEnabled)<a name="line.159"></a>
-<FONT color="green">160</FONT>                            .field("path", timeStampField)<a name="line.160"></a>
-<FONT color="green">161</FONT>                            .endObject();<a name="line.161"></a>
-<FONT color="green">162</FONT>                }<a name="line.162"></a>
-<FONT color="green">163</FONT>                if (kibanaEnabled) {<a name="line.163"></a>
-<FONT color="green">164</FONT>                    b.startObject("properties")<a name="line.164"></a>
-<FONT color="green">165</FONT>                            .startObject("@fields")<a name="line.165"></a>
-<FONT color="green">166</FONT>                            .field("type", "object")<a name="line.166"></a>
-<FONT color="green">167</FONT>                            .field("dynamic", true)<a name="line.167"></a>
-<FONT color="green">168</FONT>                            .field("path", "full")<a name="line.168"></a>
-<FONT color="green">169</FONT>                            .endObject()<a name="line.169"></a>
-<FONT color="green">170</FONT>                            .startObject("@message")<a name="line.170"></a>
-<FONT color="green">171</FONT>                            .field("type", "string")<a name="line.171"></a>
-<FONT color="green">172</FONT>                            .field("index", "analyzed")<a name="line.172"></a>
-<FONT color="green">173</FONT>                            .endObject()<a name="line.173"></a>
-<FONT color="green">174</FONT>                            .startObject("@source")<a name="line.174"></a>
-<FONT color="green">175</FONT>                            .field("type", "string")<a name="line.175"></a>
-<FONT color="green">176</FONT>                            .field("index", "not_analyzed")<a name="line.176"></a>
-<FONT color="green">177</FONT>                            .endObject()<a name="line.177"></a>
-<FONT color="green">178</FONT>                            .startObject("@source_host")<a name="line.178"></a>
-<FONT color="green">179</FONT>                            .field("type", "string")<a name="line.179"></a>
-<FONT color="green">180</FONT>                            .field("index", "not_analyzed")<a name="line.180"></a>
-<FONT color="green">181</FONT>                            .endObject()<a name="line.181"></a>
-<FONT color="green">182</FONT>                            .startObject("@source_path")<a name="line.182"></a>
-<FONT color="green">183</FONT>                            .field("type", "string")<a name="line.183"></a>
-<FONT color="green">184</FONT>                            .field("index", "not_analyzed")<a name="line.184"></a>
-<FONT color="green">185</FONT>                            .endObject()<a name="line.185"></a>
-<FONT color="green">186</FONT>                            .startObject("@tags")<a name="line.186"></a>
-<FONT color="green">187</FONT>                            .field("type", "string")<a name="line.187"></a>
-<FONT color="green">188</FONT>                            .field("index", "not_analyzed")<a name="line.188"></a>
-<FONT color="green">189</FONT>                            .endObject()<a name="line.189"></a>
-<FONT color="green">190</FONT>                            .startObject("@timestamp")<a name="line.190"></a>
-<FONT color="green">191</FONT>                            .field("type", "date")<a name="line.191"></a>
-<FONT color="green">192</FONT>                            .endObject()<a name="line.192"></a>
-<FONT color="green">193</FONT>                            .startObject("@type")<a name="line.193"></a>
-<FONT color="green">194</FONT>                            .field("type", "string")<a name="line.194"></a>
-<FONT color="green">195</FONT>                            .field("index", "not_analyzed")<a name="line.195"></a>
-<FONT color="green">196</FONT>                            .endObject()<a name="line.196"></a>
-<FONT color="green">197</FONT>                            .endObject();<a name="line.197"></a>
-<FONT color="green">198</FONT>                }<a name="line.198"></a>
-<FONT color="green">199</FONT>                b.endObject()<a name="line.199"></a>
-<FONT color="green">200</FONT>                        .endObject();<a name="line.200"></a>
-<FONT color="green">201</FONT>                return b.string();<a name="line.201"></a>
-<FONT color="green">202</FONT>        }<a name="line.202"></a>
-<FONT color="green">203</FONT>    <a name="line.203"></a>
-<FONT color="green">204</FONT>        public Map&lt;String, String&gt; mappings() {<a name="line.204"></a>
-<FONT color="green">205</FONT>            return mappings.isEmpty() ? null : mappings;<a name="line.205"></a>
-<FONT color="green">206</FONT>        }<a name="line.206"></a>
-<FONT color="green">207</FONT>    <a name="line.207"></a>
-<FONT color="green">208</FONT>    }<a name="line.208"></a>
+<FONT color="green">079</FONT>            return settingsBuilder.build();<a name="line.79"></a>
+<FONT color="green">080</FONT>        }<a name="line.80"></a>
+<FONT color="green">081</FONT>    <a name="line.81"></a>
+<FONT color="green">082</FONT>        public ConfigHelper mapping(String type, InputStream in) throws IOException {<a name="line.82"></a>
+<FONT color="green">083</FONT>            if (type == null) {<a name="line.83"></a>
+<FONT color="green">084</FONT>                return this;<a name="line.84"></a>
+<FONT color="green">085</FONT>            }<a name="line.85"></a>
+<FONT color="green">086</FONT>            StringWriter sw = new StringWriter();<a name="line.86"></a>
+<FONT color="green">087</FONT>            Streams.copy(new InputStreamReader(in), sw);<a name="line.87"></a>
+<FONT color="green">088</FONT>            mappings.put(type, sw.toString());<a name="line.88"></a>
+<FONT color="green">089</FONT>            return this;<a name="line.89"></a>
+<FONT color="green">090</FONT>        }<a name="line.90"></a>
+<FONT color="green">091</FONT>    <a name="line.91"></a>
+<FONT color="green">092</FONT>        public ConfigHelper mapping(String type, String mapping) {<a name="line.92"></a>
+<FONT color="green">093</FONT>            if (type == null) {<a name="line.93"></a>
+<FONT color="green">094</FONT>                return this;<a name="line.94"></a>
+<FONT color="green">095</FONT>            }<a name="line.95"></a>
+<FONT color="green">096</FONT>            this.mappings.put(type, mapping);<a name="line.96"></a>
+<FONT color="green">097</FONT>            return this;<a name="line.97"></a>
+<FONT color="green">098</FONT>        }<a name="line.98"></a>
+<FONT color="green">099</FONT>    <a name="line.99"></a>
+<FONT color="green">100</FONT>        public ConfigHelper putMapping(Client client, String index) {<a name="line.100"></a>
+<FONT color="green">101</FONT>            if (!mappings.isEmpty()) {<a name="line.101"></a>
+<FONT color="green">102</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings.entrySet()) {<a name="line.102"></a>
+<FONT color="green">103</FONT>                    client.admin().indices().putMapping(new PutMappingRequest(index).type(me.getKey()).source(me.getValue())).actionGet();<a name="line.103"></a>
+<FONT color="green">104</FONT>                }<a name="line.104"></a>
+<FONT color="green">105</FONT>            }<a name="line.105"></a>
+<FONT color="green">106</FONT>            return this;<a name="line.106"></a>
+<FONT color="green">107</FONT>        }<a name="line.107"></a>
+<FONT color="green">108</FONT>    <a name="line.108"></a>
+<FONT color="green">109</FONT>        public ConfigHelper deleteMappings(Client client, String index) {<a name="line.109"></a>
+<FONT color="green">110</FONT>            if (!mappings.isEmpty()) {<a name="line.110"></a>
+<FONT color="green">111</FONT>                for (Map.Entry&lt;String,String&gt; me : mappings.entrySet()) {<a name="line.111"></a>
+<FONT color="green">112</FONT>                    client.admin().indices().deleteMapping(new DeleteMappingRequest(index).types(me.getKey())).actionGet();<a name="line.112"></a>
+<FONT color="green">113</FONT>                }<a name="line.113"></a>
+<FONT color="green">114</FONT>            }<a name="line.114"></a>
+<FONT color="green">115</FONT>            return this;<a name="line.115"></a>
+<FONT color="green">116</FONT>        }<a name="line.116"></a>
+<FONT color="green">117</FONT>    <a name="line.117"></a>
+<FONT color="green">118</FONT>        public ConfigHelper deleteMapping(Client client, String index, String type) {<a name="line.118"></a>
+<FONT color="green">119</FONT>            client.admin().indices().deleteMapping(new DeleteMappingRequest(index).types(type)).actionGet();<a name="line.119"></a>
+<FONT color="green">120</FONT>            return this;<a name="line.120"></a>
+<FONT color="green">121</FONT>        }<a name="line.121"></a>
+<FONT color="green">122</FONT>    <a name="line.122"></a>
+<FONT color="green">123</FONT>        public ConfigHelper dateDetection(boolean dateDetection) {<a name="line.123"></a>
+<FONT color="green">124</FONT>            this.dateDetection = dateDetection;<a name="line.124"></a>
+<FONT color="green">125</FONT>            return this;<a name="line.125"></a>
+<FONT color="green">126</FONT>        }<a name="line.126"></a>
+<FONT color="green">127</FONT>    <a name="line.127"></a>
+<FONT color="green">128</FONT>        public boolean dateDetection() {<a name="line.128"></a>
+<FONT color="green">129</FONT>            return dateDetection;<a name="line.129"></a>
+<FONT color="green">130</FONT>        }<a name="line.130"></a>
+<FONT color="green">131</FONT>    <a name="line.131"></a>
+<FONT color="green">132</FONT>        public ConfigHelper timeStampField(String timeStampField) {<a name="line.132"></a>
+<FONT color="green">133</FONT>            this.timeStampField = timeStampField;<a name="line.133"></a>
+<FONT color="green">134</FONT>            return this;<a name="line.134"></a>
+<FONT color="green">135</FONT>        }<a name="line.135"></a>
+<FONT color="green">136</FONT>    <a name="line.136"></a>
+<FONT color="green">137</FONT>        public String timeStampField() {<a name="line.137"></a>
+<FONT color="green">138</FONT>            return timeStampField;<a name="line.138"></a>
+<FONT color="green">139</FONT>        }<a name="line.139"></a>
+<FONT color="green">140</FONT>    <a name="line.140"></a>
+<FONT color="green">141</FONT>        public ConfigHelper timeStampFieldEnabled(boolean enable) {<a name="line.141"></a>
+<FONT color="green">142</FONT>            this.timeStampFieldEnabled = enable;<a name="line.142"></a>
+<FONT color="green">143</FONT>            return this;<a name="line.143"></a>
+<FONT color="green">144</FONT>        }<a name="line.144"></a>
+<FONT color="green">145</FONT>    <a name="line.145"></a>
+<FONT color="green">146</FONT>        public ConfigHelper kibanaEnabled(boolean enable) {<a name="line.146"></a>
+<FONT color="green">147</FONT>            this.kibanaEnabled = enable;<a name="line.147"></a>
+<FONT color="green">148</FONT>            return this;<a name="line.148"></a>
+<FONT color="green">149</FONT>        }<a name="line.149"></a>
+<FONT color="green">150</FONT>    <a name="line.150"></a>
+<FONT color="green">151</FONT>        public String defaultMapping() throws IOException{<a name="line.151"></a>
+<FONT color="green">152</FONT>                XContentBuilder b = jsonBuilder()<a name="line.152"></a>
+<FONT color="green">153</FONT>                        .startObject()<a name="line.153"></a>
+<FONT color="green">154</FONT>                        .startObject("_default_")<a name="line.154"></a>
+<FONT color="green">155</FONT>                        .field("date_detection", dateDetection);<a name="line.155"></a>
+<FONT color="green">156</FONT>                if (timeStampFieldEnabled) {<a name="line.156"></a>
+<FONT color="green">157</FONT>                    b.startObject("_timestamp")<a name="line.157"></a>
+<FONT color="green">158</FONT>                            .field("enabled", timeStampFieldEnabled)<a name="line.158"></a>
+<FONT color="green">159</FONT>                            .field("path", timeStampField)<a name="line.159"></a>
+<FONT color="green">160</FONT>                            .endObject();<a name="line.160"></a>
+<FONT color="green">161</FONT>                }<a name="line.161"></a>
+<FONT color="green">162</FONT>                if (kibanaEnabled) {<a name="line.162"></a>
+<FONT color="green">163</FONT>                    b.startObject("properties")<a name="line.163"></a>
+<FONT color="green">164</FONT>                            .startObject("@fields")<a name="line.164"></a>
+<FONT color="green">165</FONT>                            .field("type", "object")<a name="line.165"></a>
+<FONT color="green">166</FONT>                            .field("dynamic", true)<a name="line.166"></a>
+<FONT color="green">167</FONT>                            .field("path", "full")<a name="line.167"></a>
+<FONT color="green">168</FONT>                            .endObject()<a name="line.168"></a>
+<FONT color="green">169</FONT>                            .startObject("@message")<a name="line.169"></a>
+<FONT color="green">170</FONT>                            .field("type", "string")<a name="line.170"></a>
+<FONT color="green">171</FONT>                            .field("index", "analyzed")<a name="line.171"></a>
+<FONT color="green">172</FONT>                            .endObject()<a name="line.172"></a>
+<FONT color="green">173</FONT>                            .startObject("@source")<a name="line.173"></a>
+<FONT color="green">174</FONT>                            .field("type", "string")<a name="line.174"></a>
+<FONT color="green">175</FONT>                            .field("index", "not_analyzed")<a name="line.175"></a>
+<FONT color="green">176</FONT>                            .endObject()<a name="line.176"></a>
+<FONT color="green">177</FONT>                            .startObject("@source_host")<a name="line.177"></a>
+<FONT color="green">178</FONT>                            .field("type", "string")<a name="line.178"></a>
+<FONT color="green">179</FONT>                            .field("index", "not_analyzed")<a name="line.179"></a>
+<FONT color="green">180</FONT>                            .endObject()<a name="line.180"></a>
+<FONT color="green">181</FONT>                            .startObject("@source_path")<a name="line.181"></a>
+<FONT color="green">182</FONT>                            .field("type", "string")<a name="line.182"></a>
+<FONT color="green">183</FONT>                            .field("index", "not_analyzed")<a name="line.183"></a>
+<FONT color="green">184</FONT>                            .endObject()<a name="line.184"></a>
+<FONT color="green">185</FONT>                            .startObject("@tags")<a name="line.185"></a>
+<FONT color="green">186</FONT>                            .field("type", "string")<a name="line.186"></a>
+<FONT color="green">187</FONT>                            .field("index", "not_analyzed")<a name="line.187"></a>
+<FONT color="green">188</FONT>                            .endObject()<a name="line.188"></a>
+<FONT color="green">189</FONT>                            .startObject("@timestamp")<a name="line.189"></a>
+<FONT color="green">190</FONT>                            .field("type", "date")<a name="line.190"></a>
+<FONT color="green">191</FONT>                            .endObject()<a name="line.191"></a>
+<FONT color="green">192</FONT>                            .startObject("@type")<a name="line.192"></a>
+<FONT color="green">193</FONT>                            .field("type", "string")<a name="line.193"></a>
+<FONT color="green">194</FONT>                            .field("index", "not_analyzed")<a name="line.194"></a>
+<FONT color="green">195</FONT>                            .endObject()<a name="line.195"></a>
+<FONT color="green">196</FONT>                            .endObject();<a name="line.196"></a>
+<FONT color="green">197</FONT>                }<a name="line.197"></a>
+<FONT color="green">198</FONT>                b.endObject()<a name="line.198"></a>
+<FONT color="green">199</FONT>                        .endObject();<a name="line.199"></a>
+<FONT color="green">200</FONT>                return b.string();<a name="line.200"></a>
+<FONT color="green">201</FONT>        }<a name="line.201"></a>
+<FONT color="green">202</FONT>    <a name="line.202"></a>
+<FONT color="green">203</FONT>        public Map&lt;String, String&gt; mappings() {<a name="line.203"></a>
+<FONT color="green">204</FONT>            return mappings.isEmpty() ? null : mappings;<a name="line.204"></a>
+<FONT color="green">205</FONT>        }<a name="line.205"></a>
+<FONT color="green">206</FONT>    <a name="line.206"></a>
+<FONT color="green">207</FONT>    }<a name="line.207"></a>
 
 
 
