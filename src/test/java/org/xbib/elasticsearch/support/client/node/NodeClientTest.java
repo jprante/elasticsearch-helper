@@ -1,6 +1,8 @@
 
 package org.xbib.elasticsearch.support.client.node;
 
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -17,7 +19,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClientTest.class.getSimpleName());
 
     @Test
-    public void testNewIndexBulkClient() throws Exception {
+    public void testNewIndexNodeClient() throws Exception {
         final NodeClient es = new NodeClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
@@ -25,18 +27,40 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
                 .setType("test")
                 .newIndex();
         es.shutdown();
-        if (es.hasErrors()) {
+        if (es.hasThrowable()) {
             logger.error("error", es.getThrowable());
         }
-        assertFalse(es.hasErrors());
+        assertFalse(es.hasThrowable());
+    }
+
+    @Test
+    public void testMappingNodeClient() throws Exception {
+        final NodeClient es = new NodeClient()
+                .flushInterval(TimeValue.timeValueSeconds(5))
+                .newClient(client("1"))
+                .mapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}} }")
+                .setIndex(INDEX)
+                .setType("test")
+                .newIndex();
+
+        GetMappingsRequest getMappingsRequest = new GetMappingsRequest()
+                .indices(INDEX);
+        GetMappingsResponse getMappingsResponse = es.client().admin().indices().getMappings(getMappingsRequest).actionGet();
+
+        logger.info("mappings={}", getMappingsResponse.getMappings());
+
+        es.shutdown();
+        if (es.hasThrowable()) {
+            logger.error("error", es.getThrowable());
+        }
+        assertFalse(es.hasThrowable());
     }
 
     @Test
     public void testRandomDocsNodeClient() throws Exception {
         final NodeClient es = new NodeClient()
                 .maxActionsPerBulkRequest(1000)
-                .maxConcurrentBulkRequests(10)
-                .flushInterval(TimeValue.timeValueSeconds(5))
+                .flushInterval(TimeValue.timeValueSeconds(10))
                 .newClient(client("1"))
                 .setIndex(INDEX)
                 .setType("test")
@@ -50,11 +74,11 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            assertEquals(es.getTotalBulkRequests(), 13);
-            if (es.hasErrors()) {
+            assertEquals(13, es.getState().getTotalIngest().count());
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 

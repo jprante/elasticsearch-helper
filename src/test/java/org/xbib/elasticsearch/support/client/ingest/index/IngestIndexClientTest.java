@@ -23,21 +23,21 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testNewIndexIngest() {
-        final IngestIndexClient es = new IngestIndexClient()
+        final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
         es.shutdown();
-        if (es.hasErrors()) {
+        if (es.hasThrowable()) {
             logger.error("error", es.getThrowable());
         }
-        assertFalse(es.hasErrors());
+        assertFalse(es.hasThrowable());
     }
 
     @Test
     public void testDeleteIndexIngestClient() {
-        final IngestIndexClient es = new IngestIndexClient()
+        final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
@@ -50,16 +50,16 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
             logger.error("no node available");
         } finally {
             es.shutdown();
-            if (es.hasErrors()) {
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testSingleDocIngestClient() {
-        final IngestIndexClient es = new IngestIndexClient()
+        final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
@@ -76,18 +76,18 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            assertEquals(es.getTotalBulkRequests(), 1);
-            if (es.hasErrors()) {
+            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(1, es.getState().getTotalIngest().count());
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testRandomIngestClient() {
-        final IngestIndexClient es = new IngestIndexClient()
+        final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
                 .setIndex("test")
@@ -101,19 +101,19 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            assertEquals(es.getTotalBulkRequests(), 13);
-            if (es.hasErrors()) {
+            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(13, es.getState().getTotalIngest().count());
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testThreadedRandomIngestClient() throws Exception {
         int max = Runtime.getRuntime().availableProcessors();
-        final IngestIndexClient es = new IngestIndexClient()
+        final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .maxActionsPerBulkRequest(10000)
                 .newClient(getAddress())
                 .setIndex("test")
@@ -142,13 +142,12 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
         } finally {
             logger.info("stats={}", es.stats());
             es.stopBulk().shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            int target = max * 12345 / 10000 + 1;
-            assertEquals(es.getTotalBulkRequests(), target);
-            if (es.hasErrors()) {
+            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals( max * 12345 / 10000 + 1, es.getState().getTotalIngest().count());
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 

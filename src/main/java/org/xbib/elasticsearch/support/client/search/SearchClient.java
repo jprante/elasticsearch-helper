@@ -38,13 +38,11 @@ public class SearchClient extends AbstractTransportClient implements Search {
         return type;
     }
 
-    @Override
     public SearchClient newClient() {
         this.newClient(findURI());
         return this;
     }
 
-    @Override
     public SearchClient newClient(URI uri) {
         this.newClient(uri, defaultSettings(uri));
         return this;

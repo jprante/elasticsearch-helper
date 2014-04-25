@@ -1,7 +1,13 @@
 
 package org.xbib.elasticsearch.support.client.ingest.index;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
+
 import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -18,21 +24,16 @@ import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexProcessor;
 import org.xbib.elasticsearch.action.ingest.index.IngestIndexRequest;
-import org.xbib.elasticsearch.support.client.AbstractIngestClient;
-import org.xbib.elasticsearch.support.metrics.CounterMetric;
-import org.xbib.elasticsearch.support.metrics.MeanMetric;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.concurrent.TimeUnit;
+import org.xbib.elasticsearch.support.client.AbstractIngestTransportClient;
+import org.xbib.elasticsearch.support.client.ClientHelper;
+import org.xbib.elasticsearch.support.client.State;
 
 /**
  * Ingest index client
  */
-public class IngestIndexClient extends AbstractIngestClient {
+public class IngestIndexTransportClient extends AbstractIngestTransportClient {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestIndexClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestIndexTransportClient.class.getName());
     /**
      * The default size of a request
      */
@@ -52,24 +53,12 @@ public class IngestIndexClient extends AbstractIngestClient {
      */
     private TimeValue maxWaitTime = new TimeValue(60, TimeUnit.SECONDS);
 
-    private final MeanMetric totalIngest = new MeanMetric();
-
-    private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
-
-    private final CounterMetric currentIngest = new CounterMetric();
-
-    private final CounterMetric currentIngestNumDocs = new CounterMetric();
-
-    private final CounterMetric submitted = new CounterMetric();
-
-    private final CounterMetric succeeded = new CounterMetric();
-
-    private final CounterMetric failed = new CounterMetric();
-
     /**
      * The processor
      */
     private IngestIndexProcessor ingestProcessor;
+
+    private State state;
 
     /**
      * The last exception if any
@@ -79,20 +68,26 @@ public class IngestIndexClient extends AbstractIngestClient {
     private volatile boolean closed = false;
 
     @Override
-    public IngestIndexClient maxActionsPerBulkRequest(int maxBulkActions) {
+    public IngestIndexTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
         this.maxBulkActions = maxBulkActions;
         return this;
     }
 
     @Override
-    public IngestIndexClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
+    public IngestIndexTransportClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
     @Override
-    public IngestIndexClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
+    public IngestIndexTransportClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
         this.maxVolume = maxVolume;
+        return this;
+    }
+
+    @Override
+    public IngestIndexTransportClient maxRequestWait(TimeValue timeout) {
+        this.maxWaitTime = timeout;
         return this;
     }
 
@@ -101,8 +96,11 @@ public class IngestIndexClient extends AbstractIngestClient {
      *
      * @return this indexer
      */
-    @Override
-    public IngestIndexClient newClient() {
+    public IngestIndexTransportClient newClient() {
+        return this.newClient(findURI());
+    }
+
+    public IngestIndexTransportClient newClient(Client client) {
         return this.newClient(findURI());
     }
 
@@ -116,20 +114,21 @@ public class IngestIndexClient extends AbstractIngestClient {
      * @return this indexer
      */
     @Override
-    public IngestIndexClient newClient(URI uri) {
+    public IngestIndexTransportClient newClient(URI uri) {
         return this.newClient(uri, defaultSettings(uri));
     }
 
     @Override
-    public IngestIndexClient newClient(URI uri, Settings settings) {
+    public IngestIndexTransportClient newClient(URI uri, Settings settings) {
         super.newClient(uri, settings);
+        this.state = new State();
         resetSettings();
         IngestIndexProcessor.Listener listener = new IngestIndexProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestIndexRequest request) {
-                submitted.inc(request.numberOfActions());
-                currentIngestNumDocs.inc(request.numberOfActions());
-                totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
+                state.getSubmitted().inc(request.numberOfActions());
+                state.getCurrentIngestNumDocs().inc(request.numberOfActions());
+                state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                         executionId, request.numberOfActions(), request.estimatedSizeInBytes(), concurrency);
@@ -138,9 +137,9 @@ public class IngestIndexClient extends AbstractIngestClient {
 
             @Override
             public void afterBulk(long executionId, int concurrency, IngestResponse response) {
-                succeeded.inc(response.successSize());
-                failed.inc(response.failureSize());
-                totalIngest.inc(response.tookInMillis());
+                state.getSucceeded().inc(response.successSize());
+                state.getFailed().inc(response.failureSize());
+                state.getTotalIngest().inc(response.tookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms] {} outstanding bulk requests",
                         executionId, response.successSize(), response.failureSize(), response.took().millis(), concurrency);
@@ -150,7 +149,7 @@ public class IngestIndexClient extends AbstractIngestClient {
                         logger.error("after bulk [{}] [{} failure reason: {}", executionId, f.pos(), f.message());
                     }
                 } else {
-                    currentIngestNumDocs.dec(response.successSize());
+                    state.getCurrentIngestNumDocs().dec(response.successSize());
                 }
             }
 
@@ -172,50 +171,54 @@ public class IngestIndexClient extends AbstractIngestClient {
         return client;
     }
 
+    public State getState() {
+        return state;
+    }
+
     @Override
-    public IngestIndexClient setIndex(String index) {
+    public IngestIndexTransportClient setIndex(String index) {
         super.setIndex(index);
         return this;
     }
 
     @Override
-    public IngestIndexClient setType(String type) {
+    public IngestIndexTransportClient setType(String type) {
         super.setType(type);
         return this;
     }
 
-    public IngestIndexClient setting(String key, String value) {
+    public IngestIndexTransportClient setting(String key, String value) {
         super.setting(key, value);
         return this;
     }
 
-    public IngestIndexClient setting(String key, Integer value) {
+    public IngestIndexTransportClient setting(String key, Integer value) {
         super.setting(key, value);
         return this;
     }
 
-    public IngestIndexClient setting(String key, Boolean value) {
+    public IngestIndexTransportClient setting(String key, Boolean value) {
         super.setting(key, value);
         return this;
     }
 
-    public IngestIndexClient setting(InputStream in) throws IOException {
+    public IngestIndexTransportClient setting(InputStream in) throws IOException {
         super.setting(in);
         return this;
     }
 
-    public IngestIndexClient shards(int value) {
+    public IngestIndexTransportClient shards(int value) {
         super.shards(value);
         return this;
     }
 
-    public IngestIndexClient replica(int value) {
+    public IngestIndexTransportClient replica(int value) {
         super.replica(value);
         return this;
     }
 
     @Override
-    public IngestIndexClient newIndex() {
+    public IngestIndexTransportClient newIndex() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -223,7 +226,7 @@ public class IngestIndexClient extends AbstractIngestClient {
         return this;
     }
 
-    public IngestIndexClient deleteIndex() {
+    public IngestIndexTransportClient deleteIndex() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -232,19 +235,19 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient mapping(String type, InputStream in) throws IOException {
+    public IngestIndexTransportClient mapping(String type, InputStream in) throws IOException {
         super.mapping(type, in);
         return this;
     }
 
     @Override
-    public IngestIndexClient mapping(String type, String mapping) {
+    public IngestIndexTransportClient mapping(String type, String mapping) {
         super.mapping(type, mapping);
         return this;
     }
 
     @Override
-    public IngestIndexClient putMapping(String index) {
+    public IngestIndexTransportClient putMapping(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -253,7 +256,7 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient deleteMapping(String index, String type) {
+    public IngestIndexTransportClient deleteMapping(String index, String type) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -262,20 +265,26 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient startBulk() throws IOException {
-        disableRefreshInterval();
-        updateReplicaLevel(0);
+    public IngestIndexTransportClient startBulk() throws IOException {
+        if (state.isBulk()) {
+            return this;
+        }
+        state.setBulk(true);
+        ClientHelper.startBulk(client, getIndex());
         return this;
     }
 
     @Override
-    public IngestIndexClient stopBulk() {
-        enableRefreshInterval();
+    public IngestIndexTransportClient stopBulk() throws IOException {
+        if (state.isBulk()) {
+            ClientHelper.stopBulk(client, getIndex());
+        }
+        state.setBulk(false);
         return this;
     }
 
     @Override
-    public IngestIndexClient refresh() {
+    public IngestIndexTransportClient refresh() {
         if (client == null) {
             logger.warn("no client");
             return this;
@@ -289,65 +298,42 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public IngestIndexClient index(String index, String type, String id, String source) {
+    public IngestIndexTransportClient index(String index, String type, String id, String source) {
         return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source));
     }
 
     @Override
-    public IngestIndexClient index(IndexRequest indexRequest) {
+    public IngestIndexTransportClient index(IndexRequest indexRequest) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            currentIngest.inc();
+            state.getCurrentIngest().inc();
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index failed: " + e.getMessage(), e);
         } finally {
-            currentIngest.dec();
+            state.getCurrentIngest().dec();
         }
         return this;
     }
 
     @Override
-    public IngestIndexClient delete(String index, String type, String id) {
+    public IngestIndexTransportClient delete(String index, String type, String id) {
         // do nothing
         return this;
     }
 
     @Override
-    public IngestIndexClient delete(DeleteRequest deleteRequest) {
+    public IngestIndexTransportClient delete(DeleteRequest deleteRequest) {
         // do nothing
         return this;
     }
 
-    public IngestIndexClient numberOfShards(int value) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        setting("index.number_of_shards", value);
-        return this;
-    }
-
-    public IngestIndexClient numberOfReplicas(int value) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        if (getIndex() == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        setting("index.number_of_replicas", value);
-        return this;
-    }
-
-    public IngestIndexClient flush() {
+    @Override
+    public IngestIndexTransportClient flush() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -357,6 +343,22 @@ public class IngestIndexClient extends AbstractIngestClient {
         }
         ingestProcessor.flush();
         return this;
+    }
+
+    @Override
+    public IngestIndexTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
+        ClientHelper.waitForCluster(client, status, timeValue);
+        return this;
+    }
+
+    @Override
+    public int waitForRecovery() throws IOException {
+        return ClientHelper.waitForRecovery(client, getIndex());
+    }
+
+    @Override
+    public int updateReplicaLevel(int level) throws IOException {
+        return ClientHelper.updateReplicaLevel(client, getIndex(), level);
     }
 
     @Override
@@ -374,7 +376,9 @@ public class IngestIndexClient extends AbstractIngestClient {
                 logger.info("closing ingest processor...");
                 ingestProcessor.close();
             }
-            enableRefreshInterval();
+            if (state.isBulk()) {
+                stopBulk();
+            }
             logger.info("shutting down...");
             super.shutdown();
             logger.info("shutting down completed");
@@ -384,36 +388,7 @@ public class IngestIndexClient extends AbstractIngestClient {
     }
 
     @Override
-    public long getTotalSizeInBytes() {
-        return totalIngestSizeInBytes.count();
-    }
-
-    public long getTotalBulkRequestTime() {
-        return totalIngest.sum();
-    }
-
-    @Override
-    public long getTotalBulkRequests() {
-        return totalIngest.count();
-    }
-
-    @Override
-    public long getTotalSubmitted() {
-        return submitted.count();
-    }
-
-    @Override
-    public long getTotalSucceeded() {
-        return succeeded.count();
-    }
-
-    @Override
-    public long getTotalFailed() {
-        return failed.count();
-    }
-
-    @Override
-    public boolean hasErrors() {
+    public boolean hasThrowable() {
         return throwable != null;
     }
 

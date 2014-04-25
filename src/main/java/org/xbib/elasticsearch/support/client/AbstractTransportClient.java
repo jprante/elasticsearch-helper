@@ -1,13 +1,9 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
@@ -16,8 +12,6 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,13 +32,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
 import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public abstract class AbstractTransportClient implements ClientBuilder {
+public abstract class AbstractTransportClient {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());
 
@@ -52,9 +45,9 @@ public abstract class AbstractTransportClient implements ClientBuilder {
 
     private final Set<InetSocketTransportAddress> addresses = newHashSet();
 
-    protected TransportClient client;
+    protected TimeValue maxWaitTime = new TimeValue(60, TimeUnit.SECONDS);
 
-    protected String clustername;
+    protected TransportClient client;
 
     public AbstractTransportClient newClient(URI uri, Settings settings) {
         if (client != null) {
@@ -75,7 +68,7 @@ public abstract class AbstractTransportClient implements ClientBuilder {
             this.client = new TransportClient();
         }
         try {
-            connect(uri);
+            connect(uri, settings);
         } catch (UnknownHostException e) {
             logger.error(e.getMessage(), e);
         } catch (SocketException e) {
@@ -95,6 +88,7 @@ public abstract class AbstractTransportClient implements ClientBuilder {
                 .put("client.transport.ignore_cluster_name", false)
                 .put("client.transport.ping_timeout", "30s")
                 .put("client.transport.nodes_sampler_interval", "30s")
+                .put("action.ingest.timeout", maxWaitTime)
                 .build();
     }
 
@@ -102,62 +96,16 @@ public abstract class AbstractTransportClient implements ClientBuilder {
         return client;
     }
 
-    public void waitForCluster() throws IOException {
-        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-    }
-
-    public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        try {
-            logger.info("waiting for cluster state {}", status.name());
-            ClusterHealthResponse healthResponse =
-                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
-            if (healthResponse.isTimedOut()) {
-                throw new IOException("cluster state is " + healthResponse.getStatus().name()
-                        + " and not " + status.name()
-                        + ", cowardly refusing to continue with operations");
-            } else {
-                logger.info("... cluster state ok");
-            }
-        } catch (ElasticsearchTimeoutException e) {
-            throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
-        }
-    }
-
-    public String clusterName() {
-        return clustername;
-    }
-
     public String healthColor() {
-        try {
-            ClusterHealthResponse healthResponse =
-                client.admin().cluster().prepareHealth().setTimeout(TimeValue.timeValueSeconds(30)).execute().actionGet();
-            ClusterHealthStatus status = healthResponse.getStatus();
-            return status.name();
-        } catch (ElasticsearchTimeoutException e) {
-            return "TIMEOUT";
-        } catch (NoNodeAvailableException e) {
-            return "DISCONNECTED";
-        } catch (Throwable t) {
-            return "[" + t.getMessage() + "]";
-        }
+        return ClientHelper.healthColor(client);
     }
 
-    public List<String> connectNodes() {
-        List<String> nodes = newLinkedList();
-        if (client.connectedNodes() != null) {
-            for (DiscoveryNode discoveryNode : client.connectedNodes()) {
-                nodes.add(discoveryNode.toString());
-            }
-        }
-        return nodes;
+    public List<String> getConnectedNodes() {
+        return ClientHelper.getConnectedNodes(client);
     }
 
     public String stats() throws IOException {
-        XContentBuilder builder = jsonBuilder();
-        builder.startObject();
-        client.threadPool().stats().toXContent(builder, ToXContent.EMPTY_PARAMS);
-        builder.endObject();
-        return builder.string();
+        return ClientHelper.threadPoolStats(client);
     }
 
     public synchronized void shutdown() {
@@ -200,14 +148,15 @@ public abstract class AbstractTransportClient implements ClientBuilder {
     }
 
     protected String findClusterName(URI uri) {
+        String clustername;
         try {
-            Map<String, String> map = parseQueryString(uri, "UTF-8");
-            clustername = map.get("es.cluster.name");
+            Map<String,String> params = parseQueryString(uri, "UTF-8");
+            clustername = params.get("es.cluster.name");
             if (clustername != null) {
                 logger.info("cluster name found in URI {}: {}", uri, clustername);
                 return clustername;
             }
-            clustername = map.get("cluster.name");
+            clustername = params.get("cluster.name");
             if (clustername != null) {
                 logger.info("cluster name found in URI {}: {}", uri, clustername);
                 return clustername;
@@ -231,7 +180,7 @@ public abstract class AbstractTransportClient implements ClientBuilder {
         return clustername;
     }
 
-    protected void connect(URI uri) throws IOException {
+    protected void connect(URI uri, Settings settings) throws IOException {
         String hostname = uri.getHost();
         int port = uri.getPort();
         boolean newaddresses = false;
@@ -316,10 +265,13 @@ public abstract class AbstractTransportClient implements ClientBuilder {
                     logger.info("new connection to {}", node);
                 }
                 if (!nodes.isEmpty()) {
-                    try {
-                        connectMore();
-                    } catch (Exception e) {
-                        logger.error("error while connecting to more nodes", e);
+                    Map<String,String> params = parseQueryString(uri, "UTF-8");
+                    if (params.containsKey("es.sniff")) {
+                        try {
+                            connectMore();
+                        } catch (Exception e) {
+                            logger.error("error while connecting to more nodes", e);
+                        }
                     }
                 }
             }

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.config;
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;

@@ -1,16 +1,13 @@
-package org.xbib.elasticsearch.support.config;
+package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.ConfigHelper;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
 public class ConfigHelperTest {
-
-    private static final ESLogger logger = ESLoggerFactory.getLogger(ConfigHelperTest.class.getName());
 
     @Test
     public void testConfigHelper() throws IOException {

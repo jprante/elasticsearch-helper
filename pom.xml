@@ -7,7 +7,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>1.1.0.0</version>
+    <version>1.1.0.3</version>
 
     <packaging>jar</packaging>
 
@@ -47,9 +47,8 @@
 
     <distributionManagement>
         <repository>
-            <id>bintray-jprante-elasticsearch-plugins-elasticsearch-support</id>
-            <name>jprante-elasticsearch-plugins-elasticsearch-support</name>
-            <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-support</url>
+            <id>xbib.org</id>
+            <url>scpexe://xbib.org/repository</url>
         </repository>
     </distributionManagement>
 
@@ -100,6 +99,13 @@
     </dependencies>
 
     <build>
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh-external</artifactId>
+                <version>2.6</version>
+            </extension>
+        </extensions>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
@@ -275,5 +281,19 @@
             </plugin>
         </plugins>
     </reporting>
+
+    <profiles>
+        <profile>
+            <id>bintray</id>
+            <activation><activeByDefault>false</activeByDefault></activation>
+            <distributionManagement>
+                <repository>
+                    <id>bintray-jprante-elasticsearch-plugins-elasticsearch-support</id>
+                    <name>jprante-elasticsearch-plugins-elasticsearch-support</name>
+                    <url>https://api.bintray.com/maven/jprante/elasticsearch-plugins/elasticsearch-support</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
 
 </project>

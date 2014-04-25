@@ -17,9 +17,8 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.unit.TimeValue;
 
 /**
- * A bulk request holds an ordered {@link org.elasticsearch.action.index.IndexRequest}s
- * and {@link org.elasticsearch.action.delete.DeleteRequest}s and allows to executes
- * it in a single batch.
+ * An ingest request holds an {@link org.xbib.elasticsearch.action.ingest.IngestRequest}s
+ * and allows to execute it in a single batch.
  */
 public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 

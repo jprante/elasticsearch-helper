@@ -14,7 +14,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.metrics.CounterMetric;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -160,6 +159,7 @@ public class IngestProcessor {
 
         /**
          * Callback before the bulk request is executed.
+         * @param bulkId the bulk job identifier
          */
         void beforeBulk(long bulkId, int concurrency, IngestRequest request);
 

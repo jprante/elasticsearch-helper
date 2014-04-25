@@ -28,7 +28,7 @@ public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {
         int replicaLevel = 3;
         int shardsAfterReplica;
 
-        final IngestClient es = new IngestClient()
+        final IngestTransportClient es = new IngestTransportClient()
                 .newClient(getAddress())
                 .setIndex("replicatest")
                 .setType("replicatest")
@@ -47,10 +47,10 @@ public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            if (es.hasErrors()) {
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
 
         stopNode("3");

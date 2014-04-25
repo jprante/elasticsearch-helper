@@ -107,15 +107,16 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
     protected PrimaryResponse<IngestShardResponse, IngestShardRequest> shardOperationOnPrimary(ClusterState clusterState, PrimaryOperationRequest shardRequest) {
         final IngestShardRequest request = shardRequest.request;
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request.index()).shardSafe(shardRequest.shardId);
-        Set<Tuple<String, String>> mappingsToUpdate = null;
         int successSize = 0;
         List<IngestItemFailure> failure = newLinkedList();
         int size = request.items().size();
         long[] versions = new long[size];
+        Set<Tuple<String, String>> mappingsToUpdate = newHashSet();
         for (int i = 0; i < size; i++) {
             IngestItemRequest item = request.items().get(i);
             if (item.request() instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) item.request();
+                Engine.IndexingOperation op = null;
                 try {
                     // validate, if routing is required, that we got routing
                     MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
@@ -127,28 +128,20 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                     SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                             .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
                     long version;
-                    Engine.IndexingOperation op;
                     if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
                         Engine.Index index = indexShard.prepareIndex(sourceToParse).version(indexRequest.version()).versionType(indexRequest.versionType()).origin(Engine.Operation.Origin.PRIMARY);
+                        op = index;
                         indexShard.index(index);
                         version = index.version();
-                        op = index;
                     } else {
                         Engine.Create create = indexShard.prepareCreate(sourceToParse).version(indexRequest.version()).versionType(indexRequest.versionType()).origin(Engine.Operation.Origin.PRIMARY);
+                        op = create;
                         indexShard.create(create);
                         version = create.version();
-                        op = create;
                     }
                     versions[i] = indexRequest.version();
                     // update the version on request so it will happen on the replicas
                     indexRequest.version(version);
-                    // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
-                    if (op.parsedDoc().mappingsModified()) {
-                        if (mappingsToUpdate == null) {
-                            mappingsToUpdate = newHashSet();
-                        }
-                        mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
-                    }
                     successSize++;
                 } catch (Throwable e) {
                     // rethrow the failure if we are going to retry on primary and let parent failure to handle it
@@ -161,13 +154,18 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                         throw new ElasticsearchException(e.getMessage());
                     }
                     if (e instanceof ElasticsearchException && ((ElasticsearchException) e).status() == RestStatus.CONFLICT) {
-                        logger.trace("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
+                        logger.error("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
                     } else {
-                        logger.debug("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
+                        logger.error("[{}][{}] failed to execute bulk item (index) {}", e, shardRequest.request.index(), shardRequest.shardId, indexRequest);
                     }
                     failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));
                     // nullify the request so it won't execute on the replicas
                     request.items().set(i, null);
+                } finally {
+                    // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
+                    if (op != null && op.parsedDoc().mappingsModified()) {
+                        mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
+                    }
                 }
             } else if (item.request() instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) item.request();
@@ -198,9 +196,9 @@ public class TransportShardIngestAction extends TransportShardReplicationOperati
                 }
             }
         }
-
-        if (mappingsToUpdate != null) {
+        if (!mappingsToUpdate.isEmpty()) {
             for (Tuple<String, String> mappingToUpdate : mappingsToUpdate) {
+                logger.info("mapping update {} {}", mappingToUpdate.v1(), mappingToUpdate.v2());
                 updateMappingOnMaster(mappingToUpdate.v1(), mappingToUpdate.v2());
             }
         }

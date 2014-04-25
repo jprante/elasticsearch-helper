@@ -114,6 +114,7 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
         for (int i = 0; i < size; i++) {
             IngestIndexItemRequest item = request.items().get(i);
             IndexRequest indexRequest = (IndexRequest) item.request();
+            Engine.IndexingOperation op = null;
             try {
                 // validate, if routing is required, that we got routing
                 MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
@@ -125,28 +126,20 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                 SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source()).type(indexRequest.type()).id(indexRequest.id())
                         .routing(indexRequest.routing()).parent(indexRequest.parent()).timestamp(indexRequest.timestamp()).ttl(indexRequest.ttl());
                 long version;
-                Engine.IndexingOperation op;
                 if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
                     Engine.Index index = indexShard.prepareIndex(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
+                    op = index;
                     indexShard.index(index);
                     version = index.version();
-                    op = index;
                 } else {
                     Engine.Create create = indexShard.prepareCreate(sourceToParse).version(indexRequest.version()).origin(Engine.Operation.Origin.REPLICA);
+                    op = create;
                     indexShard.create(create);
                     version = create.version();
-                    op = create;
                 }
                 versions[i] = indexRequest.version();
                 // update the version on request so it will happen on the replicas
                 indexRequest.version(version);
-                // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
-                if (op.parsedDoc().mappingsModified()) {
-                    if (mappingsToUpdate == null) {
-                        mappingsToUpdate = Sets.newHashSet();
-                    }
-                    mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
-                }
                 successSize++;
             } catch (Throwable e) {
                 // rethrow the failure if we are going to retry on primary and let parent failure to handle it
@@ -166,6 +159,14 @@ public class TransportShardIngestIndexAction extends TransportShardReplicationOp
                 failure.add(new IngestItemFailure(item.id(), ExceptionsHelper.detailedMessage(e)));
                 // nullify the request so it won't execute on the replicas
                 request.items().set(i, null);
+            } finally {
+                // update mapping on master if needed, we won't update changes to the same type, since once its changed, it won't have mappers added
+                if (op != null && op.parsedDoc().mappingsModified()) {
+                    if (mappingsToUpdate == null) {
+                        mappingsToUpdate = Sets.newHashSet();
+                    }
+                    mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
+                }
             }
         }
         if (mappingsToUpdate != null) {

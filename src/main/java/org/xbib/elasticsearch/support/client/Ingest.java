@@ -2,16 +2,23 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
  */
-public interface Ingest extends ClientBuilder, Feeder {
+public interface Ingest extends Feeder {
+
+    Ingest newClient(Client client);
+
+    Ingest newClient(URI uri);
 
     /**
      * Set index name
@@ -51,6 +58,13 @@ public interface Ingest extends ClientBuilder, Feeder {
     Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
 
     /**
+     * Set request timeout. Default is 60s.
+     * @param timeout timeout
+     * @return this ingest
+     */
+    Ingest maxRequestWait(TimeValue timeout);
+
+    /**
      * The number of shards for index creation
      * @param shards the number of shards
      * @return this
@@ -63,6 +77,8 @@ public interface Ingest extends ClientBuilder, Feeder {
      * @return this
      */
     Ingest replica(int replica);
+
+    Settings settings();
 
     /**
      * Clear settings
@@ -100,13 +116,6 @@ public interface Ingest extends ClientBuilder, Feeder {
      * @return this
      */
     Ingest setting(InputStream in) throws IOException;
-
-    /**
-     * Enable date format detection in strings in the settings
-     * @param b true if  date format detection should be enabled
-     * @return this
-     */
-    Ingest dateDetection(boolean b);
 
     Ingest mapping(String type, InputStream in) throws IOException;
 
@@ -165,44 +174,17 @@ public interface Ingest extends ClientBuilder, Feeder {
      * Wait for cluster being healthy.
      * @throws IOException
      */
-    void waitForCluster() throws IOException;
+    Ingest waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
 
     /**
      * Wait for index recovery (after replica change)
      * @return number of shards found
      */
-    int waitForRecovery();
+    int waitForRecovery() throws IOException;
 
-    /**
-     * Get total bulk request count
-     * @return the total bulk request
-     */
-    long getTotalBulkRequests();
+    State getState();
 
-    /**
-     * Get total bulk request time spent
-     * @return the total bulk request time
-     */
-    long getTotalBulkRequestTime();
-
-    /**
-     * Get total documents that have been ingested
-     * @return the total number of documents
-     */
-    long getTotalSubmitted();
-
-    long getTotalSucceeded();
-
-    long getTotalFailed();
-
-    /**
-     * Get the total ingested data size in bytes so far.
-     *
-     * @return the total size in bytes
-     */
-    long getTotalSizeInBytes();
-
-    boolean hasErrors();
+    boolean hasThrowable();
 
     /**
      * Return last throwable if exists.

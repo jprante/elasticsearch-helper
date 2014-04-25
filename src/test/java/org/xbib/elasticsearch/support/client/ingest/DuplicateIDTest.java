@@ -6,8 +6,10 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class DuplicateIDTest extends AbstractNodeRandomTestHelper {
 
@@ -15,7 +17,7 @@ public class DuplicateIDTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testDuplicateDocIDs() {
-        final IngestClient es = new IngestClient()
+        final IngestTransportClient es = new IngestTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
                 .setIndex("test")
@@ -25,16 +27,21 @@ public class DuplicateIDTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }
+            es.refresh();
+            long hits = es.client().prepareSearch("test").setTypes("test")
+                    .setQuery(matchAllQuery())
+                    .execute().actionGet().getHits().getTotalHits();
+            logger.info("hits = {}", hits);
+            assertTrue(hits < 12345);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("submitted={} succedded={}", es.getTotalSubmitted(), es.getTotalSucceeded());
-            assertEquals(es.getTotalBulkRequests(), 13);
-            if (es.hasErrors()) {
+            assertEquals(es.getState().getTotalIngest().count(), 13);
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 }

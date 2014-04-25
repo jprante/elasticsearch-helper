@@ -1,13 +1,16 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.helper;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+import org.xbib.elasticsearch.support.AliasTest;
+import org.xbib.elasticsearch.support.NPETest;
+import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.DuplicateIDTest;
-import org.xbib.elasticsearch.support.client.ingest.IngestClientTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.ReplicaLevelTest;
 import org.xbib.elasticsearch.support.client.ingest.index.IngestIndexClientTest;
 import org.xbib.elasticsearch.support.client.node.NodeClientTest;
-import org.xbib.elasticsearch.support.config.ConfigHelperTest;
+import org.xbib.elasticsearch.support.client.ConfigHelperTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -15,7 +18,8 @@ import org.xbib.elasticsearch.support.config.ConfigHelperTest;
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
-        IngestClientTest.class,
+        BulkTransportClientTest.class,
+        IngestTransportClientTest.class,
         IngestIndexClientTest.class,
         DuplicateIDTest.class,
         NodeClientTest.class

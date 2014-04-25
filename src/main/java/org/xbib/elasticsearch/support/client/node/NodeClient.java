@@ -1,9 +1,13 @@
 
 package org.xbib.elasticsearch.support.client.node;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.elasticsearch.ElasticsearchIllegalStateException;
-import org.elasticsearch.ElasticsearchTimeoutException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -16,24 +20,20 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.config.ConfigHelper;
-import org.xbib.elasticsearch.support.client.Feeder;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import org.xbib.elasticsearch.support.client.ClientHelper;
+import org.xbib.elasticsearch.support.client.Ingest;
+import org.xbib.elasticsearch.support.client.ConfigHelper;
+import org.xbib.elasticsearch.support.client.State;
 
 /**
  * Node client support
  */
-public class NodeClient implements Feeder {
+public class NodeClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClient.class.getSimpleName());
 
@@ -45,44 +45,56 @@ public class NodeClient implements Feeder {
 
     private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
 
+    private final ConfigHelper configHelper = new ConfigHelper();
+
+    private final AtomicLong outstandingBulkRequests = new AtomicLong(0L);
+
     private Client client;
+
+    private BulkProcessor bulkProcessor;
 
     private String index;
 
     private String type;
 
-    private ConfigHelper configHelper = new ConfigHelper();
-
-    private final AtomicLong outstandingBulkRequests = new AtomicLong(0L);
-
-    private final MeanMetric totalIngest = new MeanMetric();
-
-    private final CounterMetric totalIngestNumDocs = new CounterMetric();
-
-    private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
-
-    private final CounterMetric currentIngest = new CounterMetric();
-
-    private final CounterMetric currentIngestNumDocs = new CounterMetric();
+    private State state;
 
     private boolean closed = false;
 
-    private BulkProcessor bulkProcessor;
-
     private Throwable throwable;
 
+    @Override
+    public NodeClient shards(int shards) {
+        configHelper.setting("index.number_of_shards", shards);
+        return this;
+    }
+
+    @Override
+    public NodeClient replica(int replica) {
+        configHelper.setting("index.number_of_replica", replica);
+        return this;
+    }
+
+    @Override
     public NodeClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
         this.maxActionsPerBulkRequest = maxActionsPerBulkRequest;
         return this;
     }
 
+    @Override
     public NodeClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
         this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
         return this;
     }
 
-    public NodeClient maxVolume(ByteSizeValue maxVolume) {
+    @Override
+    public NodeClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
         this.maxVolume = maxVolume;
+        return this;
+    }
+
+    public NodeClient maxRequestWait(TimeValue timeValue) {
+        // ignore, not implemented
         return this;
     }
 
@@ -91,14 +103,21 @@ public class NodeClient implements Feeder {
         return this;
     }
 
+    @Override
+    public NodeClient newClient(URI uri) {
+        // no-op
+        return this;
+    }
+
     public NodeClient newClient(Client client) {
         this.client = client;
+        this.state = new State();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingBulkRequests.getAndIncrement();
-                currentIngestNumDocs.inc(request.numberOfActions());
-                totalIngestSizeInBytes.inc(request.estimatedSizeInBytes());
+                state.getCurrentIngestNumDocs().inc(request.numberOfActions());
+                state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                         executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
@@ -108,7 +127,7 @@ public class NodeClient implements Feeder {
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 outstandingBulkRequests.decrementAndGet();
-                totalIngest.inc(response.getTookInMillis());
+                state.getTotalIngest().inc(response.getTookInMillis());
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] success [{} items] [{}ms]",
                             executionId, response.getItems().length, response.getTook().millis());
@@ -118,8 +137,7 @@ public class NodeClient implements Feeder {
                     logger.error("after bulk [{}] failure reason: {}",
                             executionId, response.buildFailureMessage());
                 } else {
-                    currentIngestNumDocs.dec(response.getItems().length);
-                    totalIngestNumDocs.inc(response.getItems().length);
+                    state.getCurrentIngestNumDocs().dec(response.getItems().length);
                 }
             }
 
@@ -132,7 +150,7 @@ public class NodeClient implements Feeder {
             }
         };
         BulkProcessor.Builder builder = BulkProcessor.builder(client, listener)
-                .setBulkActions(maxActionsPerBulkRequest-1)  // off-by-one
+                .setBulkActions(maxActionsPerBulkRequest)  // off-by-one
                 .setConcurrentRequests(maxConcurrentBulkRequests)
                 .setFlushInterval(flushInterval);
         if (maxVolume != null) {
@@ -140,7 +158,7 @@ public class NodeClient implements Feeder {
         }
         this.bulkProcessor =  builder.build();
         try {
-            waitForHealthyCluster();
+            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
             closed = false;
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
@@ -154,26 +172,21 @@ public class NodeClient implements Feeder {
         return client;
     }
 
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
     public NodeClient setIndex(String index) {
         this.index = index;
         return this;
     }
 
+    @Override
     public NodeClient setType(String type) {
         this.type = type;
         return this;
-    }
-
-    public String getIndex() {
-        return index;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public TimeValue getFlushInterval() {
-        return flushInterval;
     }
 
     @Override
@@ -191,14 +204,14 @@ public class NodeClient implements Feeder {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            currentIngest.inc();
+            state.getCurrentIngest().inc();
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
-            logger.error("bulk add of index failed: " + e.getMessage(), e);
+            logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            currentIngest.dec();
+            state.getCurrentIngest().dec();
         }
         return this;
     }
@@ -216,18 +229,19 @@ public class NodeClient implements Feeder {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            currentIngest.inc();
+            state.getCurrentIngest().inc();
             bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
         } finally {
-            currentIngest.dec();
+            state.getCurrentIngest().dec();
         }
         return this;
     }
 
+    @Override
     public NodeClient flush() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
@@ -241,78 +255,109 @@ public class NodeClient implements Feeder {
         return this;
     }
 
-    public void shutdown() {
-        flush();
-        bulkProcessor.close();
-        client.close();
+    @Override
+    public NodeClient startBulk() throws IOException {
+        if (state.isBulk()) {
+            return this;
+        }
+        state.setBulk(true);
+        ClientHelper.startBulk(client, index);
+        return this;
     }
 
-    public NodeClient waitForHealthyCluster() throws IOException {
-        return waitForHealthyCluster(ClusterHealthStatus.YELLOW, "30s");
-    }
-
-    public NodeClient waitForHealthyCluster(ClusterHealthStatus status, String timeout) throws IOException {
-        try {
-            logger.info("waiting for cluster health {}...", status.name());
-            ClusterHealthResponse healthResponse =
-                    client.admin().cluster().prepareHealth().setWaitForStatus(status).setTimeout(timeout).execute().actionGet();
-            if (healthResponse.isTimedOut()) {
-                throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
-            }
-        } catch (ElasticsearchTimeoutException e) {
-            throw new IOException("cluster not healthy, cowardly refusing to continue with operations");
+    @Override
+    public NodeClient stopBulk() throws IOException {
+        if (state.isBulk()) {
+            state.setBulk(false);
+            ClientHelper.stopBulk(client, index);
         }
         return this;
     }
 
+    @Override
+    public NodeClient refresh() {
+        ClientHelper.refresh(client, index);
+        return this;
+    }
+
+    @Override
+    public int updateReplicaLevel(int level) throws IOException {
+        return ClientHelper.updateReplicaLevel(client, index, level);
+    }
+
+
+    @Override
+    public NodeClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+        ClientHelper.waitForCluster(client, status, timeout);
+        return this;
+    }
+
+    @Override
+    public int waitForRecovery() throws IOException {
+        return ClientHelper.waitForRecovery(client, index);
+    }
+
+    @Override
+    public void shutdown() {
+        try {
+            flush();
+            bulkProcessor.close();
+            stopBulk();
+            client.close();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+    }
+
+
+    @Override
+    public NodeClient resetSettings() {
+        configHelper.reset();
+        return this;
+    }
+
+    @Override
     public NodeClient setting(String key, String value) {
         configHelper.setting(key, value);
         return this;
     }
 
+    @Override
     public NodeClient setting(String key, Integer value) {
         configHelper.setting(key, value);
         return this;
     }
 
+    @Override
     public NodeClient setting(String key, Boolean value) {
         configHelper.setting(key, value);
         return this;
     }
 
+    @Override
     public NodeClient setting(InputStream in) throws IOException {
         configHelper.setting(in);
         return this;
     }
 
+    @Override
     public Settings settings() {
         return configHelper.settings();
     }
 
+    @Override
     public NodeClient mapping(String type, InputStream in) throws IOException {
         configHelper.mapping(type,in);
         return this;
     }
 
+    @Override
     public NodeClient mapping(String type, String mapping) {
         configHelper.mapping(type, mapping);
         return this;
     }
 
-    public Map<String,String> mappings() {
-        return configHelper.mappings();
-    }
-
-    public NodeClient putMapping(String index) {
-        configHelper.putMapping(client, index);
-        return this;
-    }
-
-    public NodeClient deleteMapping(String index, String type) {
-        configHelper.deleteMapping(client, index, type);
-        return this;
-    }
-
+    @Override
     public NodeClient newIndex() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
@@ -335,7 +380,7 @@ public class NodeClient implements Feeder {
             }
         }
         logger.info("creating index {} with settings = {}, mappings = {}",
-                getIndex(), settings(), mappings());
+                getIndex(), settings().getAsMap(), mappings());
         try {
             client.admin().indices().create(request).actionGet();
         } catch (Exception e) {
@@ -344,6 +389,7 @@ public class NodeClient implements Feeder {
         return this;
     }
 
+    @Override
     public NodeClient deleteIndex() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
@@ -364,28 +410,26 @@ public class NodeClient implements Feeder {
         return this;
     }
 
-    public long getTotalSizeInBytes() {
-        return totalIngestSizeInBytes.count();
-    }
-
-    public long getTotalBulkRequestTime() {
-        return totalIngest.sum();
-    }
-
-    public long getTotalBulkRequests() {
-        return totalIngest.count();
-    }
-
-    public long getTotalDocuments() {
-        return totalIngestNumDocs.count();
-    }
-
-    public boolean hasErrors() {
+    @Override
+    public boolean hasThrowable() {
         return throwable != null;
     }
 
+    @Override
     public Throwable getThrowable() {
         return throwable;
+    }
+
+    public String getIndex() {
+        return index;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Map<String,String> mappings() {
+        return configHelper.mappings();
     }
 
 }

@@ -33,7 +33,7 @@ public class IngestIndexAction extends Action<IngestIndexRequest, IngestResponse
     public TransportRequestOptions transportOptions(Settings settings) {
         return TransportRequestOptions.options()
                 .withType(TransportRequestOptions.Type.BULK)
-                .withTimeout(settings.getAsTime("action.ingest.timeout", TimeValue.timeValueMinutes(1)))
+                .withTimeout(settings.getAsTime("action.ingest.timeout", TimeValue.timeValueSeconds(60)))
                 .withCompress(settings.getAsBoolean("action.ingest.compress", true));
     }
 }

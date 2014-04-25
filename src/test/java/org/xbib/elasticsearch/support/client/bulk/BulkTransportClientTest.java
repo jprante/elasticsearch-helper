@@ -17,23 +17,23 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkClientTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkClientTest.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
     @Test
     public void testBulkClient() {
-        final BulkClient es = new BulkClient()
+        final BulkTransportClient es = new BulkTransportClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(getAddress())
                 .setIndex("test")
                 .setType("test")
                 .newIndex();
         es.shutdown();
-        if (es.hasErrors()) {
+        if (es.hasThrowable()) {
             logger.error("error", es.getThrowable());
         }
-        assertFalse(es.hasErrors());
+        assertFalse(es.hasThrowable());
         try {
             es.deleteIndex()
               .newIndex()
@@ -42,16 +42,16 @@ public class BulkClientTest extends AbstractNodeRandomTestHelper {
             logger.error("no node available");
         } finally {
             es.shutdown();
-            if (es.hasErrors()) {
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testSingleDocBulkClient() {
-        final BulkClient es = new BulkClient()
+        final BulkTransportClient es = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(getAddress())
@@ -70,18 +70,18 @@ public class BulkClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            assertEquals(es.getTotalBulkRequests(), 1);
-            if (es.hasErrors()) {
+            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(es.getState().getTotalIngest().count(), 1);
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testRandomDocsBulkClient() {
-        final BulkClient es = new BulkClient()
+        final BulkTransportClient es = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(10))
                 .newClient(getAddress())
@@ -96,18 +96,18 @@ public class BulkClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getTotalBulkRequests());
-            assertEquals(es.getTotalBulkRequests(), 13);
-            if (es.hasErrors()) {
+            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(es.getState().getTotalIngest().count(), 13);
+            if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
-            assertFalse(es.hasErrors());
+            assertFalse(es.hasThrowable());
         }
     }
 
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
-        final BulkClient client = new BulkClient()
+        final BulkTransportClient client = new BulkTransportClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
@@ -136,13 +136,13 @@ public class BulkClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk().shutdown();
-            logger.info("total bulk requests = {}", client.getTotalBulkRequests());
+            logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
             int target = max * 12345 / 1000 + 1;
-            assertEquals(client.getTotalBulkRequests(), target);
-            if (client.hasErrors()) {
+            assertEquals(client.getState().getTotalIngest().count(), target);
+            if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
-            assertFalse(client.hasErrors());
+            assertFalse(client.hasThrowable());
         }
     }
 
