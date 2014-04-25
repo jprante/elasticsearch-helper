@@ -105,8 +105,8 @@ public class IngestIndexTransportClient extends AbstractIngestTransportClient {
     }
 
     /**
-     * Create new client with concurrent ingestProcessor processor.
-     * <p/>
+     * Create new client with concurrent ingest processor.
+     *
      * The URI describes host and port of the node the client should connect to,
      * with the parameter <tt>es.cluster.name</tt> for the cluster name.
      *
