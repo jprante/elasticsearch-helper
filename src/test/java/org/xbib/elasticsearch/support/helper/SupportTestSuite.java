@@ -4,6 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.support.AliasTest;
 import org.xbib.elasticsearch.support.NPETest;
+import org.xbib.elasticsearch.support.cron.CronTest;
 import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.DuplicateIDTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
@@ -18,6 +19,7 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
+        CronTest.class,
         BulkTransportClientTest.class,
         IngestTransportClientTest.class,
         IngestIndexClientTest.class,

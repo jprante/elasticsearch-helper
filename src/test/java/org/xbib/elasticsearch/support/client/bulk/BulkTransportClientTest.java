@@ -8,7 +8,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +50,9 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testSingleDocBulkClient() {
+        /**
+         * most of the times, BulkProcessor has difficulties with a single document...
+         */
         final BulkTransportClient es = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(5))
@@ -63,15 +65,12 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             es.newIndex();
             es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
-            logger.info("stats={}", es.stats());
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
-            assertEquals(es.getState().getTotalIngest().count(), 1);
+            logger.info("bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(1, es.getState().getTotalIngest().count());
             if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
@@ -92,12 +91,13 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
+            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
             es.shutdown();
-            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
-            assertEquals(es.getState().getTotalIngest().count(), 13);
+            logger.info("bulk requests = {}", es.getState().getTotalIngest().count());
+            assertEquals(13, es.getState().getTotalIngest().count(), 13);
             if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }
@@ -135,10 +135,10 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            client.stopBulk().shutdown();
-            logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
+            client.stopBulk().flush().shutdown();
+            logger.info("bulk requests = {}", client.getState().getTotalIngest().count() );
             int target = max * 12345 / 1000 + 1;
-            assertEquals(client.getState().getTotalIngest().count(), target);
+            assertEquals(target, client.getState().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

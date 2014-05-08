@@ -70,6 +70,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < 12345; i++) {
                 es.index(INDEX, "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
+            es.flush();
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {

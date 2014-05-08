@@ -68,11 +68,10 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             es.newIndex();
             es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
-            logger.info("stats={}", es.stats());
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         } finally {
             es.shutdown();
             logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
@@ -138,7 +137,6 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("stats={}", client.stats());
             client.stopBulk().shutdown();
             logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
             assertEquals(max * 12345 / 10000 + 1, client.getState().getTotalIngest().count());

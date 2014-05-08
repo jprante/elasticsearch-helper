@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.metrics;
+package org.xbib.metrics;
 
 import org.elasticsearch.common.metrics.Metric;
 

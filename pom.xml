@@ -7,7 +7,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>1.1.0.3</version>
+    <version>1.1.0.4</version>
 
     <packaging>jar</packaging>
 
@@ -54,13 +54,13 @@
 
     <repositories>
         <repository>
-            <id>bintray-elasticsearch-plugins</id>
-            <url>http://dl.bintray.com/jprante/elasticsearch-plugins</url>
+            <id>xbib</id>
+            <url>http://xbib.org/repository</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>false</enabled>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>

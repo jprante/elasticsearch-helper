@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.helper;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
@@ -15,11 +16,11 @@ import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
-import static org.elasticsearch.common.settings.ImmutableSettings.Builder.EMPTY_SETTINGS;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
@@ -30,47 +31,82 @@ public abstract class AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
-    protected final String CLUSTER = "test-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+    protected final String INDEX = "my_index";
 
-    protected final String INDEX = "test-" + NetworkUtils.getLocalAddress().getHostName().toLowerCase();
-
-    protected int PORT;
-
-    protected Settings defaultSettings = ImmutableSettings
-            .settingsBuilder()
-            .put("cluster.name", CLUSTER)
-                    // default for queue_size for bulk thread pool is only 50 since 0.90.7
-                    // enlarge queue for this unit test because we are on a single machine with SSD...
-            .put("threadpool.bulk.queue_size", 200)
-            .build();
+    protected final String TYPE = "my_type";
 
     private Map<String, Node> nodes = newHashMap();
 
     private Map<String, Client> clients = newHashMap();
 
-    private Map<String, InetSocketTransportAddress> addresses = newHashMap();
+    private String host;
+
+    private int port;
 
     protected URI getAddress() {
-        return URI.create("es://localhost:" + PORT + "?es.cluster.name=" + CLUSTER);
+        return URI.create("es://" + getHost() + ":" + getPort() + "?es.cluster.name=" + getClusterName());
+    }
+
+    protected String getClusterName() {
+        return "test-support-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+    }
+
+    protected String getHost() {
+        return host;
+    }
+
+    protected int getPort() {
+        return port;
+    }
+
+    protected Settings getNodeSettings() {
+        return ImmutableSettings
+                .settingsBuilder()
+                .put("cluster.name", getClusterName())
+                .put("index.number_of_shards", 1)
+                .put("index.number_of_replica", 0)
+                .put("cluster.routing.schedule", "50ms")
+                .put("gateway.type", "none")
+                .put("index.store.type", "ram")
+                .put("http.enabled", false)
+                .put("discovery.zen.multicast.enabled", false)
+                .put("threadpool.bulk.queue_size", 200)
+                .build();
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void startNodes() throws Exception {
         startNode("1");
         // find node address
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
         NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
-        InetSocketTransportAddress address = (InetSocketTransportAddress)response.iterator().next()
-                        .getTransport().getAddress().publishAddress();
-        PORT = address.address().getPort();
-        addresses.put("1", address);
+        Object obj = response.iterator().next().getTransport().getAddress()
+                .publishAddress();
+        if (obj instanceof InetSocketTransportAddress) {
+            InetSocketTransportAddress address = (InetSocketTransportAddress) obj;
+            host = address.address().getHostName();
+            port = address.address().getPort();
+        }
+        createIndices();
+    }
+
+    private void createIndices() throws Exception {
         logger.info("creating index {}", INDEX);
-        client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
+        try {
+            client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
+        } catch (IndexAlreadyExistsException e) {
+            // ignore
+        }
         logger.info("index {} created", INDEX);
     }
 
     @After
-    public void deleteIndices() {
+    public void stopNodes() throws Exception {
+        deleteIndices();
+        closeAllNodes();
+    }
+
+    private void deleteIndices() throws Exception {
         logger.info("deleting index {}", INDEX);
         try {
             client("1").admin().indices().delete(new DeleteIndexRequest().indices(INDEX)).actionGet();
@@ -81,28 +117,17 @@ public abstract class AbstractNodeTestHelper {
         closeAllNodes();
     }
 
-    public Node startNode(String id) {
+    protected Node startNode(String id) {
         return buildNode(id).start();
     }
 
-    public Node buildNode(String id) {
-        return buildNode(id, EMPTY_SETTINGS);
-    }
-
-    public Node buildNode(String id, Settings settings) {
+    private Node buildNode(String id) {
         String settingsSource = getClass().getName().replace('.', '/') + ".yml";
         Settings finalSettings = settingsBuilder()
                 .loadFromClasspath(settingsSource)
-                .put(defaultSettings)
-                .put(settings)
+                .put(getNodeSettings())
                 .put("name", id)
                 .build();
-        if (finalSettings.get("gateway.type") == null) {
-            finalSettings = settingsBuilder().put(finalSettings).put("gateway.type", "none").build();
-        }
-        if (finalSettings.get("cluster.routing.schedule") != null) {
-            finalSettings = settingsBuilder().put(finalSettings).put("cluster.routing.schedule", "50ms").build();
-        }
         Node node = nodeBuilder().settings(finalSettings).build();
         Client client = node.client();
         nodes.put(id, node);
@@ -110,7 +135,7 @@ public abstract class AbstractNodeTestHelper {
         return node;
     }
 
-    public void stopNode(String id) {
+    protected void stopNode(String id) {
         Client client = clients.remove(id);
         if (client != null) {
             client.close();

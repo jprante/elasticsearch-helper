@@ -38,7 +38,7 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
     /**
      * The default size of a bulk request
      */
-    private int maxActionsPerBulkRequest = 100;
+    private int maxActionsPerBulkRequest = 1000;
     /**
      * The default number of maximum concurrent requests
      */
@@ -291,7 +291,7 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
 
     @Override
     public BulkTransportClient startBulk() throws IOException {
-        if (state.isBulk()) {
+        if (state == null || state.isBulk()) {
             return this;
         }
         state.setBulk(true);
@@ -301,7 +301,7 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
 
     @Override
     public BulkTransportClient stopBulk() throws IOException {
-        if (state.isBulk()) {
+        if (state  == null || state.isBulk()) {
             ClientHelper.stopBulk(client, index);
         }
         state.setBulk(false);
@@ -360,7 +360,8 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
         return this;
     }
 
-    public BulkTransportClient flush() {
+    @Override
+    public synchronized BulkTransportClient flush() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -368,13 +369,10 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
             logger.warn("no client");
             return this;
         }
-        // we simply wait long enough for BulkProcessor flush plus one second
-        try {
-            logger.info("flushing bulk processor (forced wait of {} seconds...)", 2 * flushInterval.seconds());
-            Thread.sleep(2 * flushInterval.getMillis());
-        } catch (InterruptedException e) {
-            logger.error("interrupted", e);
-        }
+        logger.info("flushing bulk processor");
+        // hacked BulkProcessor to execute the submission of remaining docs. Wait always 30 seconds at most.
+        BulkProcessorHelper.flush(bulkProcessor);
+        BulkProcessorHelper.waitFor(bulkProcessor, TimeValue.timeValueSeconds(30));
         return this;
     }
 
@@ -406,10 +404,9 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
         }
         try {
             if (bulkProcessor != null) {
-                flush();
                 bulkProcessor.close();
             }
-            if (state.isBulk()) {
+            if (state != null && state.isBulk()) {
                 ClientHelper.stopBulk(client, index);
             }
             logger.info("shutting down...");

@@ -11,13 +11,13 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.common.logging.ESLogger;
 
 import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
@@ -109,9 +109,11 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
             @Override
             public void beforeBulk(long executionId, int concurrency, IngestRequest request) {
                 int n = request.numberOfActions();
-                state.getSubmitted().inc(n);
-                state.getCurrentIngestNumDocs().inc(n);
-                state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                if (state != null) {
+                    state.getSubmitted().inc(n);
+                    state.getCurrentIngestNumDocs().inc(n);
+                    state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                }
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                             executionId, n, request.estimatedSizeInBytes(), concurrency);
@@ -120,9 +122,11 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
 
             @Override
             public void afterBulk(long executionId, int concurrency, IngestResponse response) {
-                state.getSucceeded().inc(response.successSize());
-                state.getFailed().inc(response.failureSize());
-                state.getTotalIngest().inc(response.tookInMillis());
+                if (state != null) {
+                    state.getSucceeded().inc(response.successSize());
+                    state.getFailed().inc(response.failureSize());
+                    state.getTotalIngest().inc(response.tookInMillis());
+                }
                 if (logger.isDebugEnabled()) {
                     logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
                             executionId, response.successSize(), response.failureSize(), response.tookInMillis());
@@ -133,7 +137,9 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
                         logger.error("after bulk [{}] [{}] failure, reason: {}", executionId, f.pos(), f.message());
                     }
                 } else {
-                    state.getCurrentIngestNumDocs().dec(response.successSize());
+                    if (state != null) {
+                        state.getCurrentIngestNumDocs().dec(response.successSize());
+                    }
                 }
             }
 
@@ -250,7 +256,7 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
 
     @Override
     public IngestTransportClient startBulk() throws IOException {
-        if (state.isBulk()) {
+        if (state  == null || state.isBulk()) {
             return this;
         }
         state.setBulk(true);
@@ -260,7 +266,7 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
 
     @Override
     public IngestTransportClient stopBulk() throws IOException {
-        if (state.isBulk()) {
+        if (state == null || state.isBulk()) {
             ClientHelper.stopBulk(client, getIndex());
         }
         state.setBulk(false);
@@ -292,14 +298,18 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -315,14 +325,18 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(deleteRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -395,7 +409,7 @@ public class IngestTransportClient extends AbstractIngestTransportClient impleme
                 logger.info("closing ingest processor...");
                 ingestProcessor.close();
             }
-            if (state.isBulk()) {
+            if (state != null && state.isBulk()) {
                 ClientHelper.stopBulk(client, getIndex());
             }
             logger.info("shutting down...");

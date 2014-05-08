@@ -29,6 +29,7 @@ import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.State;
+import org.xbib.elasticsearch.support.client.bulk.BulkProcessorHelper;
 
 /**
  * Node client support
@@ -246,12 +247,9 @@ public class NodeClient implements Ingest {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        // we simply wait long enough for BulkProcessor flush
-        try {
-            Thread.sleep(2 * flushInterval.getMillis());
-        } catch (InterruptedException e) {
-            logger.error("interrupted", e);
-        }
+        logger.info("flushing bulk processor");
+        BulkProcessorHelper.flush(bulkProcessor);
+        BulkProcessorHelper.waitFor(bulkProcessor, TimeValue.timeValueSeconds(60));
         return this;
     }
 
@@ -300,8 +298,9 @@ public class NodeClient implements Ingest {
     @Override
     public void shutdown() {
         try {
-            flush();
-            bulkProcessor.close();
+            if (bulkProcessor != null) {
+                bulkProcessor.close();
+            }
             stopBulk();
             client.close();
         } catch (Exception e) {

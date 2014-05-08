@@ -35,20 +35,15 @@ public class ClientHelper {
         return nodes;
     }
 
-    public static String threadPoolStats(TransportClient client) throws IOException {
-        XContentBuilder builder = jsonBuilder();
-        builder.startObject();
-        client.threadPool().stats().toXContent(builder, ToXContent.EMPTY_PARAMS);
-        builder.endObject();
-        return builder.string();
-    }
-
     public static void updateIndexSetting(Client client, String index, String key, Object value) throws IOException {
         if (client == null) {
             throw new IOException("no client");
         }
         if (index == null) {
             throw new IOException("no index name given");
+        }
+        if (key == null) {
+            throw new IOException("no key given");
         }
         if (value == null) {
             throw new IOException("no value given");
@@ -107,7 +102,6 @@ public class ClientHelper {
 
     public static void startBulk(Client client, String index) throws IOException {
         updateIndexSetting(client, index, "refresh_interval", -1);
-        updateReplicaLevel(client, index, 0);
     }
 
     public static void stopBulk(Client client, String index) throws IOException {

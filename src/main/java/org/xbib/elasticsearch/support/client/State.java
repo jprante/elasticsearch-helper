@@ -1,8 +1,8 @@
 
 package org.xbib.elasticsearch.support.client;
 
-import org.xbib.elasticsearch.support.metrics.CounterMetric;
-import org.xbib.elasticsearch.support.metrics.MeanMetric;
+import org.xbib.metrics.CounterMetric;
+import org.xbib.metrics.MeanMetric;
 
 public class State {
 

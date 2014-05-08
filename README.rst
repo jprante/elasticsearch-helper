@@ -1,37 +1,48 @@
 .. image:: ../../../elasticsearch-support/raw/master/src/site/resources/support.jpg
 
-
 Elasticsearch support plugin
 ============================
 
 This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
+.. image:: https://travis-ci.org/jprante/elasticsearch-support.png
+
+Versions
+--------
+
+=============  ==============  =================
+ES version     Plugin          Release date
+-------------  --------------  -----------------
+0.19.11.2      0.19.11.2       Feb 1, 2013
+0.20.6         0.20.6.1        Feb 4, 2014
+0.90.7         0.90.7.1        Dec 3, 2013
+1.0.0.RC2      1.0.0.RC2.1     Feb 3, 2014
+1.1.0          1.1.0.4         May 8, 2014
+=============  ==============  =================
+
 Installation
 ------------
 
-.. image:: https://travis-ci.org/jprante/elasticsearch-support.png
-
-=============  ==============  =================  ==========================================================
-ES version     Plugin          Release date       Command
--------------  --------------  -----------------  ----------------------------------------------------------
-0.19.11.2      0.19.11.2       Feb 1, 2013        ./bin/plugin -install support -url http://bit.ly/1fW1Ubk
-0.20.6         0.20.6.1        Feb 4, 2014        ./bin/plugin -install support -url http://bit.ly/1k6HOjT
-0.90.7         0.90.7.1        Dec 3, 2013        ./bin/plugin -install support -url http://bit.ly/1arMpDf
-1.0.0.RC2      1.0.0.RC2.1     Feb 3, 2014        ./bin/plugin -install support -url http://bit.ly/1bWNxAD
-1.1.0          1.1.0.0         Mar 25, 2014       ./bin/plugin --install support --url http://bit.ly/1h6rqgR
-=============  ==============  =================  ==========================================================
+    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.1.0.4/elasticsearch-support-1.1.0.4.zip
 
 Do not forget to restart the node after installing.
+
+Checksum
+--------
+
+File: elasticsearch-support-1.1.0.4.zip
+
+SHA1: 5f857ddde172f5295eaadb1ee930c1727532fa58
 
 Project docs
 ------------
 
 The Maven project site is available at `Github <http://jprante.github.io/elasticsearch-support>`_
 
-Binaries
---------
+Issues
+------
 
-Binaries are available at `Bintray <https://bintray.com/pkg/show/general/jprante/elasticsearch-plugins/elasticsearch-support>`_
+All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-support/issues>`_
 
 
 License

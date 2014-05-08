@@ -104,10 +104,6 @@ public abstract class AbstractTransportClient {
         return ClientHelper.getConnectedNodes(client);
     }
 
-    public String stats() throws IOException {
-        return ClientHelper.threadPoolStats(client);
-    }
-
     public synchronized void shutdown() {
         if (client != null) {
             client.close();
