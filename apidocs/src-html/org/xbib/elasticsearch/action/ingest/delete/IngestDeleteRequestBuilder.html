@@ -1,100 +1,105 @@
-<HTML>
-<BODY BGCOLOR="white">
-<PRE>
-<FONT color="green">001</FONT>    <a name="line.1"></a>
-<FONT color="green">002</FONT>    package org.xbib.elasticsearch.action.ingest.delete;<a name="line.2"></a>
-<FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.action.ActionListener;<a name="line.4"></a>
-<FONT color="green">005</FONT>    import org.elasticsearch.action.ActionRequestBuilder;<a name="line.5"></a>
-<FONT color="green">006</FONT>    import org.elasticsearch.action.ListenableActionFuture;<a name="line.6"></a>
-<FONT color="green">007</FONT>    import org.elasticsearch.action.WriteConsistencyLevel;<a name="line.7"></a>
-<FONT color="green">008</FONT>    import org.elasticsearch.action.delete.DeleteRequest;<a name="line.8"></a>
-<FONT color="green">009</FONT>    import org.elasticsearch.action.delete.DeleteRequestBuilder;<a name="line.9"></a>
-<FONT color="green">010</FONT>    import org.elasticsearch.action.support.PlainListenableActionFuture;<a name="line.10"></a>
-<FONT color="green">011</FONT>    import org.elasticsearch.action.support.replication.ReplicationType;<a name="line.11"></a>
-<FONT color="green">012</FONT>    import org.elasticsearch.client.Client;<a name="line.12"></a>
-<FONT color="green">013</FONT>    import org.elasticsearch.client.internal.InternalClient;<a name="line.13"></a>
-<FONT color="green">014</FONT>    <a name="line.14"></a>
-<FONT color="green">015</FONT>    import org.elasticsearch.common.unit.TimeValue;<a name="line.15"></a>
-<FONT color="green">016</FONT>    import org.xbib.elasticsearch.action.ingest.IngestResponse;<a name="line.16"></a>
-<FONT color="green">017</FONT>    <a name="line.17"></a>
-<FONT color="green">018</FONT>    /**<a name="line.18"></a>
-<FONT color="green">019</FONT>     * A bulk request holds ordered {@link org.elasticsearch.action.delete.DeleteRequest}s<a name="line.19"></a>
-<FONT color="green">020</FONT>     * and allows to executes it in a single batch.<a name="line.20"></a>
-<FONT color="green">021</FONT>     */<a name="line.21"></a>
-<FONT color="green">022</FONT>    public class IngestDeleteRequestBuilder extends ActionRequestBuilder&lt;IngestDeleteRequest, IngestResponse, IngestDeleteRequestBuilder&gt; {<a name="line.22"></a>
-<FONT color="green">023</FONT>    <a name="line.23"></a>
-<FONT color="green">024</FONT>        public IngestDeleteRequestBuilder(Client client) {<a name="line.24"></a>
-<FONT color="green">025</FONT>            super((InternalClient)client, new IngestDeleteRequest());<a name="line.25"></a>
-<FONT color="green">026</FONT>        }<a name="line.26"></a>
-<FONT color="green">027</FONT>    <a name="line.27"></a>
-<FONT color="green">028</FONT>        public IngestDeleteRequest request() {<a name="line.28"></a>
-<FONT color="green">029</FONT>            return this.request;<a name="line.29"></a>
-<FONT color="green">030</FONT>        }<a name="line.30"></a>
-<FONT color="green">031</FONT>    <a name="line.31"></a>
-<FONT color="green">032</FONT>        @Override<a name="line.32"></a>
-<FONT color="green">033</FONT>        public ListenableActionFuture&lt;IngestResponse&gt; execute() {<a name="line.33"></a>
-<FONT color="green">034</FONT>            PlainListenableActionFuture&lt;IngestResponse&gt; future = new PlainListenableActionFuture&lt;IngestResponse&gt;(request.listenerThreaded(), client.threadPool());<a name="line.34"></a>
-<FONT color="green">035</FONT>            execute(future);<a name="line.35"></a>
-<FONT color="green">036</FONT>            return future;<a name="line.36"></a>
-<FONT color="green">037</FONT>        }<a name="line.37"></a>
-<FONT color="green">038</FONT>    <a name="line.38"></a>
-<FONT color="green">039</FONT>        @Override<a name="line.39"></a>
-<FONT color="green">040</FONT>        public void execute(ActionListener&lt;IngestResponse&gt; listener) {<a name="line.40"></a>
-<FONT color="green">041</FONT>            doExecute(listener);<a name="line.41"></a>
-<FONT color="green">042</FONT>        }<a name="line.42"></a>
-<FONT color="green">043</FONT>    <a name="line.43"></a>
-<FONT color="green">044</FONT>        /**<a name="line.44"></a>
-<FONT color="green">045</FONT>         * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.<a name="line.45"></a>
-<FONT color="green">046</FONT>         */<a name="line.46"></a>
-<FONT color="green">047</FONT>        public IngestDeleteRequestBuilder add(DeleteRequest request) {<a name="line.47"></a>
-<FONT color="green">048</FONT>            this.request.add(request);<a name="line.48"></a>
-<FONT color="green">049</FONT>            return this;<a name="line.49"></a>
-<FONT color="green">050</FONT>        }<a name="line.50"></a>
-<FONT color="green">051</FONT>    <a name="line.51"></a>
-<FONT color="green">052</FONT>        /**<a name="line.52"></a>
-<FONT color="green">053</FONT>         * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.<a name="line.53"></a>
-<FONT color="green">054</FONT>         */<a name="line.54"></a>
-<FONT color="green">055</FONT>        public IngestDeleteRequestBuilder add(DeleteRequestBuilder request) {<a name="line.55"></a>
-<FONT color="green">056</FONT>            this.request.add(request.request());<a name="line.56"></a>
-<FONT color="green">057</FONT>            return this;<a name="line.57"></a>
-<FONT color="green">058</FONT>        }<a name="line.58"></a>
-<FONT color="green">059</FONT>    <a name="line.59"></a>
-<FONT color="green">060</FONT>        /**<a name="line.60"></a>
-<FONT color="green">061</FONT>         * Set the replication type for this operation.<a name="line.61"></a>
-<FONT color="green">062</FONT>         */<a name="line.62"></a>
-<FONT color="green">063</FONT>        public IngestDeleteRequestBuilder setReplicationType(ReplicationType replicationType) {<a name="line.63"></a>
-<FONT color="green">064</FONT>            request.replicationType(replicationType);<a name="line.64"></a>
-<FONT color="green">065</FONT>            return this;<a name="line.65"></a>
-<FONT color="green">066</FONT>        }<a name="line.66"></a>
-<FONT color="green">067</FONT>    <a name="line.67"></a>
-<FONT color="green">068</FONT>        /**<a name="line.68"></a>
-<FONT color="green">069</FONT>         * Sets the consistency level. Defaults to {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}.<a name="line.69"></a>
-<FONT color="green">070</FONT>         */<a name="line.70"></a>
-<FONT color="green">071</FONT>        public IngestDeleteRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {<a name="line.71"></a>
-<FONT color="green">072</FONT>            request.consistencyLevel(consistencyLevel);<a name="line.72"></a>
-<FONT color="green">073</FONT>            return this;<a name="line.73"></a>
-<FONT color="green">074</FONT>        }<a name="line.74"></a>
-<FONT color="green">075</FONT>    <a name="line.75"></a>
-<FONT color="green">076</FONT>        /**<a name="line.76"></a>
-<FONT color="green">077</FONT>         * Sets the timeout. Defaults to {@link org.xbib.elasticsearch.action.ingest.delete.IngestDeleteShardRequest#DEFAULT_TIMEOUT}.<a name="line.77"></a>
-<FONT color="green">078</FONT>         */<a name="line.78"></a>
-<FONT color="green">079</FONT>        public IngestDeleteRequestBuilder setTimeout(TimeValue timeout) {<a name="line.79"></a>
-<FONT color="green">080</FONT>            request.timeout(timeout);<a name="line.80"></a>
-<FONT color="green">081</FONT>            return this;<a name="line.81"></a>
-<FONT color="green">082</FONT>        }<a name="line.82"></a>
-<FONT color="green">083</FONT>    <a name="line.83"></a>
-<FONT color="green">084</FONT>        /**<a name="line.84"></a>
-<FONT color="green">085</FONT>         * The number of actions currently in the bulk.<a name="line.85"></a>
-<FONT color="green">086</FONT>         */<a name="line.86"></a>
-<FONT color="green">087</FONT>        public int numberOfActions() {<a name="line.87"></a>
-<FONT color="green">088</FONT>            return request.numberOfActions();<a name="line.88"></a>
-<FONT color="green">089</FONT>        }<a name="line.89"></a>
-<FONT color="green">090</FONT>    <a name="line.90"></a>
-<FONT color="green">091</FONT>        protected void doExecute(ActionListener&lt;IngestResponse&gt; listener) {<a name="line.91"></a>
-<FONT color="green">092</FONT>            ((InternalClient)client).execute(IngestDeleteAction.INSTANCE, request, listener);<a name="line.92"></a>
-<FONT color="green">093</FONT>        }<a name="line.93"></a>
-<FONT color="green">094</FONT>    }<a name="line.94"></a>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a name="line.1"></a>
+<span class="sourceLineNo">002</span>package org.xbib.elasticsearch.action.ingest.delete;<a name="line.2"></a>
+<span class="sourceLineNo">003</span><a name="line.3"></a>
+<span class="sourceLineNo">004</span>import org.elasticsearch.action.ActionListener;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import org.elasticsearch.action.ActionRequestBuilder;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.elasticsearch.action.ListenableActionFuture;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.elasticsearch.action.WriteConsistencyLevel;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.elasticsearch.action.delete.DeleteRequest;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.elasticsearch.action.delete.DeleteRequestBuilder;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.elasticsearch.action.support.PlainListenableActionFuture;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.elasticsearch.action.support.replication.ReplicationType;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.elasticsearch.client.Client;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.elasticsearch.client.internal.InternalClient;<a name="line.13"></a>
+<span class="sourceLineNo">014</span><a name="line.14"></a>
+<span class="sourceLineNo">015</span>import org.elasticsearch.common.unit.TimeValue;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import org.xbib.elasticsearch.action.ingest.IngestResponse;<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>/**<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * A bulk request holds ordered {@link org.elasticsearch.action.delete.DeleteRequest}s<a name="line.19"></a>
+<span class="sourceLineNo">020</span> * and allows to executes it in a single batch.<a name="line.20"></a>
+<span class="sourceLineNo">021</span> */<a name="line.21"></a>
+<span class="sourceLineNo">022</span>public class IngestDeleteRequestBuilder extends ActionRequestBuilder&lt;IngestDeleteRequest, IngestResponse, IngestDeleteRequestBuilder&gt; {<a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span>    public IngestDeleteRequestBuilder(Client client) {<a name="line.24"></a>
+<span class="sourceLineNo">025</span>        super((InternalClient)client, new IngestDeleteRequest());<a name="line.25"></a>
+<span class="sourceLineNo">026</span>    }<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>    public IngestDeleteRequest request() {<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        return this.request;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>    }<a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span>    @Override<a name="line.32"></a>
+<span class="sourceLineNo">033</span>    public ListenableActionFuture&lt;IngestResponse&gt; execute() {<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        PlainListenableActionFuture&lt;IngestResponse&gt; future = new PlainListenableActionFuture&lt;IngestResponse&gt;(request.listenerThreaded(), client.threadPool());<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        execute(future);<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        return future;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>    }<a name="line.37"></a>
+<span class="sourceLineNo">038</span><a name="line.38"></a>
+<span class="sourceLineNo">039</span>    @Override<a name="line.39"></a>
+<span class="sourceLineNo">040</span>    public void execute(ActionListener&lt;IngestResponse&gt; listener) {<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        doExecute(listener);<a name="line.41"></a>
+<span class="sourceLineNo">042</span>    }<a name="line.42"></a>
+<span class="sourceLineNo">043</span><a name="line.43"></a>
+<span class="sourceLineNo">044</span>    /**<a name="line.44"></a>
+<span class="sourceLineNo">045</span>     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.<a name="line.45"></a>
+<span class="sourceLineNo">046</span>     */<a name="line.46"></a>
+<span class="sourceLineNo">047</span>    public IngestDeleteRequestBuilder add(DeleteRequest request) {<a name="line.47"></a>
+<span class="sourceLineNo">048</span>        this.request.add(request);<a name="line.48"></a>
+<span class="sourceLineNo">049</span>        return this;<a name="line.49"></a>
+<span class="sourceLineNo">050</span>    }<a name="line.50"></a>
+<span class="sourceLineNo">051</span><a name="line.51"></a>
+<span class="sourceLineNo">052</span>    /**<a name="line.52"></a>
+<span class="sourceLineNo">053</span>     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.<a name="line.53"></a>
+<span class="sourceLineNo">054</span>     */<a name="line.54"></a>
+<span class="sourceLineNo">055</span>    public IngestDeleteRequestBuilder add(DeleteRequestBuilder request) {<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        this.request.add(request.request());<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        return this;<a name="line.57"></a>
+<span class="sourceLineNo">058</span>    }<a name="line.58"></a>
+<span class="sourceLineNo">059</span><a name="line.59"></a>
+<span class="sourceLineNo">060</span>    /**<a name="line.60"></a>
+<span class="sourceLineNo">061</span>     * Set the replication type for this operation.<a name="line.61"></a>
+<span class="sourceLineNo">062</span>     */<a name="line.62"></a>
+<span class="sourceLineNo">063</span>    public IngestDeleteRequestBuilder setReplicationType(ReplicationType replicationType) {<a name="line.63"></a>
+<span class="sourceLineNo">064</span>        request.replicationType(replicationType);<a name="line.64"></a>
+<span class="sourceLineNo">065</span>        return this;<a name="line.65"></a>
+<span class="sourceLineNo">066</span>    }<a name="line.66"></a>
+<span class="sourceLineNo">067</span><a name="line.67"></a>
+<span class="sourceLineNo">068</span>    /**<a name="line.68"></a>
+<span class="sourceLineNo">069</span>     * Sets the consistency level. Defaults to {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}.<a name="line.69"></a>
+<span class="sourceLineNo">070</span>     */<a name="line.70"></a>
+<span class="sourceLineNo">071</span>    public IngestDeleteRequestBuilder setConsistencyLevel(WriteConsistencyLevel consistencyLevel) {<a name="line.71"></a>
+<span class="sourceLineNo">072</span>        request.consistencyLevel(consistencyLevel);<a name="line.72"></a>
+<span class="sourceLineNo">073</span>        return this;<a name="line.73"></a>
+<span class="sourceLineNo">074</span>    }<a name="line.74"></a>
+<span class="sourceLineNo">075</span><a name="line.75"></a>
+<span class="sourceLineNo">076</span>    /**<a name="line.76"></a>
+<span class="sourceLineNo">077</span>     * Sets the timeout. Defaults to {@link org.xbib.elasticsearch.action.ingest.delete.IngestDeleteShardRequest#DEFAULT_TIMEOUT}.<a name="line.77"></a>
+<span class="sourceLineNo">078</span>     */<a name="line.78"></a>
+<span class="sourceLineNo">079</span>    public IngestDeleteRequestBuilder setTimeout(TimeValue timeout) {<a name="line.79"></a>
+<span class="sourceLineNo">080</span>        request.timeout(timeout);<a name="line.80"></a>
+<span class="sourceLineNo">081</span>        return this;<a name="line.81"></a>
+<span class="sourceLineNo">082</span>    }<a name="line.82"></a>
+<span class="sourceLineNo">083</span><a name="line.83"></a>
+<span class="sourceLineNo">084</span>    /**<a name="line.84"></a>
+<span class="sourceLineNo">085</span>     * The number of actions currently in the bulk.<a name="line.85"></a>
+<span class="sourceLineNo">086</span>     */<a name="line.86"></a>
+<span class="sourceLineNo">087</span>    public int numberOfActions() {<a name="line.87"></a>
+<span class="sourceLineNo">088</span>        return request.numberOfActions();<a name="line.88"></a>
+<span class="sourceLineNo">089</span>    }<a name="line.89"></a>
+<span class="sourceLineNo">090</span><a name="line.90"></a>
+<span class="sourceLineNo">091</span>    protected void doExecute(ActionListener&lt;IngestResponse&gt; listener) {<a name="line.91"></a>
+<span class="sourceLineNo">092</span>        ((InternalClient)client).execute(IngestDeleteAction.INSTANCE, request, listener);<a name="line.92"></a>
+<span class="sourceLineNo">093</span>    }<a name="line.93"></a>
+<span class="sourceLineNo">094</span>}<a name="line.94"></a>
 
 
 
@@ -155,6 +160,7 @@
 
 
 
-</PRE>
-</BODY>
-</HTML>
+</pre>
+</div>
+</body>
+</html>

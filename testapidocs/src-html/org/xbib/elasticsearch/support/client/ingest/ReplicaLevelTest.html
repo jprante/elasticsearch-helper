@@ -1,66 +1,71 @@
-<HTML>
-<BODY BGCOLOR="white">
-<PRE>
-<FONT color="green">001</FONT>    <a name="line.1"></a>
-<FONT color="green">002</FONT>    package org.xbib.elasticsearch.support.client.ingest;<a name="line.2"></a>
-<FONT color="green">003</FONT>    <a name="line.3"></a>
-<FONT color="green">004</FONT>    import org.elasticsearch.client.transport.NoNodeAvailableException;<a name="line.4"></a>
-<FONT color="green">005</FONT>    import org.elasticsearch.common.logging.ESLogger;<a name="line.5"></a>
-<FONT color="green">006</FONT>    import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.6"></a>
-<FONT color="green">007</FONT>    <a name="line.7"></a>
-<FONT color="green">008</FONT>    import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;<a name="line.8"></a>
-<FONT color="green">009</FONT>    <a name="line.9"></a>
-<FONT color="green">010</FONT>    import java.io.IOException;<a name="line.10"></a>
-<FONT color="green">011</FONT>    <a name="line.11"></a>
-<FONT color="green">012</FONT>    import org.junit.Test;<a name="line.12"></a>
-<FONT color="green">013</FONT>    import static org.junit.Assert.assertEquals;<a name="line.13"></a>
-<FONT color="green">014</FONT>    import static org.junit.Assert.assertFalse;<a name="line.14"></a>
-<FONT color="green">015</FONT>    <a name="line.15"></a>
-<FONT color="green">016</FONT>    public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {<a name="line.16"></a>
-<FONT color="green">017</FONT>    <a name="line.17"></a>
-<FONT color="green">018</FONT>        private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTest.class.getSimpleName());<a name="line.18"></a>
-<FONT color="green">019</FONT>    <a name="line.19"></a>
-<FONT color="green">020</FONT>        @Test<a name="line.20"></a>
-<FONT color="green">021</FONT>        public void testReplicaLevel() throws IOException {<a name="line.21"></a>
-<FONT color="green">022</FONT>    <a name="line.22"></a>
-<FONT color="green">023</FONT>            // we need 3 nodes for replica level 3<a name="line.23"></a>
-<FONT color="green">024</FONT>            startNode("2");<a name="line.24"></a>
-<FONT color="green">025</FONT>            startNode("3");<a name="line.25"></a>
-<FONT color="green">026</FONT>    <a name="line.26"></a>
-<FONT color="green">027</FONT>            int numberOfShards = 2;<a name="line.27"></a>
-<FONT color="green">028</FONT>            int replicaLevel = 3;<a name="line.28"></a>
-<FONT color="green">029</FONT>            int shardsAfterReplica;<a name="line.29"></a>
-<FONT color="green">030</FONT>    <a name="line.30"></a>
-<FONT color="green">031</FONT>            final IngestClient es = new IngestClient()<a name="line.31"></a>
-<FONT color="green">032</FONT>                    .newClient(getAddress())<a name="line.32"></a>
-<FONT color="green">033</FONT>                    .setIndex("replicatest")<a name="line.33"></a>
-<FONT color="green">034</FONT>                    .setType("replicatest")<a name="line.34"></a>
-<FONT color="green">035</FONT>                    .numberOfShards(numberOfShards)<a name="line.35"></a>
-<FONT color="green">036</FONT>                    .numberOfReplicas(0)<a name="line.36"></a>
-<FONT color="green">037</FONT>                    .newIndex();<a name="line.37"></a>
-<FONT color="green">038</FONT>    <a name="line.38"></a>
-<FONT color="green">039</FONT>            try {<a name="line.39"></a>
-<FONT color="green">040</FONT>                for (int i = 0; i &lt; 12345; i++) {<a name="line.40"></a>
-<FONT color="green">041</FONT>                    es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.41"></a>
-<FONT color="green">042</FONT>                }<a name="line.42"></a>
-<FONT color="green">043</FONT>                es.flush();<a name="line.43"></a>
-<FONT color="green">044</FONT>                shardsAfterReplica = es.updateReplicaLevel(replicaLevel);<a name="line.44"></a>
-<FONT color="green">045</FONT>                assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));<a name="line.45"></a>
-<FONT color="green">046</FONT>            } catch (NoNodeAvailableException e) {<a name="line.46"></a>
-<FONT color="green">047</FONT>                logger.warn("skipping, no node available");<a name="line.47"></a>
-<FONT color="green">048</FONT>            } finally {<a name="line.48"></a>
-<FONT color="green">049</FONT>                es.shutdown();<a name="line.49"></a>
-<FONT color="green">050</FONT>                if (es.hasErrors()) {<a name="line.50"></a>
-<FONT color="green">051</FONT>                    logger.error("error", es.getThrowable());<a name="line.51"></a>
-<FONT color="green">052</FONT>                }<a name="line.52"></a>
-<FONT color="green">053</FONT>                assertFalse(es.hasErrors());<a name="line.53"></a>
-<FONT color="green">054</FONT>            }<a name="line.54"></a>
-<FONT color="green">055</FONT>    <a name="line.55"></a>
-<FONT color="green">056</FONT>            stopNode("3");<a name="line.56"></a>
-<FONT color="green">057</FONT>            stopNode("2");<a name="line.57"></a>
-<FONT color="green">058</FONT>        }<a name="line.58"></a>
-<FONT color="green">059</FONT>    <a name="line.59"></a>
-<FONT color="green">060</FONT>    }<a name="line.60"></a>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span><a name="line.1"></a>
+<span class="sourceLineNo">002</span>package org.xbib.elasticsearch.support.client.ingest;<a name="line.2"></a>
+<span class="sourceLineNo">003</span><a name="line.3"></a>
+<span class="sourceLineNo">004</span>import org.elasticsearch.client.transport.NoNodeAvailableException;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import org.elasticsearch.common.logging.ESLogger;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.6"></a>
+<span class="sourceLineNo">007</span><a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;<a name="line.8"></a>
+<span class="sourceLineNo">009</span><a name="line.9"></a>
+<span class="sourceLineNo">010</span>import java.io.IOException;<a name="line.10"></a>
+<span class="sourceLineNo">011</span><a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.junit.Test;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import static org.junit.Assert.assertEquals;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import static org.junit.Assert.assertFalse;<a name="line.14"></a>
+<span class="sourceLineNo">015</span><a name="line.15"></a>
+<span class="sourceLineNo">016</span>public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>    private final static ESLogger logger = ESLoggerFactory.getLogger(ReplicaLevelTest.class.getSimpleName());<a name="line.18"></a>
+<span class="sourceLineNo">019</span><a name="line.19"></a>
+<span class="sourceLineNo">020</span>    @Test<a name="line.20"></a>
+<span class="sourceLineNo">021</span>    public void testReplicaLevel() throws IOException {<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span>        // we need 3 nodes for replica level 3<a name="line.23"></a>
+<span class="sourceLineNo">024</span>        startNode("2");<a name="line.24"></a>
+<span class="sourceLineNo">025</span>        startNode("3");<a name="line.25"></a>
+<span class="sourceLineNo">026</span><a name="line.26"></a>
+<span class="sourceLineNo">027</span>        int numberOfShards = 2;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>        int replicaLevel = 3;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        int shardsAfterReplica;<a name="line.29"></a>
+<span class="sourceLineNo">030</span><a name="line.30"></a>
+<span class="sourceLineNo">031</span>        final IngestTransportClient es = new IngestTransportClient()<a name="line.31"></a>
+<span class="sourceLineNo">032</span>                .newClient(getAddress())<a name="line.32"></a>
+<span class="sourceLineNo">033</span>                .setIndex("replicatest")<a name="line.33"></a>
+<span class="sourceLineNo">034</span>                .setType("replicatest")<a name="line.34"></a>
+<span class="sourceLineNo">035</span>                .numberOfShards(numberOfShards)<a name="line.35"></a>
+<span class="sourceLineNo">036</span>                .numberOfReplicas(0)<a name="line.36"></a>
+<span class="sourceLineNo">037</span>                .newIndex();<a name="line.37"></a>
+<span class="sourceLineNo">038</span><a name="line.38"></a>
+<span class="sourceLineNo">039</span>        try {<a name="line.39"></a>
+<span class="sourceLineNo">040</span>            for (int i = 0; i &lt; 12345; i++) {<a name="line.40"></a>
+<span class="sourceLineNo">041</span>                es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.41"></a>
+<span class="sourceLineNo">042</span>            }<a name="line.42"></a>
+<span class="sourceLineNo">043</span>            es.flush();<a name="line.43"></a>
+<span class="sourceLineNo">044</span>            shardsAfterReplica = es.updateReplicaLevel(replicaLevel);<a name="line.44"></a>
+<span class="sourceLineNo">045</span>            assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));<a name="line.45"></a>
+<span class="sourceLineNo">046</span>        } catch (NoNodeAvailableException e) {<a name="line.46"></a>
+<span class="sourceLineNo">047</span>            logger.warn("skipping, no node available");<a name="line.47"></a>
+<span class="sourceLineNo">048</span>        } finally {<a name="line.48"></a>
+<span class="sourceLineNo">049</span>            es.shutdown();<a name="line.49"></a>
+<span class="sourceLineNo">050</span>            if (es.hasThrowable()) {<a name="line.50"></a>
+<span class="sourceLineNo">051</span>                logger.error("error", es.getThrowable());<a name="line.51"></a>
+<span class="sourceLineNo">052</span>            }<a name="line.52"></a>
+<span class="sourceLineNo">053</span>            assertFalse(es.hasThrowable());<a name="line.53"></a>
+<span class="sourceLineNo">054</span>        }<a name="line.54"></a>
+<span class="sourceLineNo">055</span><a name="line.55"></a>
+<span class="sourceLineNo">056</span>        stopNode("3");<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        stopNode("2");<a name="line.57"></a>
+<span class="sourceLineNo">058</span>    }<a name="line.58"></a>
+<span class="sourceLineNo">059</span><a name="line.59"></a>
+<span class="sourceLineNo">060</span>}<a name="line.60"></a>
 
 
 
@@ -121,6 +126,7 @@
 
 
 
-</PRE>
-</BODY>
-</HTML>
+</pre>
+</div>
+</body>
+</html>
