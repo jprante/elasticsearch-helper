@@ -4,13 +4,16 @@ package org.xbib.elasticsearch.support.client.node;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -20,6 +23,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -40,7 +44,7 @@ public class NodeClient implements Ingest {
 
     private int maxActionsPerBulkRequest = 100;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 4;
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
 
     private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
 
@@ -54,15 +58,13 @@ public class NodeClient implements Ingest {
 
     private BulkProcessor bulkProcessor;
 
-    private String index;
-
-    private String type;
-
     private State state;
 
     private boolean closed = false;
 
     private Throwable throwable;
+
+    private Set<String> indices = new HashSet();
 
     @Override
     public NodeClient shards(int shards) {
@@ -117,7 +119,9 @@ public class NodeClient implements Ingest {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingBulkRequests.getAndIncrement();
-                state.getCurrentIngestNumDocs().inc(request.numberOfActions());
+                int n = request.numberOfActions();
+                state.getSubmitted().inc(n);
+                state.getCurrentIngestNumDocs().inc(n);
                 state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
@@ -128,17 +132,27 @@ public class NodeClient implements Ingest {
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 outstandingBulkRequests.decrementAndGet();
+                state.getSucceeded().inc(response.getItems().length);
+                state.getFailed().inc(0);
                 state.getTotalIngest().inc(response.getTookInMillis());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("after bulk [{}] success [{} items] [{}ms]",
-                            executionId, response.getItems().length, response.getTook().millis());
-                }
                 if (response.hasFailures()) {
                     closed = true;
-                    logger.error("after bulk [{}] failure reason: {}",
-                            executionId, response.buildFailureMessage());
+                    logger.error("bulk [{}] failed", executionId);
+                    for (BulkItemResponse itemResponse : response.getItems()) {
+                        if (itemResponse.isFailed()) {
+                            state.getSucceeded().dec(1);
+                            state.getFailed().inc(1);
+                        }
+                    }
                 } else {
                     state.getCurrentIngestNumDocs().dec(response.getItems().length);
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms]",
+                            executionId,
+                            state.getSucceeded().count(),
+                            state.getFailed().count(),
+                            response.getTook().millis());
                 }
             }
 
@@ -179,24 +193,8 @@ public class NodeClient implements Ingest {
     }
 
     @Override
-    public NodeClient setIndex(String index) {
-        this.index = index;
-        return this;
-    }
-
-    @Override
-    public NodeClient setType(String type) {
-        this.type = type;
-        return this;
-    }
-
-    @Override
     public NodeClient index(String index, String type, String id, String source) {
-        return index(Requests.indexRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType())
-                .id(id)
-                .create(false)
-                .source(source));
+        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source));
     }
 
     @Override
@@ -219,9 +217,7 @@ public class NodeClient implements Ingest {
 
     @Override
     public NodeClient delete(String index, String type, String id) {
-        return delete(Requests.deleteRequest(index != null ? index : getIndex())
-                .type(type != null ? type : getType())
-                .id(id));
+        return delete(Requests.deleteRequest(index).type(type).id(id));
     }
 
     @Override
@@ -254,32 +250,39 @@ public class NodeClient implements Ingest {
     }
 
     @Override
-    public NodeClient startBulk() throws IOException {
-        if (state.isBulk()) {
+    public NodeClient startBulk(String index) throws IOException {
+        if (state == null) {
             return this;
         }
-        state.setBulk(true);
-        ClientHelper.startBulk(client, index);
+        if (!state.isBulk()) {
+            state.setBulk(true);
+            ClientHelper.startBulk(client, index);
+        }
+        indices.add(index);
         return this;
     }
 
     @Override
-    public NodeClient stopBulk() throws IOException {
+    public NodeClient stopBulk(String index) throws IOException {
+        if (state == null) {
+            return this;
+        }
         if (state.isBulk()) {
             state.setBulk(false);
             ClientHelper.stopBulk(client, index);
         }
+        indices.remove(index);
         return this;
     }
 
     @Override
-    public NodeClient refresh() {
+    public NodeClient refresh(String index) {
         ClientHelper.refresh(client, index);
         return this;
     }
 
     @Override
-    public int updateReplicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(String index, int level) throws IOException {
         return ClientHelper.updateReplicaLevel(client, index, level);
     }
 
@@ -291,73 +294,31 @@ public class NodeClient implements Ingest {
     }
 
     @Override
-    public int waitForRecovery() throws IOException {
+    public int waitForRecovery(String index) throws IOException {
         return ClientHelper.waitForRecovery(client, index);
     }
 
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         try {
             if (bulkProcessor != null) {
+                logger.info("closing bulk processor...");
                 bulkProcessor.close();
             }
-            stopBulk();
+            logger.info("stopping bulk mode for indices {}...", indices);
+            for (String index : indices) {
+                stopBulk(index);
+            }
+            logger.info("shutting down...");
             client.close();
+            logger.info("shutting down completed");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
     }
 
-
     @Override
-    public NodeClient resetSettings() {
-        configHelper.reset();
-        return this;
-    }
-
-    @Override
-    public NodeClient setting(String key, String value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    @Override
-    public NodeClient setting(String key, Integer value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    @Override
-    public NodeClient setting(String key, Boolean value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    @Override
-    public NodeClient setting(InputStream in) throws IOException {
-        configHelper.setting(in);
-        return this;
-    }
-
-    @Override
-    public Settings settings() {
-        return configHelper.settings();
-    }
-
-    @Override
-    public NodeClient mapping(String type, InputStream in) throws IOException {
-        configHelper.mapping(type,in);
-        return this;
-    }
-
-    @Override
-    public NodeClient mapping(String type, String mapping) {
-        configHelper.mapping(type, mapping);
-        return this;
-    }
-
-    @Override
-    public NodeClient newIndex() {
+    public NodeClient newIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -365,21 +326,21 @@ public class NodeClient implements Ingest {
             logger.warn("no client");
             return this;
         }
-        if (getIndex() == null) {
+        if (index == null) {
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(getIndex());
-        if (settings() != null) {
-            request.settings(settings());
+        CreateIndexRequest request = new CreateIndexRequest(index);
+        if (getSettings() != null) {
+            request.settings(getSettings());
         }
-        if (mappings() != null) {
-            for (Map.Entry<String,String> me : mappings().entrySet()) {
+        if (getMappings() != null) {
+            for (Map.Entry<String,String> me : getMappings().entrySet()) {
                 request.mapping(me.getKey(), me.getValue());
             }
         }
         logger.info("creating index {} with settings = {}, mappings = {}",
-                getIndex(), settings().getAsMap(), mappings());
+                index, getSettings().getAsMap(), getMappings());
         try {
             client.admin().indices().create(request).actionGet();
         } catch (Exception e) {
@@ -389,7 +350,7 @@ public class NodeClient implements Ingest {
     }
 
     @Override
-    public NodeClient deleteIndex() {
+    public NodeClient deleteIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -397,12 +358,12 @@ public class NodeClient implements Ingest {
             logger.warn("no client");
             return this;
         }
-        if (getIndex() == null) {
+        if (index == null) {
             logger.warn("no index name given to delete index");
             return this;
         }
         try {
-            client.admin().indices().delete(new DeleteIndexRequest(getIndex())).actionGet();
+            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -419,15 +380,52 @@ public class NodeClient implements Ingest {
         return throwable;
     }
 
-    public String getIndex() {
-        return index;
+
+    public ImmutableSettings.Builder getSettingsBuilder() {
+        return configHelper.settingsBuilder();
     }
 
-    public String getType() {
-        return type;
+    public void resetSettings() {
+        configHelper.reset();
     }
 
-    public Map<String,String> mappings() {
+    public void addSetting(InputStream in) throws IOException {
+        configHelper.setting(in);
+    }
+
+    public void addSetting(String key, String value) {
+        configHelper.setting(key, value);
+    }
+
+    public void addSetting(String key, Boolean value) {
+        configHelper.setting(key, value);
+    }
+
+    public void addSetting(String key, Integer value) {
+        configHelper.setting(key, value);
+    }
+
+    public void setSettings(Settings settings) {
+        configHelper.settings(settings);
+    }
+
+    public Settings getSettings() {
+        return configHelper.settings();
+    }
+
+    public void addMapping(String type, InputStream in) throws IOException {
+        configHelper.mapping(type, in);
+    }
+
+    public void addMapping(String type, String mapping) {
+        configHelper.mapping(type, mapping);
+    }
+
+    public String defaultMapping() throws IOException {
+        return configHelper.defaultMapping();
+    }
+
+    public Map<String,String> getMappings() {
         return configHelper.mappings();
     }
 

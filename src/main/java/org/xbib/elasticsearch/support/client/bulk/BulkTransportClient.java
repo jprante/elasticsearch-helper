@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -17,22 +18,21 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
-import org.xbib.elasticsearch.support.client.AbstractIngestTransportClient;
+import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.State;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *  Client using the BulkProcessor of Elasticsearch
  */
-public class BulkTransportClient extends AbstractIngestTransportClient implements Ingest {
+public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getSimpleName());
     /**
@@ -62,20 +62,11 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
 
     private State state;
 
-    /**
-     * The default index
-     */
-    private String index;
-    /**
-     * The default type
-     */
-    private String type;
-
     private Throwable throwable;
 
-    private ConfigHelper configHelper = new ConfigHelper();
-
     private boolean closed = false;
+
+    private Set<String> indices = new HashSet();
 
     @Override
     public BulkTransportClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
@@ -145,11 +136,14 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
                 long l = outstandingRequests.getAndIncrement();
-                state.getSubmitted().inc(request.numberOfActions());
-                state.getCurrentIngestNumDocs().inc(request.numberOfActions());
-                state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                if (state != null) {
+                    int n = request.numberOfActions();
+                    state.getSubmitted().inc(n);
+                    state.getCurrentIngestNumDocs().inc(n);
+                    state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                }
                 if (logger.isDebugEnabled()) {
-                    logger.debug("new bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
+                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
                             executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
                 }
             }
@@ -157,22 +151,28 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 outstandingRequests.decrementAndGet();
-                state.getSucceeded().inc(response.getItems().length);
-                state.getFailed().inc(request.numberOfActions() - response.getItems().length);
-                state.getTotalIngest().inc(response.getTookInMillis());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("bulk [{}] [{} items] [{}] [{}ms]",
-                            executionId,
-                            response.getItems().length,
-                            response.hasFailures() ? "failure" : "ok",
-                            response.getTook().millis());
+                if (state != null) {
+                    state.getSucceeded().inc(response.getItems().length);
+                    state.getTotalIngest().inc(response.getTookInMillis());
                 }
                 if (response.hasFailures()) {
-                    // we do not close, maybe mapping failures
-                    logger.error("bulk [{}] failure reason: {}",
-                            executionId, response.buildFailureMessage());
+                    closed = true;
+                    logger.error("bulk [{}] failed", executionId);
+                    for (BulkItemResponse itemResponse : response.getItems()) {
+                        if (itemResponse.isFailed()) {
+                            state.getSucceeded().dec(1);
+                            state.getFailed().inc(1);
+                        }
+                    }
                 } else {
                     state.getCurrentIngestNumDocs().dec(response.getItems().length);
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms]",
+                            executionId,
+                            state.getSucceeded().count(),
+                            state.getFailed().count(),
+                            response.getTook().millis());
                 }
             }
 
@@ -201,66 +201,6 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
         return client;
     }
 
-    @Override
-    public BulkTransportClient setIndex(String index) {
-        this.index = index;
-        return this;
-    }
-
-    @Override
-    public String getIndex() {
-        return index;
-    }
-
-    @Override
-    public BulkTransportClient setType(String type) {
-        this.type = type;
-        return this;
-    }
-
-    @Override
-    public String getType() {
-        return type;
-    }
-
-    public BulkTransportClient setting(String key, String value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    public BulkTransportClient setting(String key, Integer value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    public BulkTransportClient setting(String key, Boolean value) {
-        configHelper.setting(key, value);
-        return this;
-    }
-
-    public BulkTransportClient setting(InputStream in) throws IOException {
-        configHelper.setting(in);
-        return this;
-    }
-
-    public Settings settings() {
-        return configHelper.settings();
-    }
-
-    public BulkTransportClient mapping(String type, InputStream in) throws IOException {
-        configHelper.mapping(type,in);
-        return this;
-    }
-
-    public BulkTransportClient mapping(String type, String mapping) {
-        configHelper.mapping(type, mapping);
-        return this;
-    }
-
-    public Map<String,String> mappings() {
-        return configHelper.mappings();
-    }
-
     public BulkTransportClient shards(int value) {
         super.shards(value);
         return this;
@@ -272,44 +212,51 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
     }
 
     @Override
-    public BulkTransportClient newIndex() {
+    public BulkTransportClient newIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        super.newIndex();
+        super.newIndex(index);
         return this;
     }
 
     @Override
-    public BulkTransportClient deleteIndex() {
+    public BulkTransportClient deleteIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        super.deleteIndex();
+        super.deleteIndex(index);
         return this;
     }
 
     @Override
-    public BulkTransportClient startBulk() throws IOException {
-        if (state == null || state.isBulk()) {
+    public BulkTransportClient startBulk(String index) throws IOException {
+        if (state == null) {
             return this;
         }
-        state.setBulk(true);
-        ClientHelper.startBulk(client, index);
+        if (!state.isBulk()) {
+            state.setBulk(true);
+            ClientHelper.startBulk(client, index);
+        }
+        indices.add(index);
         return this;
     }
 
     @Override
-    public BulkTransportClient stopBulk() throws IOException {
-        if (state  == null || state.isBulk()) {
+    public BulkTransportClient stopBulk(String index) throws IOException {
+        if (state == null) {
+            return this;
+        }
+        if (state.isBulk()) {
+            state.setBulk(false);
             ClientHelper.stopBulk(client, index);
         }
-        state.setBulk(false);
+        indices.remove(index);
         return this;
     }
 
     @Override
-    public BulkTransportClient refresh() {
+    public BulkTransportClient refresh(String index) {
         ClientHelper.refresh(client, index);
         return this;
     }
@@ -383,12 +330,12 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
     }
 
     @Override
-    public int waitForRecovery() throws IOException {
+    public int waitForRecovery(String index) throws IOException {
         return ClientHelper.waitForRecovery(client, index);
     }
 
     @Override
-    public int updateReplicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(String index, int level) throws IOException {
         return ClientHelper.updateReplicaLevel(client, index, level);
     }
 
@@ -404,10 +351,12 @@ public class BulkTransportClient extends AbstractIngestTransportClient implement
         }
         try {
             if (bulkProcessor != null) {
+                logger.info("closing bulk processor...");
                 bulkProcessor.close();
             }
-            if (state != null && state.isBulk()) {
-                ClientHelper.stopBulk(client, index);
+            logger.info("stopping bulk mode for indices {}...", indices);
+            for (String index : indices) {
+                stopBulk(index);
             }
             logger.info("shutting down...");
             super.shutdown();

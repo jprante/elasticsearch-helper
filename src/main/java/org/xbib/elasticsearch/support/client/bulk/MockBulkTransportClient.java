@@ -9,7 +9,6 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.xbib.elasticsearch.support.client.Ingest;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 
 /**
@@ -56,48 +55,6 @@ public class MockBulkTransportClient extends BulkTransportClient implements Inge
     }
 
     @Override
-    public MockBulkTransportClient setIndex(String index) {
-        super.setIndex(index);
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient setType(String type) {
-        super.setType(type);
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient setting(String key, String value) {
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient setting(String key, Integer value) {
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient setting(String key, Boolean value) {
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient setting(InputStream in) throws IOException{
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient mapping(String type, InputStream in) throws IOException {
-        return this;
-    }
-
-    @Override
-    public MockBulkTransportClient mapping(String type, String mapping) {
-        return this;
-    }
-
-    @Override
     public MockBulkTransportClient index(String index, String type, String id, String source) {
         return this;
     }
@@ -123,22 +80,22 @@ public class MockBulkTransportClient extends BulkTransportClient implements Inge
     }
 
     @Override
-    public MockBulkTransportClient startBulk() throws IOException {
+    public MockBulkTransportClient startBulk(String index) throws IOException {
         return this;
     }
 
     @Override
-    public MockBulkTransportClient stopBulk() throws IOException {
+    public MockBulkTransportClient stopBulk(String index) throws IOException {
         return this;
     }
 
     @Override
-    public MockBulkTransportClient deleteIndex() {
+    public MockBulkTransportClient deleteIndex(String index) {
         return this;
     }
 
     @Override
-    public MockBulkTransportClient newIndex() {
+    public MockBulkTransportClient newIndex(String index) {
         return this;
     }
 
@@ -148,17 +105,17 @@ public class MockBulkTransportClient extends BulkTransportClient implements Inge
     }
 
     @Override
-    public MockBulkTransportClient refresh() {
+    public MockBulkTransportClient refresh(String index) {
         return this;
     }
 
     @Override
-    public int waitForRecovery() throws IOException {
+    public int waitForRecovery(String index) throws IOException {
         return -1;
     }
 
     @Override
-    public int updateReplicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(String index, int level) throws IOException {
         return -1;
     }
 

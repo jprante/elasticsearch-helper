@@ -22,7 +22,7 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         CronTest.class,
         BulkTransportClientTest.class,
         IngestTransportClientTest.class,
-        IngestIndexClientTest.class,
+        //IngestIndexClientTest.class,
         DuplicateIDTest.class,
         NodeClientTest.class
 })

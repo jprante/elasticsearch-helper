@@ -48,7 +48,6 @@ public class CronThreadPoolExecutor extends ScheduledThreadPoolExecutor implemen
      * @param corePoolSize the pool size
      * @param handler      the handler for rejecting executions
      * @param threadFactory the thread factory
-     * @param handler the handler for rejected executions
      */
     public CronThreadPoolExecutor(int corePoolSize, ThreadFactory threadFactory, RejectedExecutionHandler handler) {
         super(corePoolSize, threadFactory, handler);

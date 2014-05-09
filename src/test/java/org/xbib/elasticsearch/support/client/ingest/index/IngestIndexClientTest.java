@@ -8,7 +8,6 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -25,9 +24,7 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
     public void testNewIndexIngest() {
         final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         es.shutdown();
         if (es.hasThrowable()) {
             logger.error("error", es.getThrowable());
@@ -39,13 +36,11 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
     public void testDeleteIndexIngestClient() {
         final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
-            es.deleteIndex()
-              .newIndex()
-              .deleteIndex();
+            es.deleteIndex("test")
+              .newIndex("test")
+              .deleteIndex("test");
         } catch (NoNodeAvailableException e) {
             logger.error("no node available");
         } finally {
@@ -61,12 +56,10 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
     public void testSingleDocIngestClient() {
         final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
-            es.deleteIndex();
-            es.newIndex();
+            es.deleteIndex("test");
+            es.newIndex("test");
             es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
         } catch (NoNodeAvailableException e) {
@@ -89,9 +82,7 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
         final IngestIndexTransportClient es = new IngestIndexTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -112,13 +103,13 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testThreadedRandomIngestClient() throws Exception {
         int max = Runtime.getRuntime().availableProcessors();
+        int maxactions = 1000;
+        final int maxloop = 12345;
         final IngestIndexTransportClient es = new IngestIndexTransportClient()
-                .maxActionsPerBulkRequest(10000)
+                .maxActionsPerBulkRequest(maxactions)
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex()
-                .startBulk();
+                .newIndex("test")
+                .startBulk("test");
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
                     EsExecutors.daemonThreadFactory("ingest-test"));
@@ -126,22 +117,25 @@ public class IngestIndexClientTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
                     public void run() {
-                        for (int i = 0; i < 12345; i++) {
+                        for (int i = 0; i < maxloop; i++) {
                             es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                         }
                         latch.countDown();
                     }
                 });
             }
-            logger.info("waiting for max 30 seconds...");
-            latch.await(30, TimeUnit.SECONDS);
+            logger.info("waiting for max 60 seconds...");
+            latch.await(60, TimeUnit.SECONDS);
+            logger.info("shutting down pool...");
             pool.shutdown();
+            logger.info("pool shut down");
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            es.stopBulk().shutdown();
-            logger.info("total bulk requests = {}", es.getState().getTotalIngest().count());
-            assertEquals( max * 12345 / 10000 + 1, es.getState().getTotalIngest().count());
+            es.stopBulk("test").shutdown();
+            logger.info("expected {}, total bulk requests = {}",
+                    max * maxloop / maxactions + 1, es.getState().getTotalIngest().count());
+            assertEquals( max * maxloop / maxactions + 1, es.getState().getTotalIngest().count());
             if (es.hasThrowable()) {
                 logger.error("error", es.getThrowable());
             }

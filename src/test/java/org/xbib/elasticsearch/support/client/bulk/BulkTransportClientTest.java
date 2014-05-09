@@ -25,18 +25,16 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient es = new BulkTransportClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         es.shutdown();
         if (es.hasThrowable()) {
             logger.error("error", es.getThrowable());
         }
         assertFalse(es.hasThrowable());
         try {
-            es.deleteIndex()
-              .newIndex()
-              .deleteIndex();
+            es.deleteIndex("test")
+              .newIndex("test")
+              .deleteIndex("test");
         } catch (NoNodeAvailableException e) {
             logger.error("no node available");
         } finally {
@@ -57,12 +55,10 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
-            es.deleteIndex();
-            es.newIndex();
+            es.deleteIndex("test");
+            es.newIndex("test");
             es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest
             es.flush();
         } catch (NoNodeAvailableException e) {
@@ -84,9 +80,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(10))
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -107,41 +101,43 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
-        final BulkTransportClient client = new BulkTransportClient()
-                .flushInterval(TimeValue.timeValueSeconds(5))
-                .maxActionsPerBulkRequest(1000)
-                .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex()
-                .startBulk();
         int max = Runtime.getRuntime().availableProcessors();
+        int maxactions = 1000;
+        final int maxloop = 12345;
+
+        final BulkTransportClient client = new BulkTransportClient()
+                .flushInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
+                .maxActionsPerBulkRequest(maxactions)
+                .newClient(getAddress())
+                .newIndex("test")
+                .startBulk("test");
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30, EsExecutors.daemonThreadFactory("bulk-test"));
+            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
+                    EsExecutors.daemonThreadFactory("bulkclient-test"));
             final CountDownLatch latch = new CountDownLatch(max);
             for (int i = 0; i < max; i++) {
                 pool.execute(new Runnable() {
                     public void run() {
-                        for (int i = 0; i < 12345; i++) {
+                        for (int i = 0; i < maxloop; i++) {
                             client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
                         }
                         latch.countDown();
                     }
                 });
             }
-            logger.info("waiting for {} seconds...", client.flushInterval().getSeconds());
-            latch.await(client.flushInterval().getSeconds(), TimeUnit.SECONDS);
+            logger.info("waiting for 60 seconds...");
+            latch.await(60, TimeUnit.SECONDS);
+            logger.info("flush ...");
+            client.flush();
+            logger.info("pool to be shut down ...");
             pool.shutdown();
+            logger.info("poot shut down");
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            client.stopBulk().flush().shutdown();
+            client.stopBulk("test").flush().shutdown();
             logger.info("bulk requests = {}", client.getState().getTotalIngest().count() );
-            int target = max * 12345 / 1000 + 1;
-            assertEquals(target, client.getState().getTotalIngest().count());
-            if (client.hasThrowable()) {
-                logger.error("error", client.getThrowable());
-            }
+            assertEquals(max * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
             assertFalse(client.hasThrowable());
         }
     }

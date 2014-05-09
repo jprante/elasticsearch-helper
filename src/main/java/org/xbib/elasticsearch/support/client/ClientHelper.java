@@ -14,14 +14,11 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.common.collect.Lists.newLinkedList;
-import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class ClientHelper {
 

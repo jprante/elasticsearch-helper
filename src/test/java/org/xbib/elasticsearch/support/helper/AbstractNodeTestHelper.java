@@ -31,13 +31,13 @@ public abstract class AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
-    protected final String INDEX = "my_index";
-
-    protected final String TYPE = "my_type";
-
     private Map<String, Node> nodes = newHashMap();
 
     private Map<String, Client> clients = newHashMap();
+
+    private AtomicInteger counter = new AtomicInteger();
+
+    private String cluster;
 
     private String host;
 
@@ -47,8 +47,12 @@ public abstract class AbstractNodeTestHelper {
         return URI.create("es://" + getHost() + ":" + getPort() + "?es.cluster.name=" + getClusterName());
     }
 
+    protected void setClusterName() {
+        this.cluster = "test-support-cluster-" + NetworkUtils.getLocalAddress().getHostName() + "-" + counter.incrementAndGet();
+    }
+
     protected String getClusterName() {
-        return "test-support-cluster-" + NetworkUtils.getLocalAddress().getHostName();
+        return cluster;
     }
 
     protected String getHost() {
@@ -76,6 +80,7 @@ public abstract class AbstractNodeTestHelper {
 
     @Before
     public void startNodes() throws Exception {
+        setClusterName();
         startNode("1");
         // find node address
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
@@ -87,10 +92,10 @@ public abstract class AbstractNodeTestHelper {
             host = address.address().getHostName();
             port = address.address().getPort();
         }
-        createIndices();
+        //createIndices();
     }
 
-    private void createIndices() throws Exception {
+    /*private void createIndices() throws Exception {
         logger.info("creating index {}", INDEX);
         try {
             client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
@@ -98,15 +103,15 @@ public abstract class AbstractNodeTestHelper {
             // ignore
         }
         logger.info("index {} created", INDEX);
-    }
+    }*/
 
     @After
     public void stopNodes() throws Exception {
-        deleteIndices();
+        //deleteIndices();
         closeAllNodes();
     }
 
-    private void deleteIndices() throws Exception {
+    /*private void deleteIndices() throws Exception {
         logger.info("deleting index {}", INDEX);
         try {
             client("1").admin().indices().delete(new DeleteIndexRequest().indices(INDEX)).actionGet();
@@ -115,7 +120,7 @@ public abstract class AbstractNodeTestHelper {
         }
         logger.info("index {} deleted", INDEX);
         closeAllNodes();
-    }
+    }*/
 
     protected Node startNode(String id) {
         return buildNode(id).start();

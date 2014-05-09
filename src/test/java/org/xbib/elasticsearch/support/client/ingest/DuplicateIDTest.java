@@ -20,14 +20,12 @@ public class DuplicateIDTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient es = new IngestTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getAddress())
-                .setIndex("test")
-                .setType("test")
-                .newIndex();
+                .newIndex("test");
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            es.refresh();
+            es.refresh("test");
             long hits = es.client().prepareSearch("test").setTypes("test")
                     .setQuery(matchAllQuery())
                     .execute().actionGet().getHits().getTotalHits();

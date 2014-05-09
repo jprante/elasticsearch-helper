@@ -280,19 +280,16 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         String index = settings.get("index", getDefaultIndexName());
         String type = settings.get("type", getDefaultTypeName());
         try {
-            ingest.setting(AbstractFeeder.class.getResourceAsStream("/" + index + "/settings"));
+            ingest.addSetting(AbstractFeeder.class.getResourceAsStream("/" + index + "/settings"));
         } catch (Exception e) {
             // ignore
         }
         try {
-            ingest.mapping(type, AbstractFeeder.class.getResourceAsStream("/" + index + "/" + type + ".mapping"));
+            ingest.addMapping(type, AbstractFeeder.class.getResourceAsStream("/" + index + "/" + type + ".mapping"));
         } catch (Exception e) {
             // ignore
         }
-        ingest.setIndex(index)
-                .setType(type)
-                .newIndex()
-                .startBulk();
+        ingest.newIndex(index).startBulk(index);
 
         // build input queue
 
@@ -334,8 +331,6 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         }
         if (ingest != null) {
             ingest.flush();
-            ingest.stopBulk();
-            ingest.updateReplicaLevel(ingest.settings().getAsInt("replica", 0));
         }
         return this;
     }
@@ -430,16 +425,8 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
                     }
                 }
                 if (ingest != null) {
-                    try {
-                        logger.info("stopping bulk model");
-                        ingest.stopBulk();
-                        logger.info("update replica level");
-                        ingest.updateReplicaLevel(settings.getAsInt("replica", 0));
-                        logger.info("shutting down ingester");
-                        ingest.shutdown();
-                    } catch (IOException e) {
-                        logger.error(e.getMessage(), e);
-                    }
+                    logger.info("shutting down ingester");
+                    ingest.shutdown();
                 }
                 logger.info("shutdown completed");
             }

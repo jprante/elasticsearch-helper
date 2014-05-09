@@ -7,6 +7,7 @@ import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,8 @@ public class ConfigHelper {
 
     private ImmutableSettings.Builder settingsBuilder;
 
+    private Settings settings;
+
     private Map<String,String> mappings = newHashMap();
 
     private boolean dateDetection = false;
@@ -33,6 +36,11 @@ public class ConfigHelper {
 
     public ConfigHelper reset() {
         settingsBuilder = ImmutableSettings.settingsBuilder();
+        return this;
+    }
+
+    public ConfigHelper settings(Settings settings) {
+        this.settings = settings;
         return this;
     }
 
@@ -73,6 +81,9 @@ public class ConfigHelper {
     }
 
     public Settings settings() {
+        if (settings != null) {
+            return settings;
+        }
         if (settingsBuilder == null) {
             settingsBuilder = ImmutableSettings.settingsBuilder();
         }

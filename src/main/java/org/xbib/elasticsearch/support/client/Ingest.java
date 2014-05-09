@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -10,6 +11,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
@@ -19,20 +21,6 @@ public interface Ingest extends Feeder {
     Ingest newClient(Client client);
 
     Ingest newClient(URI uri);
-
-    /**
-     * Set index name
-     * @param index the index name
-     * @return this
-     */
-    Ingest setIndex(String index);
-
-    /**
-     * Set type name
-     * @param type the type
-     * @return this
-     */
-    Ingest setType(String type);
 
     /**
      * Set the maximum number of actions per bulk request
@@ -78,76 +66,72 @@ public interface Ingest extends Feeder {
      */
     Ingest replica(int replica);
 
-    Settings settings();
+    void setSettings(Settings settings);
 
-    /**
-     * Clear settings
-     * @return this
-     */
-    Ingest resetSettings();
+    ImmutableSettings.Builder getSettingsBuilder();
 
-    /**
-     * Create a key/value in the settings
-     * @param key the key
-     * @param value the value
-     * @return this
-     */
-    Ingest setting(String key, String value);
+    Settings getSettings();
 
     /**
      * Create a key/value in the settings
      * @param key the key
      * @param value the value
-     * @return this
      */
-    Ingest setting(String key, Boolean value);
+    void addSetting(String key, String value);
 
     /**
      * Create a key/value in the settings
      * @param key the key
      * @param value the value
-     * @return this
      */
-    Ingest setting(String key, Integer value);
+    void addSetting(String key, Boolean value);
+
+    /**
+     * Create a key/value in the settings
+     * @param key the key
+     * @param value the value
+     */
+    void addSetting(String key, Integer value);
 
     /**
      * Create a key/value in the settings
      * @param in the input stream with settings
-     * @return this
      */
-    Ingest setting(InputStream in) throws IOException;
+    void addSetting(InputStream in) throws IOException;
 
-    Ingest mapping(String type, InputStream in) throws IOException;
+    void addMapping(String type, InputStream in) throws IOException;
 
-    Ingest mapping(String type, String mapping);
+    void addMapping(String type, String mapping);
+
+    Map<String,String> getMappings();
 
     /**
      * Start bulk mode
      *
      * @return this ingest
      */
-    Ingest startBulk() throws IOException;
+    Ingest startBulk(String index) throws IOException;
 
     /**
      * Stops bulk mode. Enables refresh.
      *
      * @return this Ingest
      */
-    Ingest stopBulk() throws IOException;
+    Ingest stopBulk(String index) throws IOException;
 
     /**
      * Create a new index
      *
      * @return this ingest
      */
-    Ingest newIndex();
+    Ingest newIndex(String index);
 
     /**
      * Delete index
      *
      * @return this ingest
      */
-    Ingest deleteIndex();
+    Ingest deleteIndex(String index);
 
     /**
      * Flush ingest, move all pending documents to the bulk indexer
@@ -160,7 +144,7 @@ public interface Ingest extends Feeder {
      *
      * @return this ingest
      */
-    Ingest refresh();
+    Ingest refresh(String index);
 
     /**
      * Add replica level.
@@ -168,7 +152,7 @@ public interface Ingest extends Feeder {
      * @param level the replica level
      * @return number of shards after updating replica level
      */
-    int updateReplicaLevel(int level) throws IOException;
+    int updateReplicaLevel(String index, int level) throws IOException;
 
     /**
      * Wait for cluster being healthy.
@@ -180,7 +164,7 @@ public interface Ingest extends Feeder {
      * Wait for index recovery (after replica change)
      * @return number of shards found
      */
-    int waitForRecovery() throws IOException;
+    int waitForRecovery(String index) throws IOException;
 
     State getState();
 

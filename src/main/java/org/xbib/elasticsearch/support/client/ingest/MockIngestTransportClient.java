@@ -1,16 +1,15 @@
 
 package org.xbib.elasticsearch.support.client.ingest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+
+import java.io.IOException;
+import java.net.URI;
 
 /**
  * Mock ingest client, it does not perform actions on a cluster.
@@ -41,64 +40,12 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public String getIndex() {
-        return null;
-    }
-
-    @Override
-    public String getType() {
-        return null;
-    }
-
-    @Override
     public MockIngestTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
         return this;
     }
 
     @Override
     public MockIngestTransportClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setIndex(String index) {
-        super.setIndex(index);
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setType(String type) {
-        super.setType(type);
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setting(String key, String value) {
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setting(String key, Integer value) {
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setting(String key, Boolean value) {
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient setting(InputStream in) throws IOException{
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient mapping(String type, InputStream in) throws IOException {
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient mapping(String type, String mapping) {
         return this;
     }
 
@@ -128,22 +75,22 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockIngestTransportClient startBulk() {
+    public MockIngestTransportClient startBulk(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient stopBulk() {
+    public MockIngestTransportClient stopBulk(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient deleteIndex() {
+    public MockIngestTransportClient deleteIndex(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient newIndex() {
+    public MockIngestTransportClient newIndex(String index) {
         return this;
     }
 
@@ -153,7 +100,7 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockIngestTransportClient refresh() {
+    public MockIngestTransportClient refresh(String index) {
         return this;
     }
 
@@ -163,12 +110,12 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public int waitForRecovery() throws IOException {
+    public int waitForRecovery(String index) throws IOException {
         return -1;
     }
 
     @Override
-    public int updateReplicaLevel(int level) throws IOException {
+    public int updateReplicaLevel(String index, int level) throws IOException {
         return -1;
     }
 

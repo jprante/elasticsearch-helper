@@ -69,6 +69,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 String aliasOrIndex = indexRequest.index();
+                // throws IndexMissingException
                 indexRequest.index(clusterState.metaData().concreteIndex(indexRequest.index()));
 
                 MappingMetaData mappingMd = null;

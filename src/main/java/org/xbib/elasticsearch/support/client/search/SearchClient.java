@@ -8,13 +8,13 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
-import org.xbib.elasticsearch.support.client.AbstractTransportClient;
+import org.xbib.elasticsearch.support.client.BaseTransportClient;
 import org.xbib.elasticsearch.support.client.Search;
 
 /**
  * Search client support
  */
-public class SearchClient extends AbstractTransportClient implements Search {
+public class SearchClient extends BaseTransportClient implements Search {
 
     private String index;
 

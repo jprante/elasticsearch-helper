@@ -9,6 +9,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -37,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 import static org.elasticsearch.common.collect.Sets.newHashSet;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 
-public abstract class AbstractTransportClient {
+public abstract class BaseTransportClient {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(AbstractTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseTransportClient.class.getSimpleName());
 
     private final static String DEFAULT_CLUSTER_NAME = "elasticsearch";
 
@@ -49,7 +50,9 @@ public abstract class AbstractTransportClient {
 
     protected TransportClient client;
 
-    public AbstractTransportClient newClient(URI uri, Settings settings) {
+    protected ConfigHelper configHelper = new ConfigHelper();
+
+    public BaseTransportClient newClient(URI uri, Settings settings) {
         if (client != null) {
             logger.warn("client is open, closing...");
             client.close();
@@ -272,6 +275,54 @@ public abstract class AbstractTransportClient {
                 }
             }
         }
+    }
+
+    public ImmutableSettings.Builder getSettingsBuilder() {
+        return configHelper.settingsBuilder();
+    }
+
+    public void resetSettings() {
+        configHelper.reset();
+    }
+
+    public void addSetting(InputStream in) throws IOException {
+        configHelper.setting(in);
+    }
+
+    public void addSetting(String key, String value) {
+        configHelper.setting(key, value);
+    }
+
+    public void addSetting(String key, Boolean value) {
+        configHelper.setting(key, value);
+    }
+
+    public void addSetting(String key, Integer value) {
+        configHelper.setting(key, value);
+    }
+
+    public void setSettings(Settings settings) {
+        configHelper.settings(settings);
+    }
+
+    public Settings getSettings() {
+        return configHelper.settings();
+    }
+
+    public void addMapping(String type, InputStream in) throws IOException {
+        configHelper.mapping(type, in);
+    }
+
+    public void addMapping(String type, String mapping) {
+        configHelper.mapping(type, mapping);
+    }
+
+    public String defaultMapping() throws IOException {
+        return configHelper.defaultMapping();
+    }
+
+    public Map<String,String> getMappings() {
+        return configHelper.mappings();
     }
 
     private void connectMore() throws IOException {

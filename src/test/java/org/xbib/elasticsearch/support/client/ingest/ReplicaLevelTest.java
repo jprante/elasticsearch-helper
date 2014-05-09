@@ -30,18 +30,16 @@ public class ReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
         final IngestTransportClient es = new IngestTransportClient()
                 .newClient(getAddress())
-                .setIndex("replicatest")
-                .setType("replicatest")
-                .numberOfShards(numberOfShards)
-                .numberOfReplicas(0)
-                .newIndex();
+                .shards(numberOfShards)
+                .replica(0)
+                .newIndex("replicatest");
 
         try {
             for (int i = 0; i < 12345; i++) {
                 es.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             es.flush();
-            shardsAfterReplica = es.updateReplicaLevel(replicaLevel);
+            shardsAfterReplica = es.updateReplicaLevel("replicatest", replicaLevel);
             assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");

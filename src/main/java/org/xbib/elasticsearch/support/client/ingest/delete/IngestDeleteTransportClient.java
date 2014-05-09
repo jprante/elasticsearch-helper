@@ -2,8 +2,9 @@
 package org.xbib.elasticsearch.support.client.ingest.delete;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -23,22 +24,22 @@ import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteProcessor;
 import org.xbib.elasticsearch.action.ingest.delete.IngestDeleteRequest;
-import org.xbib.elasticsearch.support.client.AbstractIngestTransportClient;
+import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.State;
 
 /**
  * Ingest delete client
  */
-public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
+public class IngestDeleteTransportClient extends BaseIngestTransportClient {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestDeleteTransportClient.class.getName());
 
-    private int maxActionsPerBulkRequest = 1000;
+    private int maxActionsPerBulkRequest = 100;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 4;
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
 
-    private ByteSizeValue maxVolume = new ByteSizeValue(1, ByteSizeUnit.MB);
+    private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
 
     private IngestDeleteProcessor ingestProcessor;
 
@@ -47,6 +48,8 @@ public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
     private Throwable throwable;
 
     private volatile boolean closed = false;
+
+    private Set<String> indices = new HashSet();
 
     @Override
     public IngestDeleteTransportClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
@@ -157,37 +160,6 @@ public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
         return state;
     }
 
-    @Override
-    public IngestDeleteTransportClient setIndex(String index) {
-        super.setIndex(index);
-        return this;
-    }
-
-    @Override
-    public IngestDeleteTransportClient setType(String type) {
-        super.setType(type);
-        return this;
-    }
-
-    public IngestDeleteTransportClient setting(String key, String value) {
-        super.setting(key, value);
-        return this;
-    }
-
-    public IngestDeleteTransportClient setting(String key, Integer value) {
-        super.setting(key, value);
-        return this;
-    }
-
-    public IngestDeleteTransportClient setting(String key, Boolean value) {
-        super.setting(key, value);
-        return this;
-    }
-
-    public IngestDeleteTransportClient setting(InputStream in) throws IOException {
-        super.setting(in);
-        return this;
-    }
 
     public IngestDeleteTransportClient shards(int value) {
         super.shards(value);
@@ -200,31 +172,19 @@ public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
     }
 
     @Override
-    public IngestDeleteTransportClient newIndex() {
+    public IngestDeleteTransportClient newIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        super.newIndex();
+        super.newIndex(index);
         return this;
     }
 
-    public IngestDeleteTransportClient deleteIndex() {
+    public IngestDeleteTransportClient deleteIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        super.deleteIndex();
-        return this;
-    }
-
-    @Override
-    public IngestDeleteTransportClient mapping(String type, InputStream in) throws IOException {
-        super.mapping(type, in);
-        return this;
-    }
-
-    @Override
-    public IngestDeleteTransportClient mapping(String type, String mapping) {
-        super.mapping(type, mapping);
+        super.deleteIndex(index);
         return this;
     }
 
@@ -247,32 +207,39 @@ public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
     }
 
     @Override
-    public IngestDeleteTransportClient startBulk() throws IOException {
-        if (state.isBulk()) {
+    public IngestDeleteTransportClient startBulk(String index) throws IOException {
+        if (state == null) {
             return this;
         }
-        state.setBulk(true);
-        ClientHelper.startBulk(client, getIndex());
-        return this;
-    }
-
-    @Override
-    public IngestDeleteTransportClient stopBulk() throws IOException {
-        if (state.isBulk()) {
-            ClientHelper.stopBulk(client, getIndex());
+        if (!state.isBulk()) {
+            state.setBulk(true);
+            ClientHelper.startBulk(client, index);
         }
-        state.setBulk(false);
+        indices.add(index);
+        return this;
+    }
+
+    @Override
+    public IngestDeleteTransportClient stopBulk(String index) throws IOException {
+        if (state == null) {
+            return this;
+        }
+        if (state.isBulk()) {
+            state.setBulk(false);
+            ClientHelper.stopBulk(client, index);
+        }
+        indices.remove(index);
         return this;
     }
 
 
     @Override
-    public IngestDeleteTransportClient refresh() {
+    public IngestDeleteTransportClient refresh(String index) {
         if (client == null) {
             logger.warn("no client");
             return this;
         }
-        if (getIndex() == null) {
+        if (index == null) {
             logger.warn("no index name given");
             return this;
         }
@@ -332,20 +299,20 @@ public class IngestDeleteTransportClient extends AbstractIngestTransportClient {
     }
 
     @Override
-    public int waitForRecovery() throws IOException {
-        return ClientHelper.waitForRecovery(client, getIndex());
+    public int waitForRecovery(String index) throws IOException {
+        return ClientHelper.waitForRecovery(client, index);
     }
 
     @Override
-    public int updateReplicaLevel(int level) throws IOException {
-        return ClientHelper.updateReplicaLevel(client, getIndex(), level);
+    public int updateReplicaLevel(String index, int level) throws IOException {
+        return ClientHelper.updateReplicaLevel(client, index, level);
     }
 
     @Override
     public synchronized void shutdown() {
         if (closed) {
             super.shutdown();
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchIllegalStateException("client was closed, possible reason: ", throwable);
         }
         if (client == null) {
             logger.warn("no client");
