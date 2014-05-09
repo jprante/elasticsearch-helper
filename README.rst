@@ -17,22 +17,24 @@ ES version     Plugin          Release date
 0.20.6         0.20.6.1        Feb 4, 2014
 0.90.7         0.90.7.1        Dec 3, 2013
 1.0.0.RC2      1.0.0.RC2.1     Feb 3, 2014
-1.1.0          1.1.0.4         May 8, 2014
+1.1.0          1.1.0.5         May 9, 2014
 =============  ==============  =================
 
 Installation
 ------------
 
-    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.1.0.4/elasticsearch-support-1.1.0.4.zip
+    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.1.0.5/elasticsearch-support-1.1.0.5.zip
 
 Do not forget to restart the node after installing.
 
 Checksum
 --------
 
-File: elasticsearch-support-1.1.0.4.zip
-
-SHA1: 5f857ddde172f5295eaadb1ee930c1727532fa58
+=================================  ========================================
+File                               SHA1
+---------------------------------  ----------------------------------------
+elasticsearch-support-1.1.0.5.zip  ca0f6d9163be9148959f1aa522b43758c9983bd5
+=================================  ========================================
 
 Project docs
 ------------
