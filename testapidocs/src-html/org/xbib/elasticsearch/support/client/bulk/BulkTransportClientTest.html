@@ -67,7 +67,7 @@
 <span class="sourceLineNo">059</span>        try {<a name="line.59"></a>
 <span class="sourceLineNo">060</span>            es.deleteIndex("test");<a name="line.60"></a>
 <span class="sourceLineNo">061</span>            es.newIndex("test");<a name="line.61"></a>
-<span class="sourceLineNo">062</span>            es.index("test", "test", "1", "{ \"name\" : \"Jörg Prante\"}"); // single doc ingest<a name="line.62"></a>
+<span class="sourceLineNo">062</span>            es.index("test", "test", "1", "{ \"name\" : \"J?rg Prante\"}"); // single doc ingest<a name="line.62"></a>
 <span class="sourceLineNo">063</span>            es.flush();<a name="line.63"></a>
 <span class="sourceLineNo">064</span>        } catch (NoNodeAvailableException e) {<a name="line.64"></a>
 <span class="sourceLineNo">065</span>            logger.warn("skipping, no node available");<a name="line.65"></a>

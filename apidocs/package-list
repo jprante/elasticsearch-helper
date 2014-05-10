@@ -1,6 +1,4 @@
 org.xbib.elasticsearch.action.ingest
-org.xbib.elasticsearch.action.ingest.delete
-org.xbib.elasticsearch.action.ingest.index
 org.xbib.elasticsearch.action.river.execute
 org.xbib.elasticsearch.action.river.state
 org.xbib.elasticsearch.action.search.support
@@ -13,8 +11,6 @@ org.xbib.elasticsearch.rest.action.support
 org.xbib.elasticsearch.support.client
 org.xbib.elasticsearch.support.client.bulk
 org.xbib.elasticsearch.support.client.ingest
-org.xbib.elasticsearch.support.client.ingest.delete
-org.xbib.elasticsearch.support.client.ingest.index
 org.xbib.elasticsearch.support.client.node
 org.xbib.elasticsearch.support.client.search
 org.xbib.elasticsearch.support.cron

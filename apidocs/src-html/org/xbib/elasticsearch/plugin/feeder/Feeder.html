@@ -98,11 +98,11 @@
 <span class="sourceLineNo">090</span>    Feeder&lt;T, R, P&gt; beforeRun() throws IOException;<a name="line.90"></a>
 <span class="sourceLineNo">091</span><a name="line.91"></a>
 <span class="sourceLineNo">092</span>    /**<a name="line.92"></a>
-<span class="sourceLineNo">093</span>     * Processing a specification how to feed. This is the core of the feed thread run.<a name="line.93"></a>
-<span class="sourceLineNo">094</span>     * @param specification the specification<a name="line.94"></a>
+<span class="sourceLineNo">093</span>     * Executing a task<a name="line.93"></a>
+<span class="sourceLineNo">094</span>     * @param parameters the parameters for the task execution<a name="line.94"></a>
 <span class="sourceLineNo">095</span>     * @throws Exception if processing fails<a name="line.95"></a>
 <span class="sourceLineNo">096</span>     */<a name="line.96"></a>
-<span class="sourceLineNo">097</span>    void executeTask(Map&lt;String, Object&gt; specification) throws Exception;<a name="line.97"></a>
+<span class="sourceLineNo">097</span>    void executeTask(Map&lt;String, Object&gt; parameters) throws Exception;<a name="line.97"></a>
 <span class="sourceLineNo">098</span><a name="line.98"></a>
 <span class="sourceLineNo">099</span>    /**<a name="line.99"></a>
 <span class="sourceLineNo">100</span>     * Clean up the feeder. This is the last phase of the feeder run. It is called after feeder threads<a name="line.100"></a>
@@ -126,7 +126,7 @@
 <span class="sourceLineNo">118</span>    RiverState getRiverState();<a name="line.118"></a>
 <span class="sourceLineNo">119</span><a name="line.119"></a>
 <span class="sourceLineNo">120</span>    /**<a name="line.120"></a>
-<span class="sourceLineNo">121</span>     * Interrupt the feeder. The interruption request is delegated to the feeder threads.<a name="line.121"></a>
+<span class="sourceLineNo">121</span>     * Interrupt the feeder. The interruption request is delegated to all threads.<a name="line.121"></a>
 <span class="sourceLineNo">122</span>     * @param state true if feeder should be interrupted<a name="line.122"></a>
 <span class="sourceLineNo">123</span>     */<a name="line.123"></a>
 <span class="sourceLineNo">124</span>    void setInterrupted(boolean state);<a name="line.124"></a>
