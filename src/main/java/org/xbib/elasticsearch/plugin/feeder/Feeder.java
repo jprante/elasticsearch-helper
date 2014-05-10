@@ -90,11 +90,11 @@ public interface Feeder <T, R extends PipelineRequest, P extends Pipeline<T, R>>
     Feeder<T, R, P> beforeRun() throws IOException;
 
     /**
-     * Processing a specification how to feed. This is the core of the feed thread run.
-     * @param specification the specification
+     * Executing a task
+     * @param parameters the parameters for the task execution
      * @throws Exception if processing fails
      */
-    void executeTask(Map<String, Object> specification) throws Exception;
+    void executeTask(Map<String, Object> parameters) throws Exception;
 
     /**
      * Clean up the feeder. This is the last phase of the feeder run. It is called after feeder threads
@@ -118,7 +118,7 @@ public interface Feeder <T, R extends PipelineRequest, P extends Pipeline<T, R>>
     RiverState getRiverState();
 
     /**
-     * Interrupt the feeder. The interruption request is delegated to the feeder threads.
+     * Interrupt the feeder. The interruption request is delegated to all threads.
      * @param state true if feeder should be interrupted
      */
     void setInterrupted(boolean state);

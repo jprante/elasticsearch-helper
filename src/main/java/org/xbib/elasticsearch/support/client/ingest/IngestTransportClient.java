@@ -12,6 +12,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.settings.Settings;
@@ -61,8 +62,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     private Throwable throwable;
 
     private volatile boolean closed = false;
-
-    private Set<String> indices = new HashSet();
 
     @Override
     public IngestTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
@@ -232,11 +231,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         if (state == null) {
             return this;
         }
-        if (!state.isBulk()) {
-            state.setBulk(true);
+        if (!state.isBulk(index)) {
+            state.startBulk(index);
             ClientHelper.startBulk(client, index);
         }
-        indices.add(index);
         return this;
     }
 
@@ -245,11 +243,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         if (state == null) {
             return this;
         }
-        if (state.isBulk()) {
-            state.setBulk(false);
+        if (state.isBulk(index)) {
+            state.stopBulk(index);
             ClientHelper.stopBulk(client, index);
         }
-        indices.remove(index);
         return this;
     }
 
@@ -357,9 +354,11 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 logger.info("closing ingest processor...");
                 ingestProcessor.close();
             }
-            logger.info("stopping bulk mode for indices {}...", indices);
-            for (String index : indices) {
-                stopBulk(index);
+            if (state.indices() != null && !state.indices().isEmpty()) {
+                logger.info("stopping bulk mode for indices {}...", state.indices());
+                for (String index : ImmutableSet.copyOf(state.indices())) {
+                    stopBulk(index);
+                }
             }
             logger.info("shutting down...");
             super.shutdown();

@@ -9,7 +9,6 @@ import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.DuplicateIDTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.ReplicaLevelTest;
-import org.xbib.elasticsearch.support.client.ingest.index.IngestIndexClientTest;
 import org.xbib.elasticsearch.support.client.node.NodeClientTest;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
 
@@ -22,7 +21,6 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         CronTest.class,
         BulkTransportClientTest.class,
         IngestTransportClientTest.class,
-        //IngestIndexClientTest.class,
         DuplicateIDTest.class,
         NodeClientTest.class
 })

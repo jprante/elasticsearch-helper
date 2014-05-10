@@ -12,8 +12,6 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.xbib.elasticsearch.action.river.state.RiverState;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.bulk.BulkTransportClient;
-import org.xbib.elasticsearch.support.client.ingest.IngestTransportClient;
 import org.xbib.elasticsearch.support.client.node.NodeClient;
 import org.xbib.elasticsearch.support.cron.CronExpression;
 import org.xbib.elasticsearch.support.cron.CronThreadPoolExecutor;
@@ -27,8 +25,8 @@ import org.xbib.pipeline.element.MapPipelineElement;
 import org.xbib.pipeline.simple.MetricSimplePipelineExecutor;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -159,7 +157,6 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
     }
 
 
-
     @Override
     public Feeder<T, R, P> setSettings(Settings newSettings) {
         this.settings = newSettings;
@@ -191,7 +188,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
             logger.info("scheduled feeder at fixed rate of {} seconds", seconds);
         } else {
             thread.start();
-            logger.info("started feeder");
+            logger.info("started feeder thread");
         }
     }
 
@@ -204,10 +201,12 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         Integer maxconcurrentbulkrequests = settings.getAsInt("maxconcurrentbulkrequests",
                 Runtime.getRuntime().availableProcessors());
         ByteSizeValue maxvolume = settings.getAsBytesSize("maxbulkvolume", ByteSizeValue.parseBytesSizeValue("10m"));
+        TimeValue maxrequestwait = settings.getAsTime("maxrequestwait", TimeValue.timeValueSeconds(60));
         this.ingest = new NodeClient()
                 .maxActionsPerBulkRequest(maxbulkactions)
                 .maxConcurrentBulkRequests(maxconcurrentbulkrequests)
-                .maxVolumePerBulkRequest(org.elasticsearch.common.unit.ByteSizeValue.parseBytesSizeValue(maxvolume.toString()))
+                .maxRequestWait(maxrequestwait)
+                .maxVolumePerBulkRequest(ByteSizeValue.parseBytesSizeValue(maxvolume.toString()))
                 .newClient(client);
         return this;
     }
@@ -233,7 +232,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         if (settings == null) {
             throw new IllegalArgumentException("no settings?");
         }
-        logger.info("starting run with settings {}", settings.getAsMap());
+        logger.trace("starting run with settings {}", settings.getAsMap());
         try {
             beforeRun();
             this.executor = new MetricSimplePipelineExecutor<T, R, P>()
@@ -248,7 +247,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         } finally {
-            logger.info("run completed with settings {}", settings.getAsMap());
+            logger.trace("run completed with settings {}", settings.getAsMap());
             try {
                 afterRun();
             } catch (IOException e) {
@@ -260,39 +259,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
     @Override
     @SuppressWarnings({"unchecked"})
     public Feeder<T, R, P> beforeRun() throws IOException {
-        if (spec == null) {
-            throw new IllegalArgumentException("no spec?");
-        }
-        if (settings == null) {
-            throw new IllegalArgumentException("no settings?");
-        }
-        if (ingest == null) {
-            Integer maxbulkactions = settings.getAsInt("maxbulkactions", 1000);
-            Integer maxconcurrentbulkrequests = settings.getAsInt("maxconcurrentbulkrequests",
-                    Runtime.getRuntime().availableProcessors());
-            ingest = "ingest".equals(settings.get("client")) ?
-                    new IngestTransportClient()
-                    : new BulkTransportClient();
-            ingest.maxActionsPerBulkRequest(maxbulkactions)
-                    .maxConcurrentBulkRequests(maxconcurrentbulkrequests);
-            ingest.newClient(URI.create(settings.get("elasticsearch")));
-        }
-        String index = settings.get("index", getDefaultIndexName());
-        String type = settings.get("type", getDefaultTypeName());
-        try {
-            ingest.addSetting(AbstractFeeder.class.getResourceAsStream("/" + index + "/settings"));
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            ingest.addMapping(type, AbstractFeeder.class.getResourceAsStream("/" + index + "/" + type + ".mapping"));
-        } catch (Exception e) {
-            // ignore
-        }
-        ingest.newIndex(index).startBulk(index);
-
         // build input queue
-
         this.queue = new ConcurrentLinkedQueue<Map<String, Object>>();
         Object input = getType() != null && spec.containsKey(getType()) ? spec.get(getType()) : spec;
         if (input instanceof Object[]) {
@@ -433,11 +400,15 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         };
     }
 
+    public InputStream getDefaultSettings(String index) {
+        return AbstractFeeder.class.getResourceAsStream("/" + index + "/settings");
+    }
+
+    public InputStream getDefaultMapping(String index, String type) {
+        return AbstractFeeder.class.getResourceAsStream("/" + index + "/" + type + ".mapping");
+    }
+
     public abstract PipelineProvider<P> pipelineProvider();
-
-    public abstract String getDefaultIndexName();
-
-    public abstract String getDefaultTypeName();
 
     public abstract void executeTask(Map<String, Object> map) throws Exception;
 

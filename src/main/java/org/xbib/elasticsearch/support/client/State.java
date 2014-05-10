@@ -4,11 +4,12 @@ package org.xbib.elasticsearch.support.client;
 import org.xbib.metrics.CounterMetric;
 import org.xbib.metrics.MeanMetric;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class State {
 
-    private String indexName;
-
-    private boolean bulkMode;
+    private final Set<String> indexNames = new HashSet();
 
     private final MeanMetric totalIngest = new MeanMetric();
 
@@ -23,24 +24,6 @@ public class State {
     private final CounterMetric succeeded = new CounterMetric();
 
     private final CounterMetric failed = new CounterMetric();
-
-    public State setIndexName(String name) {
-        this.indexName = name;
-        return this;
-    }
-
-    public String getIndexName() {
-        return indexName;
-    }
-
-    public State setBulk(boolean enabled) {
-        this.bulkMode = enabled;
-        return this;
-    }
-
-    public boolean isBulk() {
-        return bulkMode;
-    }
 
     public MeanMetric getTotalIngest() {
         return totalIngest;
@@ -70,5 +53,26 @@ public class State {
         return failed;
     }
 
+    public State startBulk(String indexName) {
+        synchronized (indexNames) {
+            indexNames.add(indexName);
+        }
+        return this;
+    }
+
+    public boolean isBulk(String indexName) {
+        return indexNames.contains(indexName);
+    }
+
+    public State stopBulk(String indexName) {
+        synchronized (indexNames) {
+            indexNames.remove(indexName);
+        }
+        return this;
+    }
+
+    public Set<String> indices() {
+        return indexNames;
+    }
 
 }
