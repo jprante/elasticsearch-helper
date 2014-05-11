@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchException;

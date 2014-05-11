@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
@@ -18,7 +17,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
@@ -26,12 +24,10 @@ import org.xbib.elasticsearch.support.client.State;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- *  Client using the BulkProcessor of Elasticsearch
+ * Client using the BulkProcessor of Elasticsearch
  */
 public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
 
@@ -180,7 +176,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
                 outstandingRequests.decrementAndGet();
                 throwable = failure;
                 closed = true;
-                logger.error("bulk ["+executionId+"] error", failure);
+                logger.error("bulk [" + executionId + "] error", failure);
             }
         };
         BulkProcessor.Builder builder = BulkProcessor.builder(client, listener)
@@ -190,7 +186,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         if (maxVolumePerBulkRequest != null) {
             builder.setBulkSize(maxVolumePerBulkRequest);
         }
-        this.bulkProcessor =  builder.build();
+        this.bulkProcessor = builder.build();
         this.closed = false;
         return this;
     }

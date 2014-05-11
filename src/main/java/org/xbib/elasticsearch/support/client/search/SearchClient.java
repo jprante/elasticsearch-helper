@@ -1,15 +1,13 @@
-
 package org.xbib.elasticsearch.support.client.search;
 
-import java.net.URI;
-
 import org.elasticsearch.client.Client;
-
 import org.elasticsearch.common.settings.Settings;
 import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 import org.xbib.elasticsearch.support.client.BaseTransportClient;
 import org.xbib.elasticsearch.support.client.Search;
+
+import java.net.URI;
 
 /**
  * Search client support

@@ -25,7 +25,7 @@ public class CronThreadPoolExecutor extends ScheduledThreadPoolExecutor implemen
     /**
      * Constructs a new CronThreadPoolExecutor.
      *
-     * @param corePoolSize the pool size
+     * @param corePoolSize  the pool size
      * @param threadFactory the thread factory
      */
     public CronThreadPoolExecutor(int corePoolSize, ThreadFactory threadFactory) {
@@ -36,7 +36,7 @@ public class CronThreadPoolExecutor extends ScheduledThreadPoolExecutor implemen
      * Constructs a new CronThreadPoolExecutor.
      *
      * @param corePoolSize the pool size
-     * @param handler the handler for rejected executions
+     * @param handler      the handler for rejected executions
      */
     public CronThreadPoolExecutor(int corePoolSize, RejectedExecutionHandler handler) {
         super(corePoolSize, handler);
@@ -45,8 +45,8 @@ public class CronThreadPoolExecutor extends ScheduledThreadPoolExecutor implemen
     /**
      * Constructs a new CronThreadPoolExecutor.
      *
-     * @param corePoolSize the pool size
-     * @param handler      the handler for rejecting executions
+     * @param corePoolSize  the pool size
+     * @param handler       the handler for rejecting executions
      * @param threadFactory the thread factory
      */
     public CronThreadPoolExecutor(int corePoolSize, ThreadFactory threadFactory, RejectedExecutionHandler handler) {

@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ExceptionsHelper;
@@ -31,7 +30,6 @@ import static org.elasticsearch.common.collect.Maps.newHashMap;
 
 /**
  * Ingest transport action
- *
  */
 public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
 

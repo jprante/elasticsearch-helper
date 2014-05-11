@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -122,7 +121,7 @@ public abstract class BaseTransportClient {
         try {
             hostname = InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
-            uri = URI.create("es://"+hostname+":9300");
+            uri = URI.create("es://" + hostname + ":9300");
             // custom?
             URL url = getClass().getResource("/org/xbib/elasticsearch/cluster.properties");
             if (url != null) {
@@ -149,7 +148,7 @@ public abstract class BaseTransportClient {
     protected String findClusterName(URI uri) {
         String clustername;
         try {
-            Map<String,String> params = parseQueryString(uri, "UTF-8");
+            Map<String, String> params = parseQueryString(uri, "UTF-8");
             clustername = params.get("es.cluster.name");
             if (clustername != null) {
                 logger.info("cluster name found in URI {}: {}", uri, clustername);
@@ -264,7 +263,7 @@ public abstract class BaseTransportClient {
                     logger.info("new connection to {}", node);
                 }
                 if (!nodes.isEmpty()) {
-                    Map<String,String> params = parseQueryString(uri, "UTF-8");
+                    Map<String, String> params = parseQueryString(uri, "UTF-8");
                     if (params.containsKey("es.sniff")) {
                         try {
                             connectMore();
@@ -321,7 +320,7 @@ public abstract class BaseTransportClient {
         return configHelper.defaultMapping();
     }
 
-    public Map<String,String> getMappings() {
+    public Map<String, String> getMappings() {
         return configHelper.mappings();
     }
 

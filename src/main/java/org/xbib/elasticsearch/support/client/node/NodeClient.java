@@ -1,13 +1,4 @@
-
 package org.xbib.elasticsearch.support.client.node;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -29,12 +20,17 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-
 import org.xbib.elasticsearch.support.client.ClientHelper;
-import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
+import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.State;
 import org.xbib.elasticsearch.support.client.bulk.BulkProcessorHelper;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Node client support
@@ -124,7 +120,7 @@ public class NodeClient implements Ingest {
                 state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
+                            executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
                 }
             }
 
@@ -160,7 +156,7 @@ public class NodeClient implements Ingest {
                 outstandingBulkRequests.decrementAndGet();
                 throwable = failure;
                 closed = true;
-                logger.error("after bulk ["+executionId+"] error", failure);
+                logger.error("after bulk [" + executionId + "] error", failure);
             }
         };
         BulkProcessor.Builder builder = BulkProcessor.builder(client, listener)
@@ -170,7 +166,7 @@ public class NodeClient implements Ingest {
         if (maxVolume != null) {
             builder.setBulkSize(maxVolume);
         }
-        this.bulkProcessor =  builder.build();
+        this.bulkProcessor = builder.build();
         try {
             waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
             closed = false;
@@ -334,7 +330,7 @@ public class NodeClient implements Ingest {
             request.settings(getSettings());
         }
         if (getMappings() != null) {
-            for (Map.Entry<String,String> me : getMappings().entrySet()) {
+            for (Map.Entry<String, String> me : getMappings().entrySet()) {
                 request.mapping(me.getKey(), me.getValue());
             }
         }
@@ -424,7 +420,7 @@ public class NodeClient implements Ingest {
         return configHelper.defaultMapping();
     }
 
-    public Map<String,String> getMappings() {
+    public Map<String, String> getMappings() {
         return configHelper.mappings();
     }
 

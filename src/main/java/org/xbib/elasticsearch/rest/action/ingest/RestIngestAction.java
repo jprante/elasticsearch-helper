@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.rest.action.ingest;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -86,7 +85,7 @@ public class RestIngestAction extends BaseRestHandler {
                 long v = volumeCounter.addAndGet(ingestRequest.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
                     logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                        bulkId, ingestRequest.numberOfActions(), v, concurrency);
+                            bulkId, ingestRequest.numberOfActions(), v, concurrency);
                 }
                 idHolder.bulkId(bulkId);
                 latch.countDown();
@@ -99,7 +98,7 @@ public class RestIngestAction extends BaseRestHandler {
                             bulkId, response.successSize(), response.failureSize(), response.took().millis());
                 }
                 if (!response.failure().isEmpty()) {
-                    for (IngestItemFailure f: response.failure()) {
+                    for (IngestItemFailure f : response.failure()) {
                         logger.error("bulk [{}] [{} failure reason: {}", bulkId, f.pos(), f.message());
                     }
                 }
@@ -155,9 +154,11 @@ public class RestIngestAction extends BaseRestHandler {
 
     static final class BulkIdHolder {
         private long bulkId;
+
         public void bulkId(long bulkId) {
             this.bulkId = bulkId;
         }
+
         public long bulkId() {
             return bulkId;
         }

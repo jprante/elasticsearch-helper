@@ -1,27 +1,19 @@
-
 package org.xbib.elasticsearch.support.client.ingest;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.collect.ImmutableSet;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-
 import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
@@ -30,6 +22,10 @@ import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.State;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Ingest client
@@ -102,7 +98,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     /**
      * Create new client
-     *
+     * <p/>
      * The URI describes host and port of the node the client should connect to,
      * with the parameter <tt>es.cluster.name</tt> for the cluster name.
      *
@@ -150,7 +146,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 }
                 if (response.hasFailures()) {
                     closed = true;
-                    for (IngestItemFailure f: response.failure()) {
+                    for (IngestItemFailure f : response.failure()) {
                         logger.error("after bulk [{}] [{}] failure, reason: {}", executionId, f.pos(), f.message());
                     }
                 } else {
@@ -161,7 +157,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             @Override
             public void afterBulk(long executionId, int concurrency, Throwable failure) {
                 closed = true;
-                logger.error("after bulk ["+executionId+"] failure", failure);
+                logger.error("after bulk [" + executionId + "] failure", failure);
                 throwable = failure;
             }
         };

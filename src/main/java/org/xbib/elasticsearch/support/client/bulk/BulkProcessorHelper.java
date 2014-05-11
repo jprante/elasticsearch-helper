@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -24,7 +23,7 @@ public class BulkProcessorHelper {
             Field field = bulkProcessor.getClass().getDeclaredField("bulkRequest");
             if (field != null) {
                 field.setAccessible(true);
-                BulkRequest bulkRequest = (BulkRequest)field.get(bulkProcessor);
+                BulkRequest bulkRequest = (BulkRequest) field.get(bulkProcessor);
                 if (bulkRequest.numberOfActions() > 0) {
                     Method method = bulkProcessor.getClass().getDeclaredMethod("execute");
                     if (method != null) {

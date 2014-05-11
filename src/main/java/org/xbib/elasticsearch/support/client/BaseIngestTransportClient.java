@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -57,7 +56,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             request.settings(getSettings());
         }
         if (getMappings() != null) {
-            for (Map.Entry<String,String> me : getMappings().entrySet()) {
+            for (Map.Entry<String, String> me : getMappings().entrySet()) {
                 request.mapping(me.getKey(), me.getValue());
             }
         }

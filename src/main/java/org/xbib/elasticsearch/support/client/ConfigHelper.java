@@ -7,7 +7,6 @@ import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,7 +23,7 @@ public class ConfigHelper {
 
     private Settings settings;
 
-    private Map<String,String> mappings = newHashMap();
+    private Map<String, String> mappings = newHashMap();
 
     private boolean dateDetection = false;
 
@@ -110,7 +109,7 @@ public class ConfigHelper {
 
     public ConfigHelper putMapping(Client client, String index) {
         if (!mappings.isEmpty()) {
-            for (Map.Entry<String,String> me : mappings.entrySet()) {
+            for (Map.Entry<String, String> me : mappings.entrySet()) {
                 client.admin().indices().putMapping(new PutMappingRequest(index).type(me.getKey()).source(me.getValue())).actionGet();
             }
         }
@@ -119,7 +118,7 @@ public class ConfigHelper {
 
     public ConfigHelper deleteMappings(Client client, String index) {
         if (!mappings.isEmpty()) {
-            for (Map.Entry<String,String> me : mappings.entrySet()) {
+            for (Map.Entry<String, String> me : mappings.entrySet()) {
                 client.admin().indices().deleteMapping(new DeleteMappingRequest(index).types(me.getKey())).actionGet();
             }
         }
@@ -159,56 +158,56 @@ public class ConfigHelper {
         return this;
     }
 
-    public String defaultMapping() throws IOException{
-            XContentBuilder b = jsonBuilder()
-                    .startObject()
-                    .startObject("_default_")
-                    .field("date_detection", dateDetection);
-            if (timeStampFieldEnabled) {
-                b.startObject("_timestamp")
-                        .field("enabled", timeStampFieldEnabled)
-                        .field("path", timeStampField)
-                        .endObject();
-            }
-            if (kibanaEnabled) {
-                b.startObject("properties")
-                        .startObject("@fields")
-                        .field("type", "object")
-                        .field("dynamic", true)
-                        .field("path", "full")
-                        .endObject()
-                        .startObject("@message")
-                        .field("type", "string")
-                        .field("index", "analyzed")
-                        .endObject()
-                        .startObject("@source")
-                        .field("type", "string")
-                        .field("index", "not_analyzed")
-                        .endObject()
-                        .startObject("@source_host")
-                        .field("type", "string")
-                        .field("index", "not_analyzed")
-                        .endObject()
-                        .startObject("@source_path")
-                        .field("type", "string")
-                        .field("index", "not_analyzed")
-                        .endObject()
-                        .startObject("@tags")
-                        .field("type", "string")
-                        .field("index", "not_analyzed")
-                        .endObject()
-                        .startObject("@timestamp")
-                        .field("type", "date")
-                        .endObject()
-                        .startObject("@type")
-                        .field("type", "string")
-                        .field("index", "not_analyzed")
-                        .endObject()
-                        .endObject();
-            }
-            b.endObject()
+    public String defaultMapping() throws IOException {
+        XContentBuilder b = jsonBuilder()
+                .startObject()
+                .startObject("_default_")
+                .field("date_detection", dateDetection);
+        if (timeStampFieldEnabled) {
+            b.startObject("_timestamp")
+                    .field("enabled", timeStampFieldEnabled)
+                    .field("path", timeStampField)
                     .endObject();
-            return b.string();
+        }
+        if (kibanaEnabled) {
+            b.startObject("properties")
+                    .startObject("@fields")
+                    .field("type", "object")
+                    .field("dynamic", true)
+                    .field("path", "full")
+                    .endObject()
+                    .startObject("@message")
+                    .field("type", "string")
+                    .field("index", "analyzed")
+                    .endObject()
+                    .startObject("@source")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("@source_host")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("@source_path")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("@tags")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .startObject("@timestamp")
+                    .field("type", "date")
+                    .endObject()
+                    .startObject("@type")
+                    .field("type", "string")
+                    .field("index", "not_analyzed")
+                    .endObject()
+                    .endObject();
+        }
+        b.endObject()
+                .endObject();
+        return b.string();
     }
 
     public Map<String, String> mappings() {

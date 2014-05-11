@@ -6,48 +6,48 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class NodeRiverStateResponse extends NodeOperationResponse {
 
-    private RiverState state;
+    private Set<RiverState> state;
 
     NodeRiverStateResponse() {
     }
 
     public NodeRiverStateResponse(DiscoveryNode node) {
         super(node);
+        state = new TreeSet();
     }
 
-    public NodeRiverStateResponse setState(RiverState state) {
-        this.state = state;
+    public NodeRiverStateResponse addState(RiverState state) {
+        this.state.add(state);
         return this;
     }
 
-    public RiverState getState() {
+    public Set<RiverState> getStates() {
         return state;
     }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
-        boolean b = in.readBoolean();
-        if (b) {
-            state = new RiverState();
-            state.readFrom(in);
-        } else {
-            state = null;
+        state = new TreeSet();
+        int len = in.readInt();
+        for (int i = 0; i < len; i++) {
+            RiverState rs = new RiverState();
+            rs.readFrom(in);
+            state.add(rs);
         }
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        if (state != null) {
-            out.writeBoolean(true);
-            state.writeTo(out);
-        } else {
-            out.writeBoolean(false);
+        out.writeInt(state.size());
+        for (RiverState rs : state) {
+            rs.writeTo(out);
         }
     }
-
 }

@@ -1,11 +1,10 @@
-
 package org.xbib.elasticsearch.support.client.search;
 
-import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 
 import java.io.IOException;
 import java.net.Inet4Address;

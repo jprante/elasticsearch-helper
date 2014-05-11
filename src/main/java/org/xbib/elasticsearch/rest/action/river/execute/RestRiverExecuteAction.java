@@ -15,7 +15,7 @@ import org.xbib.elasticsearch.rest.action.support.AbstractRestRiverAction;
 
 /**
  * Run a river. The river can be executed once with such a call. Example:
- *
+ * <p/>
  * curl -XPOST 'localhost:9200/_river/my_jdbc_river/_execute'
  */
 public class RestRiverExecuteAction extends AbstractRestRiverAction {

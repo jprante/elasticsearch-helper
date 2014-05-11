@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
@@ -300,7 +299,7 @@ public class IngestRequest extends ActionRequest {
             ActionRequest actionRequest = requests.poll();
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
-                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                IndexRequest indexRequest = (IndexRequest) actionRequest;
                 long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
@@ -312,7 +311,7 @@ public class IngestRequest extends ActionRequest {
 
     /**
      * Take a number of requests from the bulk request queue.
-     *
+     * <p/>
      * This method is thread safe.
      *
      * @param numRequests number of requests
@@ -324,7 +323,7 @@ public class IngestRequest extends ActionRequest {
             ActionRequest actionRequest = requests.poll();
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
-                IndexRequest indexRequest = (IndexRequest)actionRequest;
+                IndexRequest indexRequest = (IndexRequest) actionRequest;
                 long length = indexRequest.source() != null ? indexRequest.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {

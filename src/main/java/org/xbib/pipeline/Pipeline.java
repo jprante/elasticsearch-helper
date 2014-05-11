@@ -1,4 +1,3 @@
-
 package org.xbib.pipeline;
 
 import org.xbib.metrics.MeterMetric;
@@ -13,7 +12,7 @@ import java.util.concurrent.Callable;
  * @param <T> the pipeline result type
  * @param <R> the pipeline request type
  */
-public interface Pipeline<T,R extends PipelineRequest>
+public interface Pipeline<T, R extends PipelineRequest>
         extends Callable<T>, Closeable, Iterator<R> {
 
     /**

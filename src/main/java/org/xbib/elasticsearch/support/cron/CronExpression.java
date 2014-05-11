@@ -180,6 +180,7 @@ public final class CronExpression implements Cloneable {
     /**
      * Returns the time zone for which this <code>CronExpression</code>
      * will be resolved.
+     *
      * @return the time zone
      */
     public TimeZone getTimeZone() {
@@ -192,6 +193,7 @@ public final class CronExpression implements Cloneable {
     /**
      * Sets the time zone for which  this <code>CronExpression</code>
      * will be resolved.
+     *
      * @param timeZone the time zone
      */
     public void setTimeZone(TimeZone timeZone) {

@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client.bulk;
 
 import org.elasticsearch.action.delete.DeleteRequest;

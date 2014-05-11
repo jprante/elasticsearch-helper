@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
@@ -103,11 +102,12 @@ public class IngestProcessor {
 
     /**
      * For REST API
-     * @param data the REST body data
+     *
+     * @param data          the REST body data
      * @param contentUnsafe if content is unsafe
-     * @param defaultIndex default index
-     * @param defaultType default type
-     * @param listener the listener
+     * @param defaultIndex  default index
+     * @param defaultType   default type
+     * @param listener      the listener
      * @return this processor
      * @throws Exception
      */
@@ -159,6 +159,7 @@ public class IngestProcessor {
 
         /**
          * Callback before the bulk request is executed.
+         *
          * @param bulkId the bulk job identifier
          */
         void beforeBulk(long bulkId, int concurrency, IngestRequest request);
@@ -184,7 +185,7 @@ public class IngestProcessor {
         }
         if (actions > 0) {
             while (ingestRequest.numberOfActions() >= actions) {
-               process(ingestRequest.take(actions), listener);
+                process(ingestRequest.take(actions), listener);
             }
         } else {
             while (ingestRequest.numberOfActions() > 0

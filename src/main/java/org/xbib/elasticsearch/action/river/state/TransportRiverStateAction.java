@@ -49,16 +49,17 @@ public class TransportRiverStateAction extends TransportNodesOperationAction<Riv
             NodeInfo nodeInfo = nodeService.info(false, true, false, true, false, false, true, false, true);
             String riverName = request.getRiverName();
             String riverType = request.getRiverType();
+            NodeRiverStateResponse nodeRiverStateResponse = new NodeRiverStateResponse(nodeInfo.getNode());
             for (Map.Entry<RiverName, River> entry : RiverHelper.rivers(injector).entrySet()) {
                 RiverName name = entry.getKey();
-                if ((riverName == null || name.getName().equals(riverName))
-                        && (riverType == null || name.getType().equals(riverType))
+                if ((riverName == null || "*".equals(riverName) || name.getName().equals(riverName))
+                        && (riverType == null || "*".equals(riverType) || name.getType().equals(riverType))
                         && entry.getValue() instanceof StatefulRiver) {
                     StatefulRiver river = (StatefulRiver) entry.getValue();
-                    return new NodeRiverStateResponse(nodeInfo.getNode()).setState(river.getRiverState());
+                    nodeRiverStateResponse.addState(river.getRiverState());
                 }
             }
-            return new NodeRiverStateResponse(nodeInfo.getNode());
+            return nodeRiverStateResponse;
         } catch (Throwable t) {
             logger.error(t.getMessage(), t);
         }
@@ -77,8 +78,10 @@ public class TransportRiverStateAction extends TransportNodesOperationAction<Riv
             Object nodeResponse = nodeResponses.get(i);
             if (nodeResponse instanceof NodeRiverStateResponse) {
                 NodeRiverStateResponse nodeRiverStateResponse = (NodeRiverStateResponse) nodeResponse;
-                if (nodeRiverStateResponse.getState() != null) {
-                    riverStateResponse.addState(nodeRiverStateResponse.getState());
+                if (nodeRiverStateResponse.getStates() != null) {
+                    for (RiverState riverState : nodeRiverStateResponse.getStates()) {
+                        riverStateResponse.addState(riverState);
+                    }
                 }
             }
         }

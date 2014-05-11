@@ -1,4 +1,3 @@
-
 package org.xbib.metrics;
 
 import org.elasticsearch.common.metrics.Metric;

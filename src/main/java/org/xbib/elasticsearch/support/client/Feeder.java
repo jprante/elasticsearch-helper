@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -15,9 +14,9 @@ public interface Feeder {
     /**
      * Index document
      *
-     * @param index the index
-     * @param type the type
-     * @param id the id
+     * @param index  the index
+     * @param type   the type
+     * @param id     the id
      * @param source the source
      * @return this
      */
@@ -25,6 +24,7 @@ public interface Feeder {
 
     /**
      * Index document
+     *
      * @param indexRequest the index request
      * @return this
      */
@@ -34,8 +34,8 @@ public interface Feeder {
      * Delete document
      *
      * @param index the index
-     * @param type the type
-     * @param id the id
+     * @param type  the type
+     * @param id    the id
      * @return this
      */
     Feeder delete(String index, String type, String id);

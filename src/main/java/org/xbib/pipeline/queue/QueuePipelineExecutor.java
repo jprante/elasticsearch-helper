@@ -1,4 +1,3 @@
-
 package org.xbib.pipeline.queue;
 
 import org.xbib.pipeline.Pipeline;
@@ -25,9 +24,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * An Queue Pipeline setExecutor. This setExecutor can execute pipelines in parallel
  * and manage a queue that have to be processed by the pipelines.
- *
+ * <p/>
  * By doing this, the concurrency works on archive entry level, not URI level.
- *
+ * <p/>
  * Pipelines are created by a pipeline provider.
  * The maximum number of concurrent pipelines is 256.
  * Each pipeline can receive archive entries, which are put into a blocking queue by
@@ -38,8 +37,8 @@ import java.util.concurrent.TimeUnit;
  * @param <P> the pipeline type
  * @param <E> the element type
  */
-public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipeline<T,R>, E extends PipelineElement>
-     implements PipelineExecutor<T,R,P> {
+public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipeline<T, R>, E extends PipelineElement>
+        implements PipelineExecutor<T, R, P> {
 
     private ExecutorService executorService;
 
@@ -60,25 +59,25 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
     private volatile boolean closed;
 
     @Override
-    public QueuePipelineExecutor<T,R,P,E> setConcurrency(int concurrency) {
+    public QueuePipelineExecutor<T, R, P, E> setConcurrency(int concurrency) {
         this.concurrency = concurrency;
         return this;
     }
 
     @Override
-    public QueuePipelineExecutor<T,R,P,E> setPipelineProvider(PipelineProvider<P> provider) {
+    public QueuePipelineExecutor<T, R, P, E> setPipelineProvider(PipelineProvider<P> provider) {
         this.provider = provider;
         return this;
     }
 
     @Override
-    public QueuePipelineExecutor<T,R,P,E> setSink(PipelineSink<T> sink) {
+    public QueuePipelineExecutor<T, R, P, E> setSink(PipelineSink<T> sink) {
         this.sink = sink;
         return this;
     }
 
     @Override
-    public QueuePipelineExecutor<T,R,P,E> prepare() {
+    public QueuePipelineExecutor<T, R, P, E> prepare() {
         if (provider == null) {
             throw new IllegalArgumentException("no provider set");
         }
@@ -108,7 +107,7 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
      * @return this setExecutor
      */
     @Override
-    public QueuePipelineExecutor<T,R,P,E> execute() {
+    public QueuePipelineExecutor<T, R, P, E> execute() {
         futures = new LinkedList<Future<T>>();
         for (P pipeline : pipelines) {
             futures.add(executorService.submit(pipeline));
@@ -118,14 +117,15 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
 
     /**
      * Wait for all the pipelines executed.
+     *
      * @return this setExecutor
      * @throws InterruptedException
      * @throws java.util.concurrent.ExecutionException
      */
-    public QueuePipelineExecutor<T,R,P,E> waitFor() throws InterruptedException, ExecutionException, IOException {
+    public QueuePipelineExecutor<T, R, P, E> waitFor() throws InterruptedException, ExecutionException, IOException {
         for (Future<T> future : futures) {
             T t = future.get();
-            if (sink != null)  {
+            if (sink != null) {
                 sink.write(t);
             }
         }
@@ -167,6 +167,7 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
 
     /**
      * Get queue
+     *
      * @return the queue
      */
     public BlockingQueue<E> queue() {
@@ -175,6 +176,7 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
 
     /**
      * Get pipelines
+     *
      * @return the pipelines
      */
     public Set<P> getPipelines() {
@@ -184,6 +186,7 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
     /**
      * Count down the latch. Decreases the number of active pipelines.
      * Called from a pipeline when it terminates.
+     *
      * @return this setExecutor
      */
     public QueuePipelineExecutor countDown() {
@@ -194,6 +197,7 @@ public class QueuePipelineExecutor<T, R extends PipelineRequest, P extends Pipel
     /**
      * Returns the number of pipelines.  If this pipeline setExecutor can receive requests,
      * the returned number is greater than 0.
+     *
      * @return number of pipelines ready to receive requests
      */
     public long canReceive() {

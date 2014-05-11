@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.search.support;
 
 import org.elasticsearch.action.search.SearchResponse;

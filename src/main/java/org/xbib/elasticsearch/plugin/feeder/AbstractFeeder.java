@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.plugin.feeder;
 
 import org.elasticsearch.client.Client;
@@ -41,10 +40,8 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 /**
  * Base class for all feeders and feed pipelines.
- * <p>
  * A feed pipeline is a sequence of URI in form of pipeline elements that can be consumed
  * in serial or parallel manner.
- * <p>
  * Variables - mostly read-only - that are common to all pipeline executions are declared
  * as static variables.
  *
@@ -54,7 +51,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
  */
 public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pipeline<T, R>>
         extends AbstractPipeline<MapPipelineElement, PipelineException>
-        implements Feeder<T,R,P> {
+        implements Feeder<T, R, P> {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(Feeder.class.getSimpleName());
 
@@ -124,7 +121,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
     @Override
     public Feeder<T, R, P> readFrom(Reader reader) {
         try {
-            Map<String,Object> spec = XContentFactory.xContent(XContentType.JSON).createParser(reader).mapOrderedAndClose();
+            Map<String, Object> spec = XContentFactory.xContent(XContentType.JSON).createParser(reader).mapOrderedAndClose();
             Map<String, String> loadedSettings = new JsonSettingsLoader().load(jsonBuilder().map(spec).string());
             Settings settings = settingsBuilder().put(loadedSettings).build();
             setSpec(spec);
@@ -146,13 +143,13 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
     }
 
     @Override
-    public Feeder<T, R, P> setSpec(Map<String,Object> spec) {
+    public Feeder<T, R, P> setSpec(Map<String, Object> spec) {
         this.spec = spec;
         return this;
     }
 
     @Override
-    public Map<String,Object> getSpec() {
+    public Map<String, Object> getSpec() {
         return spec;
     }
 
@@ -263,7 +260,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         this.queue = new ConcurrentLinkedQueue<Map<String, Object>>();
         Object input = getType() != null && spec.containsKey(getType()) ? spec.get(getType()) : spec;
         if (input instanceof Object[]) {
-            for (Object map : (Object[])input) {
+            for (Object map : (Object[]) input) {
                 if (map instanceof Map) {
                     queue.offer((Map<String, Object>) map);
                 } else {
@@ -271,7 +268,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
                 }
             }
         } else if (input instanceof List) {
-            for (Object map : (List)input) {
+            for (Object map : (List) input) {
                 if (map instanceof Map) {
                     queue.offer((Map<String, Object>) map);
                 } else {
@@ -279,7 +276,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
                 }
             }
         } else if (input instanceof Map) {
-            queue.offer((Map<String,Object>)input);
+            queue.offer((Map<String, Object>) input);
         }
         return this;
     }
@@ -307,6 +304,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
      *
      * @param state true if the feeder should be interrupted
      */
+    @Override
     public void setInterrupted(boolean state) {
         interrupted = state;
         for (Feeder feeder : registry) {
@@ -316,6 +314,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
         }
     }
 
+    @Override
     public boolean isInterrupted() {
         return interrupted;
     }

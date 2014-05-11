@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;

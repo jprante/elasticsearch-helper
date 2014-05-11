@@ -1,4 +1,3 @@
-
 package org.xbib.pipeline.simple;
 
 import org.xbib.pipeline.Pipeline;
@@ -20,12 +19,13 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A simple pipeline executor.
+ *
  * @param <T> the pipeline result type
  * @param <R> the pipeline request type
  * @param <P> the pipeline type
  */
-public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipeline<T,R>>
-    implements PipelineExecutor<T,R,P> {
+public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipeline<T, R>>
+        implements PipelineExecutor<T, R, P> {
 
     private ExecutorService executorService;
 
@@ -42,25 +42,25 @@ public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipe
     private int concurrency;
 
     @Override
-    public SimplePipelineExecutor<T,R,P> setConcurrency(int concurrency) {
+    public SimplePipelineExecutor<T, R, P> setConcurrency(int concurrency) {
         this.concurrency = concurrency;
         return this;
     }
 
     @Override
-    public SimplePipelineExecutor<T,R,P> setPipelineProvider(PipelineProvider<P> provider) {
+    public SimplePipelineExecutor<T, R, P> setPipelineProvider(PipelineProvider<P> provider) {
         this.provider = provider;
         return this;
     }
 
     @Override
-    public SimplePipelineExecutor<T,R,P> setSink(PipelineSink<T> sink) {
+    public SimplePipelineExecutor<T, R, P> setSink(PipelineSink<T> sink) {
         this.sink = sink;
         return this;
     }
 
     @Override
-    public SimplePipelineExecutor<T,R,P> prepare() {
+    public SimplePipelineExecutor<T, R, P> prepare() {
         if (provider == null) {
             throw new IllegalStateException("no provider set");
         }
@@ -79,10 +79,11 @@ public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipe
 
     /**
      * Execute pipelines
+     *
      * @return this executor
      */
     @Override
-    public SimplePipelineExecutor<T,R,P> execute() {
+    public SimplePipelineExecutor<T, R, P> execute() {
         if (pipelines == null) {
             prepare();
         }
@@ -107,7 +108,7 @@ public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipe
      * @throws java.util.concurrent.ExecutionException
      */
     @Override
-    public SimplePipelineExecutor<T,R,P> waitFor()
+    public SimplePipelineExecutor<T, R, P> waitFor()
             throws InterruptedException, ExecutionException {
         if (executorService == null || pipelines == null || futures == null || futures.isEmpty()) {
             return this;
@@ -142,6 +143,7 @@ public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipe
 
     /**
      * Get the pipelines of this executor.
+     *
      * @return the pipelines
      */
     @Override
@@ -151,6 +153,7 @@ public class SimplePipelineExecutor<T, R extends PipelineRequest, P extends Pipe
 
     /**
      * Get the collected I/O exceptions that were thrown by the pipelines.
+     *
      * @return list of exceptions
      */
     public List<Throwable> getExceptions() {

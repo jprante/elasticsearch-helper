@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -40,6 +39,7 @@ public interface Ingest extends Feeder {
 
     /**
      * Set the maximum volume for bulk request before flush
+     *
      * @param maxVolume maximum volume
      * @return this ingest
      */
@@ -47,6 +47,7 @@ public interface Ingest extends Feeder {
 
     /**
      * Set request timeout. Default is 60s.
+     *
      * @param timeout timeout
      * @return this ingest
      */
@@ -54,6 +55,7 @@ public interface Ingest extends Feeder {
 
     /**
      * The number of shards for index creation
+     *
      * @param shards the number of shards
      * @return this
      */
@@ -61,6 +63,7 @@ public interface Ingest extends Feeder {
 
     /**
      * The number of replica for index creation
+     *
      * @param replica the number of replica
      * @return this
      */
@@ -74,27 +77,31 @@ public interface Ingest extends Feeder {
 
     /**
      * Create a key/value in the settings
-     * @param key the key
+     *
+     * @param key   the key
      * @param value the value
      */
     void addSetting(String key, String value);
 
     /**
      * Create a key/value in the settings
-     * @param key the key
+     *
+     * @param key   the key
      * @param value the value
      */
     void addSetting(String key, Boolean value);
 
     /**
      * Create a key/value in the settings
-     * @param key the key
+     *
+     * @param key   the key
      * @param value the value
      */
     void addSetting(String key, Integer value);
 
     /**
      * Create a key/value in the settings
+     *
      * @param in the input stream with settings
      */
     void addSetting(InputStream in) throws IOException;
@@ -103,7 +110,7 @@ public interface Ingest extends Feeder {
 
     void addMapping(String type, String mapping);
 
-    Map<String,String> getMappings();
+    Map<String, String> getMappings();
 
     /**
      * Start bulk mode
@@ -135,6 +142,7 @@ public interface Ingest extends Feeder {
 
     /**
      * Flush ingest, move all pending documents to the bulk indexer
+     *
      * @return this
      */
     Ingest flush();
@@ -156,12 +164,14 @@ public interface Ingest extends Feeder {
 
     /**
      * Wait for cluster being healthy.
+     *
      * @throws IOException
      */
     Ingest waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
 
     /**
      * Wait for index recovery (after replica change)
+     *
      * @return number of shards found
      */
     int waitForRecovery(String index) throws IOException;
@@ -172,6 +182,7 @@ public interface Ingest extends Feeder {
 
     /**
      * Return last throwable if exists.
+     *
      * @return last throwable
      */
     Throwable getThrowable();

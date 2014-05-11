@@ -18,9 +18,9 @@
  */
 package org.xbib.elasticsearch.support.facet;
 
-import org.xbib.facet.Facet;
 import org.elasticsearch.search.facet.Facets;
 import org.elasticsearch.search.facet.terms.TermsFacet;
+import org.xbib.facet.Facet;
 import org.xbib.facet.FacetListener;
 import org.xbib.facet.FacetTerm;
 
@@ -31,7 +31,7 @@ import java.util.Iterator;
  *
  * @author <a href="mailto:joergprante@gmail.com">J&ouml;rg Prante</a>
  */
-public class FacetSupport  {
+public class FacetSupport {
 
     private final FacetListener listener;
 
@@ -50,7 +50,7 @@ public class FacetSupport  {
         while (it.hasNext()) {
             org.elasticsearch.search.facet.Facet f = it.next();
             if (f instanceof TermsFacet) {
-                TermsFacet tf = (TermsFacet)f;
+                TermsFacet tf = (TermsFacet) f;
                 // String displayLabel, String description, String index, String relation
                 Facet facet = new Facet("", "", f.getName(), "=");
                 for (TermsFacet.Entry e : tf.getEntries()) {

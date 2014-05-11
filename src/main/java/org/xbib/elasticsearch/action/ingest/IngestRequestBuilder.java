@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.action.ActionListener;
@@ -126,6 +125,6 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
     }
 
     protected void doExecute(ActionListener<IngestResponse> listener) {
-        ((InternalClient)client).execute(IngestAction.INSTANCE, request, listener);
+        ((InternalClient) client).execute(IngestAction.INSTANCE, request, listener);
     }
 }
