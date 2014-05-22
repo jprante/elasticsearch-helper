@@ -15,7 +15,7 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.XContentRestResponse;
+import org.xbib.elasticsearch.rest.action.support.XContentRestResponse;
 import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
@@ -30,7 +30,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 import static org.elasticsearch.rest.RestRequest.Method.PUT;
 import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 import static org.elasticsearch.rest.RestStatus.OK;
-import static org.elasticsearch.rest.action.support.RestXContentBuilder.restContentBuilder;
+import static org.xbib.elasticsearch.rest.action.support.RestXContentBuilder.restContentBuilder;
 
 /**
  * <pre>

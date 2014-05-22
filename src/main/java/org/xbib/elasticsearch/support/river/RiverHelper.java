@@ -34,7 +34,7 @@ public class RiverHelper {
             try {
                 riverStateResponse = client.execute(RiverStateAction.INSTANCE, riverStateRequest).actionGet();
             } catch (IndexMissingException e) {
-                return;
+                // ignore
             }
         }
     }
@@ -71,7 +71,7 @@ public class RiverHelper {
             try {
                 riverStateResponse = client.execute(RiverStateAction.INSTANCE, riverStateRequest).actionGet();
             } catch (IndexMissingException e) {
-                return;
+                //
             }
         }
         if (seconds < 0) {

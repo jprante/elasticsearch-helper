@@ -68,7 +68,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                 IndexRequest indexRequest = (IndexRequest) request;
                 String aliasOrIndex = indexRequest.index();
                 // throws IndexMissingException
-                indexRequest.index(clusterState.metaData().concreteIndex(indexRequest.index()));
+                indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index()));
 
                 MappingMetaData mappingMd = null;
                 if (metaData.hasIndex(indexRequest.index())) {
@@ -78,7 +78,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
                 deleteRequest.routing(clusterState.metaData().resolveIndexRouting(deleteRequest.routing(), deleteRequest.index()));
-                deleteRequest.index(clusterState.metaData().concreteIndex(deleteRequest.index()));
+                deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index()));
             }
         }
 

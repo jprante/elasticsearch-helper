@@ -78,6 +78,12 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
+    public IngestTransportClient flushInterval(TimeValue flushInterval) {
+        // ignore, not supported
+        return this;
+    }
+
+    @Override
     public IngestTransportClient maxRequestWait(TimeValue timeout) {
         this.maxWaitTime = timeout;
         return this;

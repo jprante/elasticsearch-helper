@@ -46,6 +46,14 @@ public interface Ingest extends Feeder {
     Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
 
     /**
+     * Set the flush interval for automatic flushing outstanding bulk requests
+     *
+     * @param flushInterval the flush interval, default is 30 seconds
+     * @return this ingest
+     */
+    Ingest flushInterval(TimeValue flushInterval);
+
+    /**
      * Set request timeout. Default is 60s.
      *
      * @param timeout timeout

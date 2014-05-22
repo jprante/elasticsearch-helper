@@ -5,8 +5,7 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
@@ -55,8 +54,8 @@ public class ClientHelper {
         if (index == null) {
             throw new IOException("unable to waitfor recovery, index not set");
         }
-        IndicesStatusResponse response = client.admin().indices()
-                .status(new IndicesStatusRequest(index).recovery(true)).actionGet();
+        RecoveryResponse response = client.admin().indices()
+                .prepareRecoveries(index).execute().actionGet();
         return response.getTotalShards();
     }
 

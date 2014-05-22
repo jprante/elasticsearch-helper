@@ -87,6 +87,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         return this;
     }
 
+    @Override
     public BulkTransportClient flushInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
