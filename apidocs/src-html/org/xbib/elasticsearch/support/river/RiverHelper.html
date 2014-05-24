@@ -42,7 +42,7 @@
 <span class="sourceLineNo">034</span>            try {<a name="line.34"></a>
 <span class="sourceLineNo">035</span>                riverStateResponse = client.execute(RiverStateAction.INSTANCE, riverStateRequest).actionGet();<a name="line.35"></a>
 <span class="sourceLineNo">036</span>            } catch (IndexMissingException e) {<a name="line.36"></a>
-<span class="sourceLineNo">037</span>                return;<a name="line.37"></a>
+<span class="sourceLineNo">037</span>                // ignore<a name="line.37"></a>
 <span class="sourceLineNo">038</span>            }<a name="line.38"></a>
 <span class="sourceLineNo">039</span>        }<a name="line.39"></a>
 <span class="sourceLineNo">040</span>    }<a name="line.40"></a>
@@ -79,7 +79,7 @@
 <span class="sourceLineNo">071</span>            try {<a name="line.71"></a>
 <span class="sourceLineNo">072</span>                riverStateResponse = client.execute(RiverStateAction.INSTANCE, riverStateRequest).actionGet();<a name="line.72"></a>
 <span class="sourceLineNo">073</span>            } catch (IndexMissingException e) {<a name="line.73"></a>
-<span class="sourceLineNo">074</span>                return;<a name="line.74"></a>
+<span class="sourceLineNo">074</span>                //<a name="line.74"></a>
 <span class="sourceLineNo">075</span>            }<a name="line.75"></a>
 <span class="sourceLineNo">076</span>        }<a name="line.76"></a>
 <span class="sourceLineNo">077</span>        if (seconds &lt; 0) {<a name="line.77"></a>
