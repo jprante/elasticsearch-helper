@@ -248,191 +248,199 @@
 <span class="sourceLineNo">240</span>        }<a name="line.240"></a>
 <span class="sourceLineNo">241</span>        logger.info("flushing bulk processor");<a name="line.241"></a>
 <span class="sourceLineNo">242</span>        BulkProcessorHelper.flush(bulkProcessor);<a name="line.242"></a>
-<span class="sourceLineNo">243</span>        BulkProcessorHelper.waitFor(bulkProcessor, TimeValue.timeValueSeconds(60));<a name="line.243"></a>
-<span class="sourceLineNo">244</span>        return this;<a name="line.244"></a>
-<span class="sourceLineNo">245</span>    }<a name="line.245"></a>
-<span class="sourceLineNo">246</span><a name="line.246"></a>
-<span class="sourceLineNo">247</span>    @Override<a name="line.247"></a>
-<span class="sourceLineNo">248</span>    public NodeClient startBulk(String index) throws IOException {<a name="line.248"></a>
-<span class="sourceLineNo">249</span>        if (state == null) {<a name="line.249"></a>
-<span class="sourceLineNo">250</span>            return this;<a name="line.250"></a>
-<span class="sourceLineNo">251</span>        }<a name="line.251"></a>
-<span class="sourceLineNo">252</span>        if (!state.isBulk(index)) {<a name="line.252"></a>
-<span class="sourceLineNo">253</span>            state.startBulk(index);<a name="line.253"></a>
-<span class="sourceLineNo">254</span>            ClientHelper.startBulk(client, index);<a name="line.254"></a>
-<span class="sourceLineNo">255</span>        }<a name="line.255"></a>
-<span class="sourceLineNo">256</span>        return this;<a name="line.256"></a>
-<span class="sourceLineNo">257</span>    }<a name="line.257"></a>
-<span class="sourceLineNo">258</span><a name="line.258"></a>
-<span class="sourceLineNo">259</span>    @Override<a name="line.259"></a>
-<span class="sourceLineNo">260</span>    public NodeClient stopBulk(String index) throws IOException {<a name="line.260"></a>
-<span class="sourceLineNo">261</span>        if (state == null) {<a name="line.261"></a>
-<span class="sourceLineNo">262</span>            return this;<a name="line.262"></a>
+<span class="sourceLineNo">243</span>        return this;<a name="line.243"></a>
+<span class="sourceLineNo">244</span>    }<a name="line.244"></a>
+<span class="sourceLineNo">245</span><a name="line.245"></a>
+<span class="sourceLineNo">246</span>    @Override<a name="line.246"></a>
+<span class="sourceLineNo">247</span>    public NodeClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {<a name="line.247"></a>
+<span class="sourceLineNo">248</span>        if (closed) {<a name="line.248"></a>
+<span class="sourceLineNo">249</span>            throw new ElasticsearchIllegalStateException("client is closed");<a name="line.249"></a>
+<span class="sourceLineNo">250</span>        }<a name="line.250"></a>
+<span class="sourceLineNo">251</span>        BulkProcessorHelper.waitFor(bulkProcessor, maxWaitTime);<a name="line.251"></a>
+<span class="sourceLineNo">252</span>        return this;<a name="line.252"></a>
+<span class="sourceLineNo">253</span>    }<a name="line.253"></a>
+<span class="sourceLineNo">254</span><a name="line.254"></a>
+<span class="sourceLineNo">255</span>    @Override<a name="line.255"></a>
+<span class="sourceLineNo">256</span>    public NodeClient startBulk(String index) throws IOException {<a name="line.256"></a>
+<span class="sourceLineNo">257</span>        if (state == null) {<a name="line.257"></a>
+<span class="sourceLineNo">258</span>            return this;<a name="line.258"></a>
+<span class="sourceLineNo">259</span>        }<a name="line.259"></a>
+<span class="sourceLineNo">260</span>        if (!state.isBulk(index)) {<a name="line.260"></a>
+<span class="sourceLineNo">261</span>            state.startBulk(index);<a name="line.261"></a>
+<span class="sourceLineNo">262</span>            ClientHelper.startBulk(client, index);<a name="line.262"></a>
 <span class="sourceLineNo">263</span>        }<a name="line.263"></a>
-<span class="sourceLineNo">264</span>        if (state.isBulk(index)) {<a name="line.264"></a>
-<span class="sourceLineNo">265</span>            state.stopBulk(index);<a name="line.265"></a>
-<span class="sourceLineNo">266</span>            ClientHelper.stopBulk(client, index);<a name="line.266"></a>
-<span class="sourceLineNo">267</span>        }<a name="line.267"></a>
-<span class="sourceLineNo">268</span>        return this;<a name="line.268"></a>
-<span class="sourceLineNo">269</span>    }<a name="line.269"></a>
-<span class="sourceLineNo">270</span><a name="line.270"></a>
-<span class="sourceLineNo">271</span>    @Override<a name="line.271"></a>
-<span class="sourceLineNo">272</span>    public NodeClient refresh(String index) {<a name="line.272"></a>
-<span class="sourceLineNo">273</span>        ClientHelper.refresh(client, index);<a name="line.273"></a>
-<span class="sourceLineNo">274</span>        return this;<a name="line.274"></a>
-<span class="sourceLineNo">275</span>    }<a name="line.275"></a>
-<span class="sourceLineNo">276</span><a name="line.276"></a>
-<span class="sourceLineNo">277</span>    @Override<a name="line.277"></a>
-<span class="sourceLineNo">278</span>    public int updateReplicaLevel(String index, int level) throws IOException {<a name="line.278"></a>
-<span class="sourceLineNo">279</span>        return ClientHelper.updateReplicaLevel(client, index, level);<a name="line.279"></a>
-<span class="sourceLineNo">280</span>    }<a name="line.280"></a>
-<span class="sourceLineNo">281</span><a name="line.281"></a>
-<span class="sourceLineNo">282</span><a name="line.282"></a>
-<span class="sourceLineNo">283</span>    @Override<a name="line.283"></a>
-<span class="sourceLineNo">284</span>    public NodeClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.284"></a>
-<span class="sourceLineNo">285</span>        ClientHelper.waitForCluster(client, status, timeout);<a name="line.285"></a>
-<span class="sourceLineNo">286</span>        return this;<a name="line.286"></a>
-<span class="sourceLineNo">287</span>    }<a name="line.287"></a>
-<span class="sourceLineNo">288</span><a name="line.288"></a>
-<span class="sourceLineNo">289</span>    @Override<a name="line.289"></a>
-<span class="sourceLineNo">290</span>    public int waitForRecovery(String index) throws IOException {<a name="line.290"></a>
-<span class="sourceLineNo">291</span>        return ClientHelper.waitForRecovery(client, index);<a name="line.291"></a>
-<span class="sourceLineNo">292</span>    }<a name="line.292"></a>
-<span class="sourceLineNo">293</span><a name="line.293"></a>
-<span class="sourceLineNo">294</span>    @Override<a name="line.294"></a>
-<span class="sourceLineNo">295</span>    public synchronized void shutdown() {<a name="line.295"></a>
-<span class="sourceLineNo">296</span>        try {<a name="line.296"></a>
-<span class="sourceLineNo">297</span>            if (bulkProcessor != null) {<a name="line.297"></a>
-<span class="sourceLineNo">298</span>                logger.info("closing bulk processor...");<a name="line.298"></a>
-<span class="sourceLineNo">299</span>                bulkProcessor.close();<a name="line.299"></a>
-<span class="sourceLineNo">300</span>            }<a name="line.300"></a>
-<span class="sourceLineNo">301</span>            if (state.indices() != null &amp;&amp; !state.indices().isEmpty()) {<a name="line.301"></a>
-<span class="sourceLineNo">302</span>                logger.info("stopping bulk mode for indices {}...", state.indices());<a name="line.302"></a>
-<span class="sourceLineNo">303</span>                for (String index : ImmutableSet.copyOf(state.indices())) {<a name="line.303"></a>
-<span class="sourceLineNo">304</span>                    stopBulk(index);<a name="line.304"></a>
-<span class="sourceLineNo">305</span>                }<a name="line.305"></a>
-<span class="sourceLineNo">306</span>            }<a name="line.306"></a>
-<span class="sourceLineNo">307</span>            logger.info("shutting down...");<a name="line.307"></a>
-<span class="sourceLineNo">308</span>            client.close();<a name="line.308"></a>
-<span class="sourceLineNo">309</span>            logger.info("shutting down completed");<a name="line.309"></a>
-<span class="sourceLineNo">310</span>        } catch (Exception e) {<a name="line.310"></a>
-<span class="sourceLineNo">311</span>            logger.error(e.getMessage(), e);<a name="line.311"></a>
-<span class="sourceLineNo">312</span>        }<a name="line.312"></a>
-<span class="sourceLineNo">313</span>    }<a name="line.313"></a>
-<span class="sourceLineNo">314</span><a name="line.314"></a>
-<span class="sourceLineNo">315</span>    @Override<a name="line.315"></a>
-<span class="sourceLineNo">316</span>    public NodeClient newIndex(String index) {<a name="line.316"></a>
-<span class="sourceLineNo">317</span>        if (closed) {<a name="line.317"></a>
-<span class="sourceLineNo">318</span>            throw new ElasticsearchIllegalStateException("client is closed");<a name="line.318"></a>
-<span class="sourceLineNo">319</span>        }<a name="line.319"></a>
-<span class="sourceLineNo">320</span>        if (client == null) {<a name="line.320"></a>
-<span class="sourceLineNo">321</span>            logger.warn("no client");<a name="line.321"></a>
-<span class="sourceLineNo">322</span>            return this;<a name="line.322"></a>
-<span class="sourceLineNo">323</span>        }<a name="line.323"></a>
-<span class="sourceLineNo">324</span>        if (index == null) {<a name="line.324"></a>
-<span class="sourceLineNo">325</span>            logger.warn("no index name given to create index");<a name="line.325"></a>
-<span class="sourceLineNo">326</span>            return this;<a name="line.326"></a>
+<span class="sourceLineNo">264</span>        return this;<a name="line.264"></a>
+<span class="sourceLineNo">265</span>    }<a name="line.265"></a>
+<span class="sourceLineNo">266</span><a name="line.266"></a>
+<span class="sourceLineNo">267</span>    @Override<a name="line.267"></a>
+<span class="sourceLineNo">268</span>    public NodeClient stopBulk(String index) throws IOException {<a name="line.268"></a>
+<span class="sourceLineNo">269</span>        if (state == null) {<a name="line.269"></a>
+<span class="sourceLineNo">270</span>            return this;<a name="line.270"></a>
+<span class="sourceLineNo">271</span>        }<a name="line.271"></a>
+<span class="sourceLineNo">272</span>        if (state.isBulk(index)) {<a name="line.272"></a>
+<span class="sourceLineNo">273</span>            state.stopBulk(index);<a name="line.273"></a>
+<span class="sourceLineNo">274</span>            ClientHelper.stopBulk(client, index);<a name="line.274"></a>
+<span class="sourceLineNo">275</span>        }<a name="line.275"></a>
+<span class="sourceLineNo">276</span>        return this;<a name="line.276"></a>
+<span class="sourceLineNo">277</span>    }<a name="line.277"></a>
+<span class="sourceLineNo">278</span><a name="line.278"></a>
+<span class="sourceLineNo">279</span>    @Override<a name="line.279"></a>
+<span class="sourceLineNo">280</span>    public NodeClient refresh(String index) {<a name="line.280"></a>
+<span class="sourceLineNo">281</span>        ClientHelper.refresh(client, index);<a name="line.281"></a>
+<span class="sourceLineNo">282</span>        return this;<a name="line.282"></a>
+<span class="sourceLineNo">283</span>    }<a name="line.283"></a>
+<span class="sourceLineNo">284</span><a name="line.284"></a>
+<span class="sourceLineNo">285</span>    @Override<a name="line.285"></a>
+<span class="sourceLineNo">286</span>    public int updateReplicaLevel(String index, int level) throws IOException {<a name="line.286"></a>
+<span class="sourceLineNo">287</span>        return ClientHelper.updateReplicaLevel(client, index, level);<a name="line.287"></a>
+<span class="sourceLineNo">288</span>    }<a name="line.288"></a>
+<span class="sourceLineNo">289</span><a name="line.289"></a>
+<span class="sourceLineNo">290</span><a name="line.290"></a>
+<span class="sourceLineNo">291</span>    @Override<a name="line.291"></a>
+<span class="sourceLineNo">292</span>    public NodeClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {<a name="line.292"></a>
+<span class="sourceLineNo">293</span>        ClientHelper.waitForCluster(client, status, timeout);<a name="line.293"></a>
+<span class="sourceLineNo">294</span>        return this;<a name="line.294"></a>
+<span class="sourceLineNo">295</span>    }<a name="line.295"></a>
+<span class="sourceLineNo">296</span><a name="line.296"></a>
+<span class="sourceLineNo">297</span>    @Override<a name="line.297"></a>
+<span class="sourceLineNo">298</span>    public int waitForRecovery(String index) throws IOException {<a name="line.298"></a>
+<span class="sourceLineNo">299</span>        return ClientHelper.waitForRecovery(client, index);<a name="line.299"></a>
+<span class="sourceLineNo">300</span>    }<a name="line.300"></a>
+<span class="sourceLineNo">301</span><a name="line.301"></a>
+<span class="sourceLineNo">302</span>    @Override<a name="line.302"></a>
+<span class="sourceLineNo">303</span>    public synchronized void shutdown() {<a name="line.303"></a>
+<span class="sourceLineNo">304</span>        try {<a name="line.304"></a>
+<span class="sourceLineNo">305</span>            if (bulkProcessor != null) {<a name="line.305"></a>
+<span class="sourceLineNo">306</span>                logger.info("closing bulk processor...");<a name="line.306"></a>
+<span class="sourceLineNo">307</span>                bulkProcessor.close();<a name="line.307"></a>
+<span class="sourceLineNo">308</span>            }<a name="line.308"></a>
+<span class="sourceLineNo">309</span>            if (state.indices() != null &amp;&amp; !state.indices().isEmpty()) {<a name="line.309"></a>
+<span class="sourceLineNo">310</span>                logger.info("stopping bulk mode for indices {}...", state.indices());<a name="line.310"></a>
+<span class="sourceLineNo">311</span>                for (String index : ImmutableSet.copyOf(state.indices())) {<a name="line.311"></a>
+<span class="sourceLineNo">312</span>                    stopBulk(index);<a name="line.312"></a>
+<span class="sourceLineNo">313</span>                }<a name="line.313"></a>
+<span class="sourceLineNo">314</span>            }<a name="line.314"></a>
+<span class="sourceLineNo">315</span>            logger.info("shutting down...");<a name="line.315"></a>
+<span class="sourceLineNo">316</span>            client.close();<a name="line.316"></a>
+<span class="sourceLineNo">317</span>            logger.info("shutting down completed");<a name="line.317"></a>
+<span class="sourceLineNo">318</span>        } catch (Exception e) {<a name="line.318"></a>
+<span class="sourceLineNo">319</span>            logger.error(e.getMessage(), e);<a name="line.319"></a>
+<span class="sourceLineNo">320</span>        }<a name="line.320"></a>
+<span class="sourceLineNo">321</span>    }<a name="line.321"></a>
+<span class="sourceLineNo">322</span><a name="line.322"></a>
+<span class="sourceLineNo">323</span>    @Override<a name="line.323"></a>
+<span class="sourceLineNo">324</span>    public NodeClient newIndex(String index) {<a name="line.324"></a>
+<span class="sourceLineNo">325</span>        if (closed) {<a name="line.325"></a>
+<span class="sourceLineNo">326</span>            throw new ElasticsearchIllegalStateException("client is closed");<a name="line.326"></a>
 <span class="sourceLineNo">327</span>        }<a name="line.327"></a>
-<span class="sourceLineNo">328</span>        CreateIndexRequest request = new CreateIndexRequest(index);<a name="line.328"></a>
-<span class="sourceLineNo">329</span>        if (getSettings() != null) {<a name="line.329"></a>
-<span class="sourceLineNo">330</span>            request.settings(getSettings());<a name="line.330"></a>
+<span class="sourceLineNo">328</span>        if (client == null) {<a name="line.328"></a>
+<span class="sourceLineNo">329</span>            logger.warn("no client");<a name="line.329"></a>
+<span class="sourceLineNo">330</span>            return this;<a name="line.330"></a>
 <span class="sourceLineNo">331</span>        }<a name="line.331"></a>
-<span class="sourceLineNo">332</span>        if (getMappings() != null) {<a name="line.332"></a>
-<span class="sourceLineNo">333</span>            for (Map.Entry&lt;String, String&gt; me : getMappings().entrySet()) {<a name="line.333"></a>
-<span class="sourceLineNo">334</span>                request.mapping(me.getKey(), me.getValue());<a name="line.334"></a>
-<span class="sourceLineNo">335</span>            }<a name="line.335"></a>
-<span class="sourceLineNo">336</span>        }<a name="line.336"></a>
-<span class="sourceLineNo">337</span>        logger.info("creating index {} with settings = {}, mappings = {}",<a name="line.337"></a>
-<span class="sourceLineNo">338</span>                index, getSettings().getAsMap(), getMappings());<a name="line.338"></a>
-<span class="sourceLineNo">339</span>        try {<a name="line.339"></a>
-<span class="sourceLineNo">340</span>            client.admin().indices().create(request).actionGet();<a name="line.340"></a>
-<span class="sourceLineNo">341</span>        } catch (Exception e) {<a name="line.341"></a>
-<span class="sourceLineNo">342</span>            logger.error(e.getMessage(), e);<a name="line.342"></a>
-<span class="sourceLineNo">343</span>        }<a name="line.343"></a>
-<span class="sourceLineNo">344</span>        return this;<a name="line.344"></a>
-<span class="sourceLineNo">345</span>    }<a name="line.345"></a>
-<span class="sourceLineNo">346</span><a name="line.346"></a>
-<span class="sourceLineNo">347</span>    @Override<a name="line.347"></a>
-<span class="sourceLineNo">348</span>    public NodeClient deleteIndex(String index) {<a name="line.348"></a>
-<span class="sourceLineNo">349</span>        if (closed) {<a name="line.349"></a>
-<span class="sourceLineNo">350</span>            throw new ElasticsearchIllegalStateException("client is closed");<a name="line.350"></a>
+<span class="sourceLineNo">332</span>        if (index == null) {<a name="line.332"></a>
+<span class="sourceLineNo">333</span>            logger.warn("no index name given to create index");<a name="line.333"></a>
+<span class="sourceLineNo">334</span>            return this;<a name="line.334"></a>
+<span class="sourceLineNo">335</span>        }<a name="line.335"></a>
+<span class="sourceLineNo">336</span>        CreateIndexRequest request = new CreateIndexRequest(index);<a name="line.336"></a>
+<span class="sourceLineNo">337</span>        if (getSettings() != null) {<a name="line.337"></a>
+<span class="sourceLineNo">338</span>            request.settings(getSettings());<a name="line.338"></a>
+<span class="sourceLineNo">339</span>        }<a name="line.339"></a>
+<span class="sourceLineNo">340</span>        if (getMappings() != null) {<a name="line.340"></a>
+<span class="sourceLineNo">341</span>            for (Map.Entry&lt;String, String&gt; me : getMappings().entrySet()) {<a name="line.341"></a>
+<span class="sourceLineNo">342</span>                request.mapping(me.getKey(), me.getValue());<a name="line.342"></a>
+<span class="sourceLineNo">343</span>            }<a name="line.343"></a>
+<span class="sourceLineNo">344</span>        }<a name="line.344"></a>
+<span class="sourceLineNo">345</span>        logger.info("creating index {} with settings = {}, mappings = {}",<a name="line.345"></a>
+<span class="sourceLineNo">346</span>                index, getSettings().getAsMap(), getMappings());<a name="line.346"></a>
+<span class="sourceLineNo">347</span>        try {<a name="line.347"></a>
+<span class="sourceLineNo">348</span>            client.admin().indices().create(request).actionGet();<a name="line.348"></a>
+<span class="sourceLineNo">349</span>        } catch (Exception e) {<a name="line.349"></a>
+<span class="sourceLineNo">350</span>            logger.error(e.getMessage(), e);<a name="line.350"></a>
 <span class="sourceLineNo">351</span>        }<a name="line.351"></a>
-<span class="sourceLineNo">352</span>        if (client == null) {<a name="line.352"></a>
-<span class="sourceLineNo">353</span>            logger.warn("no client");<a name="line.353"></a>
-<span class="sourceLineNo">354</span>            return this;<a name="line.354"></a>
-<span class="sourceLineNo">355</span>        }<a name="line.355"></a>
-<span class="sourceLineNo">356</span>        if (index == null) {<a name="line.356"></a>
-<span class="sourceLineNo">357</span>            logger.warn("no index name given to delete index");<a name="line.357"></a>
-<span class="sourceLineNo">358</span>            return this;<a name="line.358"></a>
+<span class="sourceLineNo">352</span>        return this;<a name="line.352"></a>
+<span class="sourceLineNo">353</span>    }<a name="line.353"></a>
+<span class="sourceLineNo">354</span><a name="line.354"></a>
+<span class="sourceLineNo">355</span>    @Override<a name="line.355"></a>
+<span class="sourceLineNo">356</span>    public NodeClient deleteIndex(String index) {<a name="line.356"></a>
+<span class="sourceLineNo">357</span>        if (closed) {<a name="line.357"></a>
+<span class="sourceLineNo">358</span>            throw new ElasticsearchIllegalStateException("client is closed");<a name="line.358"></a>
 <span class="sourceLineNo">359</span>        }<a name="line.359"></a>
-<span class="sourceLineNo">360</span>        try {<a name="line.360"></a>
-<span class="sourceLineNo">361</span>            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();<a name="line.361"></a>
-<span class="sourceLineNo">362</span>        } catch (Exception e) {<a name="line.362"></a>
-<span class="sourceLineNo">363</span>            logger.error(e.getMessage(), e);<a name="line.363"></a>
-<span class="sourceLineNo">364</span>        }<a name="line.364"></a>
-<span class="sourceLineNo">365</span>        return this;<a name="line.365"></a>
-<span class="sourceLineNo">366</span>    }<a name="line.366"></a>
-<span class="sourceLineNo">367</span><a name="line.367"></a>
-<span class="sourceLineNo">368</span>    @Override<a name="line.368"></a>
-<span class="sourceLineNo">369</span>    public boolean hasThrowable() {<a name="line.369"></a>
-<span class="sourceLineNo">370</span>        return throwable != null;<a name="line.370"></a>
-<span class="sourceLineNo">371</span>    }<a name="line.371"></a>
-<span class="sourceLineNo">372</span><a name="line.372"></a>
-<span class="sourceLineNo">373</span>    @Override<a name="line.373"></a>
-<span class="sourceLineNo">374</span>    public Throwable getThrowable() {<a name="line.374"></a>
-<span class="sourceLineNo">375</span>        return throwable;<a name="line.375"></a>
-<span class="sourceLineNo">376</span>    }<a name="line.376"></a>
-<span class="sourceLineNo">377</span><a name="line.377"></a>
-<span class="sourceLineNo">378</span><a name="line.378"></a>
-<span class="sourceLineNo">379</span>    public ImmutableSettings.Builder getSettingsBuilder() {<a name="line.379"></a>
-<span class="sourceLineNo">380</span>        return configHelper.settingsBuilder();<a name="line.380"></a>
-<span class="sourceLineNo">381</span>    }<a name="line.381"></a>
-<span class="sourceLineNo">382</span><a name="line.382"></a>
-<span class="sourceLineNo">383</span>    public void resetSettings() {<a name="line.383"></a>
-<span class="sourceLineNo">384</span>        configHelper.reset();<a name="line.384"></a>
-<span class="sourceLineNo">385</span>    }<a name="line.385"></a>
+<span class="sourceLineNo">360</span>        if (client == null) {<a name="line.360"></a>
+<span class="sourceLineNo">361</span>            logger.warn("no client");<a name="line.361"></a>
+<span class="sourceLineNo">362</span>            return this;<a name="line.362"></a>
+<span class="sourceLineNo">363</span>        }<a name="line.363"></a>
+<span class="sourceLineNo">364</span>        if (index == null) {<a name="line.364"></a>
+<span class="sourceLineNo">365</span>            logger.warn("no index name given to delete index");<a name="line.365"></a>
+<span class="sourceLineNo">366</span>            return this;<a name="line.366"></a>
+<span class="sourceLineNo">367</span>        }<a name="line.367"></a>
+<span class="sourceLineNo">368</span>        try {<a name="line.368"></a>
+<span class="sourceLineNo">369</span>            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();<a name="line.369"></a>
+<span class="sourceLineNo">370</span>        } catch (Exception e) {<a name="line.370"></a>
+<span class="sourceLineNo">371</span>            logger.error(e.getMessage(), e);<a name="line.371"></a>
+<span class="sourceLineNo">372</span>        }<a name="line.372"></a>
+<span class="sourceLineNo">373</span>        return this;<a name="line.373"></a>
+<span class="sourceLineNo">374</span>    }<a name="line.374"></a>
+<span class="sourceLineNo">375</span><a name="line.375"></a>
+<span class="sourceLineNo">376</span>    @Override<a name="line.376"></a>
+<span class="sourceLineNo">377</span>    public boolean hasThrowable() {<a name="line.377"></a>
+<span class="sourceLineNo">378</span>        return throwable != null;<a name="line.378"></a>
+<span class="sourceLineNo">379</span>    }<a name="line.379"></a>
+<span class="sourceLineNo">380</span><a name="line.380"></a>
+<span class="sourceLineNo">381</span>    @Override<a name="line.381"></a>
+<span class="sourceLineNo">382</span>    public Throwable getThrowable() {<a name="line.382"></a>
+<span class="sourceLineNo">383</span>        return throwable;<a name="line.383"></a>
+<span class="sourceLineNo">384</span>    }<a name="line.384"></a>
+<span class="sourceLineNo">385</span><a name="line.385"></a>
 <span class="sourceLineNo">386</span><a name="line.386"></a>
-<span class="sourceLineNo">387</span>    public void addSetting(InputStream in) throws IOException {<a name="line.387"></a>
-<span class="sourceLineNo">388</span>        configHelper.setting(in);<a name="line.388"></a>
+<span class="sourceLineNo">387</span>    public ImmutableSettings.Builder getSettingsBuilder() {<a name="line.387"></a>
+<span class="sourceLineNo">388</span>        return configHelper.settingsBuilder();<a name="line.388"></a>
 <span class="sourceLineNo">389</span>    }<a name="line.389"></a>
 <span class="sourceLineNo">390</span><a name="line.390"></a>
-<span class="sourceLineNo">391</span>    public void addSetting(String key, String value) {<a name="line.391"></a>
-<span class="sourceLineNo">392</span>        configHelper.setting(key, value);<a name="line.392"></a>
+<span class="sourceLineNo">391</span>    public void resetSettings() {<a name="line.391"></a>
+<span class="sourceLineNo">392</span>        configHelper.reset();<a name="line.392"></a>
 <span class="sourceLineNo">393</span>    }<a name="line.393"></a>
 <span class="sourceLineNo">394</span><a name="line.394"></a>
-<span class="sourceLineNo">395</span>    public void addSetting(String key, Boolean value) {<a name="line.395"></a>
-<span class="sourceLineNo">396</span>        configHelper.setting(key, value);<a name="line.396"></a>
+<span class="sourceLineNo">395</span>    public void addSetting(InputStream in) throws IOException {<a name="line.395"></a>
+<span class="sourceLineNo">396</span>        configHelper.setting(in);<a name="line.396"></a>
 <span class="sourceLineNo">397</span>    }<a name="line.397"></a>
 <span class="sourceLineNo">398</span><a name="line.398"></a>
-<span class="sourceLineNo">399</span>    public void addSetting(String key, Integer value) {<a name="line.399"></a>
+<span class="sourceLineNo">399</span>    public void addSetting(String key, String value) {<a name="line.399"></a>
 <span class="sourceLineNo">400</span>        configHelper.setting(key, value);<a name="line.400"></a>
 <span class="sourceLineNo">401</span>    }<a name="line.401"></a>
 <span class="sourceLineNo">402</span><a name="line.402"></a>
-<span class="sourceLineNo">403</span>    public void setSettings(Settings settings) {<a name="line.403"></a>
-<span class="sourceLineNo">404</span>        configHelper.settings(settings);<a name="line.404"></a>
+<span class="sourceLineNo">403</span>    public void addSetting(String key, Boolean value) {<a name="line.403"></a>
+<span class="sourceLineNo">404</span>        configHelper.setting(key, value);<a name="line.404"></a>
 <span class="sourceLineNo">405</span>    }<a name="line.405"></a>
 <span class="sourceLineNo">406</span><a name="line.406"></a>
-<span class="sourceLineNo">407</span>    public Settings getSettings() {<a name="line.407"></a>
-<span class="sourceLineNo">408</span>        return configHelper.settings();<a name="line.408"></a>
+<span class="sourceLineNo">407</span>    public void addSetting(String key, Integer value) {<a name="line.407"></a>
+<span class="sourceLineNo">408</span>        configHelper.setting(key, value);<a name="line.408"></a>
 <span class="sourceLineNo">409</span>    }<a name="line.409"></a>
 <span class="sourceLineNo">410</span><a name="line.410"></a>
-<span class="sourceLineNo">411</span>    public void addMapping(String type, InputStream in) throws IOException {<a name="line.411"></a>
-<span class="sourceLineNo">412</span>        configHelper.mapping(type, in);<a name="line.412"></a>
+<span class="sourceLineNo">411</span>    public void setSettings(Settings settings) {<a name="line.411"></a>
+<span class="sourceLineNo">412</span>        configHelper.settings(settings);<a name="line.412"></a>
 <span class="sourceLineNo">413</span>    }<a name="line.413"></a>
 <span class="sourceLineNo">414</span><a name="line.414"></a>
-<span class="sourceLineNo">415</span>    public void addMapping(String type, String mapping) {<a name="line.415"></a>
-<span class="sourceLineNo">416</span>        configHelper.mapping(type, mapping);<a name="line.416"></a>
+<span class="sourceLineNo">415</span>    public Settings getSettings() {<a name="line.415"></a>
+<span class="sourceLineNo">416</span>        return configHelper.settings();<a name="line.416"></a>
 <span class="sourceLineNo">417</span>    }<a name="line.417"></a>
 <span class="sourceLineNo">418</span><a name="line.418"></a>
-<span class="sourceLineNo">419</span>    public String defaultMapping() throws IOException {<a name="line.419"></a>
-<span class="sourceLineNo">420</span>        return configHelper.defaultMapping();<a name="line.420"></a>
+<span class="sourceLineNo">419</span>    public void addMapping(String type, InputStream in) throws IOException {<a name="line.419"></a>
+<span class="sourceLineNo">420</span>        configHelper.mapping(type, in);<a name="line.420"></a>
 <span class="sourceLineNo">421</span>    }<a name="line.421"></a>
 <span class="sourceLineNo">422</span><a name="line.422"></a>
-<span class="sourceLineNo">423</span>    public Map&lt;String, String&gt; getMappings() {<a name="line.423"></a>
-<span class="sourceLineNo">424</span>        return configHelper.mappings();<a name="line.424"></a>
+<span class="sourceLineNo">423</span>    public void addMapping(String type, String mapping) {<a name="line.423"></a>
+<span class="sourceLineNo">424</span>        configHelper.mapping(type, mapping);<a name="line.424"></a>
 <span class="sourceLineNo">425</span>    }<a name="line.425"></a>
 <span class="sourceLineNo">426</span><a name="line.426"></a>
-<span class="sourceLineNo">427</span>}<a name="line.427"></a>
+<span class="sourceLineNo">427</span>    public String defaultMapping() throws IOException {<a name="line.427"></a>
+<span class="sourceLineNo">428</span>        return configHelper.defaultMapping();<a name="line.428"></a>
+<span class="sourceLineNo">429</span>    }<a name="line.429"></a>
+<span class="sourceLineNo">430</span><a name="line.430"></a>
+<span class="sourceLineNo">431</span>    public Map&lt;String, String&gt; getMappings() {<a name="line.431"></a>
+<span class="sourceLineNo">432</span>        return configHelper.mappings();<a name="line.432"></a>
+<span class="sourceLineNo">433</span>    }<a name="line.433"></a>
+<span class="sourceLineNo">434</span><a name="line.434"></a>
+<span class="sourceLineNo">435</span>}<a name="line.435"></a>
 
 
 
