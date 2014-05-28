@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -16,8 +14,6 @@ import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
-import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.node.Node;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
@@ -67,8 +63,8 @@ public abstract class AbstractNodeTestHelper {
         return ImmutableSettings
                 .settingsBuilder()
                 .put("cluster.name", getClusterName())
-                .put("index.number_of_shards", 1)
-                .put("index.number_of_replica", 0)
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
                 .put("cluster.routing.schedule", "50ms")
                 .put("gateway.type", "none")
                 .put("index.store.type", "ram")

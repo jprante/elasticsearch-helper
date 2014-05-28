@@ -2,7 +2,6 @@ package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
@@ -262,7 +261,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             logger.warn("no index name given");
             return this;
         }
-        client.admin().indices().refresh(new RefreshRequest());
+        ClientHelper.refresh(client(), index);
         return this;
     }
 
@@ -322,6 +321,19 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             return this;
         }
         ingestProcessor.flush();
+        return this;
+    }
+
+    @Override
+    public IngestTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+        }
+        if (client == null) {
+            logger.warn("no client");
+            return this;
+        }
+        ingestProcessor.waitForResponses(maxWaitTime);
         return this;
     }
 

@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.action.ingest;
 
+import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
@@ -45,47 +46,51 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         super(settings, threadPool);
         this.clusterService = clusterService;
         this.shardBulkAction = shardBulkAction;
-
         this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
-
         transportService.registerHandler(IngestAction.NAME, new IngestTransportHandler());
     }
 
     @Override
     protected void doExecute(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
-        executeBulk(ingestRequest, listener);
-    }
-
-    private void executeBulk(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
         final long startTime = System.currentTimeMillis();
+        final List<IngestItemFailure> failure = newLinkedList();
         ClusterState clusterState = clusterService.state();
         // TODO use timeout to wait here if its blocked...
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
-
         MetaData metaData = clusterState.metaData();
+        final List<ActionRequest> requests = newLinkedList();
+        // first, iterate over all requests and parse them for mapping, filter out erraneous requests
+        int i = 0;
         for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 String aliasOrIndex = indexRequest.index();
-                // throws IndexMissingException
+                // this can throw IndexMissingException
                 indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index()));
-
                 MappingMetaData mappingMd = null;
                 if (metaData.hasIndex(indexRequest.index())) {
                     mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());
                 }
-                indexRequest.process(metaData, aliasOrIndex, mappingMd, allowIdGeneration);
+                try {
+                    indexRequest.process(metaData, aliasOrIndex, mappingMd, allowIdGeneration);
+                    requests.add(indexRequest);
+                } catch (ElasticsearchParseException e) {
+                    // error in request
+                    IngestItemFailure f = new IngestItemFailure(i, e.getMessage());
+                    failure.add(f);
+                }
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
                 deleteRequest.routing(clusterState.metaData().resolveIndexRouting(deleteRequest.routing(), deleteRequest.index()));
                 deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index()));
+                requests.add(deleteRequest);
             }
+            i++;
         }
-
-        // first, go over all the requests and create a ShardId -> Operations mapping
+        // second, go over all the requests and create a ShardId -> Operations mapping
         Map<ShardId, List<IngestItemRequest>> requestsByShard = newHashMap();
-        int i = 0;
-        for (ActionRequest request : ingestRequest.requests()) {
+        i = 0;
+        for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
@@ -121,27 +126,24 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             }
             i++;
         }
-
-        final AtomicInteger successSize = new AtomicInteger(0);
-        final List<IngestItemFailure> failure = newLinkedList();
-
         if (requestsByShard.isEmpty()) {
             listener.onResponse(new IngestResponse(0, failure, System.currentTimeMillis() - startTime));
             return;
         }
-
+        final AtomicInteger successSize = new AtomicInteger(0);
+        // third, for each shard, execute bulk actions for the shard
         final AtomicInteger counter = new AtomicInteger(requestsByShard.size());
         for (Map.Entry<ShardId, List<IngestItemRequest>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
-            final List<IngestItemRequest> requests = entry.getValue();
-            IngestShardRequest ingestShardRequest = new IngestShardRequest(shardId.index().name(), shardId.id(), requests);
+            final List<IngestItemRequest> itemRequests = entry.getValue();
+            IngestShardRequest ingestShardRequest = new IngestShardRequest(shardId.index().name(), shardId.id(), itemRequests);
             ingestShardRequest.replicationType(ingestRequest.replicationType());
             ingestShardRequest.consistencyLevel(ingestRequest.consistencyLevel());
             ingestShardRequest.timeout(ingestRequest.timeout());
             shardBulkAction.execute(ingestShardRequest, new ActionListener<IngestShardResponse>() {
                 @Override
                 public void onResponse(IngestShardResponse ingestShardResponse) {
-                    successSize.addAndGet(ingestShardResponse.successSize());
+                    successSize.addAndGet(ingestShardResponse.getSuccessSize());
                     if (counter.decrementAndGet() == 0) {
                         finishHim();
                     }
@@ -152,7 +154,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     // create failures for all relevant requests
                     String message = ExceptionsHelper.detailedMessage(e);
                     synchronized (failure) {
-                        for (IngestItemRequest request : requests) {
+                        for (IngestItemRequest request : itemRequests) {
                             failure.add(new IngestItemFailure(request.id(), message));
                         }
                     }

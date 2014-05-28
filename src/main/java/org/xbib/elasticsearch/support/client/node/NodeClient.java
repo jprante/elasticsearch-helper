@@ -240,7 +240,15 @@ public class NodeClient implements Ingest {
         }
         logger.info("flushing bulk processor");
         BulkProcessorHelper.flush(bulkProcessor);
-        BulkProcessorHelper.waitFor(bulkProcessor, TimeValue.timeValueSeconds(60));
+        return this;
+    }
+
+    @Override
+    public NodeClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        BulkProcessorHelper.waitFor(bulkProcessor, maxWaitTime);
         return this;
     }
 

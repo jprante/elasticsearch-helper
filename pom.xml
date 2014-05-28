@@ -7,7 +7,7 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-support</artifactId>
-    <version>1.2.0.0</version>
+    <version>1.2.0.1</version>
 
     <packaging>jar</packaging>
 
@@ -294,6 +294,29 @@
                 </repository>
             </distributionManagement>
         </profile>
+
+        <profile>
+            <id>doclint-java8-disable</id>
+            <activation>
+                <os>
+                    <name>mac os x</name>
+                </os>
+                <jdk>[1.8,</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <javadocExecutable>/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home/bin/javadoc</javadocExecutable>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
 </project>

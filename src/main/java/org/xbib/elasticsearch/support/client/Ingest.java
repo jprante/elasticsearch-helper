@@ -156,6 +156,14 @@ public interface Ingest extends Feeder {
     Ingest flush();
 
     /**
+     * Wait for all outstanding responses
+     * @param maxWait maximum wait time
+     * @return this ingest
+     * @throws InterruptedException
+     */
+    Ingest waitForResponses(TimeValue maxWait) throws InterruptedException;
+
+    /**
      * Refresh the index.
      *
      * @return this ingest

@@ -9,7 +9,7 @@ import java.util.List;
 
 import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
-public class IngestShardRequest extends ShardReplicationOperationRequest {
+public class IngestShardRequest extends ShardReplicationOperationRequest<IngestShardRequest> {
 
     private int shardId;
 

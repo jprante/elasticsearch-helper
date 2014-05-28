@@ -14,15 +14,15 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        ReplicaLevelTest.class,
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
         CronTest.class,
-        BulkTransportClientTest.class,
-        IngestTransportClientTest.class,
+        ReplicaLevelTest.class,
         DuplicateIDTest.class,
-        NodeClientTest.class
+        BulkTransportClientTest.class,
+        NodeClientTest.class,
+        IngestTransportClientTest.class
 })
 public class SupportTestSuite {
 

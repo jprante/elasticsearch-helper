@@ -104,7 +104,7 @@ public class ClientHelper {
     }
 
     public static void refresh(Client client, String index) {
-        client.admin().indices().refresh(new RefreshRequest(index));
+        client.admin().indices().prepareRefresh(index).execute().actionGet();
     }
 
 }

@@ -27,15 +27,15 @@ public class IngestShardResponse extends ActionResponse {
         this.failure = failure;
     }
 
-    public ShardId shardId() {
+    public ShardId getShardId() {
         return shardId;
     }
 
-    public int successSize() {
+    public int getSuccessSize() {
         return successSize;
     }
 
-    public List<IngestItemFailure> failure() {
+    public List<IngestItemFailure> getFailure() {
         return failure;
     }
 
@@ -45,7 +45,9 @@ public class IngestShardResponse extends ActionResponse {
         successSize = in.readVInt();
         failure = Lists.newLinkedList();
         for (int i = 0; i < in.readVInt(); i++) {
-            failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
+            int pos = in.readVInt();
+            String msg = in.readString();
+            failure.add(new IngestItemFailure(pos, msg));
         }
     }
 

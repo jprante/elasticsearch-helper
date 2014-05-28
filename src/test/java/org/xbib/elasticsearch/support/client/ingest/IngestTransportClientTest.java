@@ -1,6 +1,8 @@
 
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -102,7 +104,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testThreadedRandomDocsIngestClient() throws Exception {
         int max = Runtime.getRuntime().availableProcessors();
-        int maxactions = 10000;
+        int maxactions = 1000;
         final int maxloop = 12345;
         final IngestTransportClient client = new IngestTransportClient()
                 .maxActionsPerBulkRequest(maxactions)
@@ -125,21 +127,27 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             }
             logger.info("waiting for max 60 seconds...");
             latch.await(60, TimeUnit.SECONDS);
-            logger.info("flush ...");
+            logger.info("client flush ...");
             client.flush();
-            logger.info("pool to be shut down ...");
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
+            logger.info("test thread pool to be shut down ...");
             pool.shutdown();
-            logger.info("poot shut down");
+            logger.info("thread poot shut down");
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            client.stopBulk("test").shutdown();
+            client.stopBulk("test");
             logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
             assertEquals(max * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
+            client.refresh("test");
+            assertEquals(max * maxloop,
+                    client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
+            );
+            client.shutdown();
         }
     }
 

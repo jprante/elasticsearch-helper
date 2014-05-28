@@ -74,6 +74,10 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
+    public MockIngestTransportClient waitForResponses(TimeValue timeValue) throws InterruptedException {
+        return this;
+    }
+    @Override
     public MockIngestTransportClient startBulk(String index) {
         return this;
     }

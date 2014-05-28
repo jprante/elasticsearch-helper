@@ -9,6 +9,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;
@@ -26,41 +27,38 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testNewIndexNodeClient() throws Exception {
-        final NodeClient es = new NodeClient()
+        final NodeClient client = new NodeClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
                 .newIndex("test");
-        es.shutdown();
-        if (es.hasThrowable()) {
-            logger.error("error", es.getThrowable());
+        if (client.hasThrowable()) {
+            logger.error("error", client.getThrowable());
         }
-        assertFalse(es.hasThrowable());
+        assertFalse(client.hasThrowable());
+        client.shutdown();
     }
 
     @Test
     public void testMappingNodeClient() throws Exception {
-        final NodeClient es = new NodeClient()
+        final NodeClient client = new NodeClient()
                 .flushInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"));
-        es.addMapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}}}}");
-        es.newIndex("test");
-
+        client.addMapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}}}}");
+        client.newIndex("test");
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest()
                 .indices("test");
-        GetMappingsResponse getMappingsResponse = es.client().admin().indices().getMappings(getMappingsRequest).actionGet();
-
+        GetMappingsResponse getMappingsResponse = client.client().admin().indices().getMappings(getMappingsRequest).actionGet();
         logger.info("mappings={}", getMappingsResponse.getMappings());
-
-        es.shutdown();
-        if (es.hasThrowable()) {
-            logger.error("error", es.getThrowable());
+        if (client.hasThrowable()) {
+            logger.error("error", client.getThrowable());
         }
-        assertFalse(es.hasThrowable());
+        assertFalse(client.hasThrowable());
+        client.shutdown();
     }
 
     @Test
     public void testRandomDocsNodeClient() throws Exception {
-        final NodeClient es = new NodeClient()
+        final NodeClient client = new NodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushInterval(TimeValue.timeValueSeconds(10))
                 .newClient(client("1"))
@@ -68,18 +66,19 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
 
         try {
             for (int i = 0; i < 12345; i++) {
-                es.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
+                client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            es.flush();
+            client.flush();
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            es.shutdown();
-            assertEquals(13, es.getState().getTotalIngest().count());
-            if (es.hasThrowable()) {
-                logger.error("error", es.getThrowable());
+            assertEquals(13, client.getState().getTotalIngest().count());
+            if (client.hasThrowable()) {
+                logger.error("error", client.getThrowable());
             }
-            assertFalse(es.hasThrowable());
+            assertFalse(client.hasThrowable());
+            client.shutdown();
         }
     }
 
@@ -112,21 +111,26 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             latch.await(60, TimeUnit.SECONDS);
             logger.info("flush...");
             client.flush();
-            logger.info("waiting for pool shutdown...");
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
+            logger.info("test thread pool shutdown...");
             pool.shutdown();
             logger.info("pool is shut down");
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            client.stopBulk("test").shutdown();
+            client.stopBulk("test");
             logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
             assertEquals(max * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
+            client.refresh("test");
+            assertEquals(max * maxloop,
+                    client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
+            );
+            client.shutdown();
         }
-
     }
 
 }

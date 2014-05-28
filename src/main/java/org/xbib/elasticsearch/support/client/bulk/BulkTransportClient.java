@@ -313,7 +313,19 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         logger.info("flushing bulk processor");
         // hacked BulkProcessor to execute the submission of remaining docs. Wait always 30 seconds at most.
         BulkProcessorHelper.flush(bulkProcessor);
-        BulkProcessorHelper.waitFor(bulkProcessor, TimeValue.timeValueSeconds(30));
+        return this;
+    }
+
+    @Override
+    public synchronized BulkTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        if (client == null) {
+            logger.warn("no client");
+            return this;
+        }
+        BulkProcessorHelper.waitFor(bulkProcessor, maxWaitTime);
         return this;
     }
 
