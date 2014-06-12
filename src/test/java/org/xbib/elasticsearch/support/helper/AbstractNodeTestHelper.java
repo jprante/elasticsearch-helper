@@ -25,7 +25,7 @@ import org.junit.Before;
 
 public abstract class AbstractNodeTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger("test");
+    protected final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
     private Map<String, Node> nodes = newHashMap();
 

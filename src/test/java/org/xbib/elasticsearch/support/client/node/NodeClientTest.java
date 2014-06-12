@@ -111,7 +111,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             latch.await(60, TimeUnit.SECONDS);
             logger.info("flush...");
             client.flush();
-            client.waitForResponses(TimeValue.timeValueSeconds(30));
+            client.waitForResponses(TimeValue.timeValueSeconds(60));
             logger.info("test thread pool shutdown...");
             pool.shutdown();
             logger.info("pool is shut down");

@@ -129,7 +129,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             latch.await(60, TimeUnit.SECONDS);
             logger.info("client flush ...");
             client.flush();
-            client.waitForResponses(TimeValue.timeValueSeconds(30));
+            client.waitForResponses(TimeValue.timeValueSeconds(60));
             logger.info("test thread pool to be shut down ...");
             pool.shutdown();
             logger.info("thread poot shut down");
