@@ -4,11 +4,15 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.support.AliasTest;
 import org.xbib.elasticsearch.support.NPETest;
-import org.xbib.elasticsearch.support.cron.CronTest;
+import org.xbib.elasticsearch.support.client.bulk.BulkDuplicateIDTest;
+import org.xbib.elasticsearch.support.client.bulk.BulkReplicaTest;
 import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;
-import org.xbib.elasticsearch.support.client.ingest.DuplicateIDTest;
+import org.xbib.elasticsearch.support.client.bulk.BulkUpdateReplicaLevelTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestDuplicateIDTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestReplicaTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
-import org.xbib.elasticsearch.support.client.ingest.ReplicaLevelTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestUpdateReplicaLevelTest;
+import org.xbib.elasticsearch.support.cron.CronTest;
 import org.xbib.elasticsearch.support.client.node.NodeClientTest;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
 
@@ -18,11 +22,15 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         AliasTest.class,
         NPETest.class,
         CronTest.class,
-        ReplicaLevelTest.class,
-        DuplicateIDTest.class,
-        BulkTransportClientTest.class,
         NodeClientTest.class,
-        IngestTransportClientTest.class
+        BulkDuplicateIDTest.class,
+        BulkReplicaTest.class,
+        BulkTransportClientTest.class,
+        BulkUpdateReplicaLevelTest.class,
+        IngestDuplicateIDTest.class,
+        IngestReplicaTest.class,
+        IngestTransportClientTest.class,
+        IngestUpdateReplicaLevelTest.class
 })
 public class SupportTestSuite {
 

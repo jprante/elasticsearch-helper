@@ -10,6 +10,7 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.xbib.elasticsearch.support.client.bulk.BulkTransportClient;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testNewIndexNodeClient() throws Exception {
         final NodeClient client = new NodeClient()
-                .flushInterval(TimeValue.timeValueSeconds(5))
+                .flushIngestInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
                 .newIndex("test");
         if (client.hasThrowable()) {
@@ -41,7 +42,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testMappingNodeClient() throws Exception {
         final NodeClient client = new NodeClient()
-                .flushInterval(TimeValue.timeValueSeconds(5))
+                .flushIngestInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"));
         client.addMapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}}}}");
         client.newIndex("test");
@@ -57,10 +58,38 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
+    public void testSingleDocNodeClient() {
+        final NodeClient client = new NodeClient()
+                .maxActionsPerBulkRequest(1000)
+                .flushIngestInterval(TimeValue.timeValueSeconds(30))
+                .newClient(client("1"))
+                .newIndex("test");
+        try {
+            client.deleteIndex("test");
+            client.newIndex("test");
+            client.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
+            client.flushIngest();
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
+        } catch (InterruptedException e) {
+            // ignore
+        } catch (NoNodeAvailableException e) {
+            logger.warn("skipping, no node available");
+        } finally {
+            logger.info("bulk requests = {}", client.getState().getTotalIngest().count());
+            assertEquals(1, client.getState().getTotalIngest().count());
+            if (client.hasThrowable()) {
+                logger.error("error", client.getThrowable());
+            }
+            assertFalse(client.hasThrowable());
+            client.shutdown();
+        }
+    }
+
+    @Test
     public void testRandomDocsNodeClient() throws Exception {
         final NodeClient client = new NodeClient()
                 .maxActionsPerBulkRequest(1000)
-                .flushInterval(TimeValue.timeValueSeconds(10))
+                .flushIngestInterval(TimeValue.timeValueSeconds(10))
                 .newClient(client("1"))
                 .newIndex("test");
 
@@ -68,7 +97,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < 12345; i++) {
                 client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            client.flush();
+            client.flushIngest();
             client.waitForResponses(TimeValue.timeValueSeconds(30));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
@@ -89,7 +118,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
         final int maxloop = 12345;
         final NodeClient client = new NodeClient()
                 .maxActionsPerBulkRequest(maxactions)
-                .flushInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
+                .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
                 .newClient(client("1"))
                 .newIndex("test")
                 .startBulk("test");
@@ -110,9 +139,9 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
             logger.info("waiting for max 60 seconds...");
             latch.await(60, TimeUnit.SECONDS);
             logger.info("flush...");
-            client.flush();
+            client.flushIngest();
             client.waitForResponses(TimeValue.timeValueSeconds(60));
-            logger.info("test thread pool shutdown...");
+            logger.info("thread pool shutdown...");
             pool.shutdown();
             logger.info("pool is shut down");
         } catch (NoNodeAvailableException e) {

@@ -1,8 +1,8 @@
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
+import org.xbib.elasticsearch.action.delete.DeleteRequest;
+import org.xbib.elasticsearch.action.index.IndexRequest;
 
 /**
  * Minimal API for feed

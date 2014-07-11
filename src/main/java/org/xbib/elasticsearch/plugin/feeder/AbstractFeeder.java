@@ -294,7 +294,7 @@ public abstract class AbstractFeeder<T, R extends PipelineRequest, P extends Pip
             logger.warn("executor shutdown interrupted");
         }
         if (ingest != null) {
-            ingest.flush();
+            ingest.flushIngest();
         }
         return this;
     }

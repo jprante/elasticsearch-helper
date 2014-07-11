@@ -3,9 +3,8 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
@@ -54,9 +53,10 @@ public class ClientHelper {
         if (index == null) {
             throw new IOException("unable to waitfor recovery, index not set");
         }
-        RecoveryResponse response = client.admin().indices()
-                .prepareRecoveries(index).execute().actionGet();
-        return response.getTotalShards();
+        RecoveryResponse response = client.admin().indices().prepareRecoveries(index).execute().actionGet();
+        int shards = response.getTotalShards();
+        client.admin().cluster().prepareHealth(index).setWaitForActiveShards(shards).execute().actionGet();
+        return shards;
     }
 
     public static void waitForCluster(Client client, ClusterHealthStatus status, TimeValue timeout) throws IOException {
@@ -90,21 +90,24 @@ public class ClientHelper {
 
     public static int updateReplicaLevel(Client client, String index, int level) throws IOException {
         waitForCluster(client, ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-        waitForRecovery(client, index);
         updateIndexSetting(client, index, "number_of_replicas", level);
         return waitForRecovery(client, index);
     }
 
-    public static void startBulk(Client client, String index) throws IOException {
+    public static void disableRefresh(Client client, String index) throws IOException {
         updateIndexSetting(client, index, "refresh_interval", -1);
     }
 
-    public static void stopBulk(Client client, String index) throws IOException {
+    public static void enableRefresh(Client client, String index) throws IOException {
         updateIndexSetting(client, index, "refresh_interval", 1000);
     }
 
+    public static void flush(Client client, String index) {
+        client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
+    }
+
     public static void refresh(Client client, String index) {
-        client.admin().indices().prepareRefresh(index).execute().actionGet();
+        client.admin().indices().prepareRefresh().setIndices(index).setForce(true).execute().actionGet();
     }
 
 }

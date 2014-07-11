@@ -3,11 +3,12 @@ package org.xbib.elasticsearch.action.river.execute;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.nodes.NodesOperationRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.internal.InternalGenericClient;
 
 public class RiverExecuteRequestBuilder extends NodesOperationRequestBuilder<RiverExecuteRequest, RiverExecuteResponse, RiverExecuteRequestBuilder> {
 
     public RiverExecuteRequestBuilder(Client client) {
-        super((org.elasticsearch.client.internal.InternalGenericClient) client, new RiverExecuteRequest());
+        super((InternalGenericClient) client, new RiverExecuteRequest());
     }
 
     public RiverExecuteRequestBuilder setRiverType(String riverType) {

@@ -63,14 +63,12 @@ public abstract class AbstractNodeTestHelper {
         return ImmutableSettings
                 .settingsBuilder()
                 .put("cluster.name", getClusterName())
-                .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 1)
                 .put("cluster.routing.schedule", "50ms")
                 .put("gateway.type", "none")
-                .put("index.store.type", "ram")
+                .put("index.store.type", "memory")
                 .put("http.enabled", false)
                 .put("discovery.zen.multicast.enabled", false)
-                .put("threadpool.bulk.queue_size", 200)
+                .put("threadpool.bulk.queue_size", 200) // default is 50, too low
                 .build();
     }
 
@@ -88,35 +86,12 @@ public abstract class AbstractNodeTestHelper {
             host = address.address().getHostName();
             port = address.address().getPort();
         }
-        //createIndices();
     }
-
-    /*private void createIndices() throws Exception {
-        logger.info("creating index {}", INDEX);
-        try {
-            client("1").admin().indices().create(new CreateIndexRequest(INDEX)).actionGet();
-        } catch (IndexAlreadyExistsException e) {
-            // ignore
-        }
-        logger.info("index {} created", INDEX);
-    }*/
 
     @After
     public void stopNodes() throws Exception {
-        //deleteIndices();
         closeAllNodes();
     }
-
-    /*private void deleteIndices() throws Exception {
-        logger.info("deleting index {}", INDEX);
-        try {
-            client("1").admin().indices().delete(new DeleteIndexRequest().indices(INDEX)).actionGet();
-        } catch (IndexMissingException e) {
-            // ignore
-        }
-        logger.info("index {} deleted", INDEX);
-        closeAllNodes();
-    }*/
 
     protected Node startNode(String id) {
         return buildNode(id).start();
@@ -140,10 +115,12 @@ public abstract class AbstractNodeTestHelper {
         Client client = clients.remove(id);
         if (client != null) {
             client.close();
+            client = null;
         }
         Node node = nodes.remove(id);
         if (node != null) {
             node.close();
+            node = null;
         }
     }
 
@@ -154,11 +131,13 @@ public abstract class AbstractNodeTestHelper {
     public void closeAllNodes() {
         for (Client client : clients.values()) {
             client.close();
+            client = null;
         }
         clients.clear();
         for (Node node : nodes.values()) {
             if (node != null) {
                 node.close();
+                node = null;
             }
         }
         nodes.clear();

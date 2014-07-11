@@ -1,11 +1,11 @@
 package org.xbib.elasticsearch.support.client.bulk;
 
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.action.delete.DeleteRequest;
+import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.support.client.Ingest;
 
 import java.io.IOException;
@@ -75,7 +75,7 @@ public class MockBulkTransportClient extends BulkTransportClient implements Inge
     }
 
     @Override
-    public MockBulkTransportClient flush() {
+    public MockBulkTransportClient flushIngest() {
         return this;
     }
 

@@ -3,106 +3,128 @@ package org.xbib.elasticsearch.action.ingest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardResponse;
+import org.xbib.elasticsearch.action.ingest.replica.IngestReplicaShardResponse;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class IngestResponse extends ActionResponse {
 
-    private List<IngestItemFailure> failure;
+    protected long ingestId;
 
-    private int successSize;
+    protected int successSize;
 
-    private long tookInMillis;
+    protected IngestLeaderShardResponse leaderResponse;
+
+    @SuppressWarnings("unchecked")
+    protected List<IngestReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList());
+
+    @SuppressWarnings("unchecked")
+    protected List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList());
+
+    protected long tookInMillis;
 
     public IngestResponse() {
-        this.failure = newLinkedList();
     }
 
-    public IngestResponse(int successSize, List<IngestItemFailure> failure, long tookInMillis) {
+    public IngestResponse setIngestId(long ingestId) {
+        this.ingestId = ingestId;
+        return this;
+    }
+
+    public long ingestId() {
+        return ingestId;
+    }
+
+    public IngestResponse setSuccessSize(int successSize) {
         this.successSize = successSize;
-        this.failure = failure;
-        this.tookInMillis = tookInMillis;
+        return this;
     }
 
     public int successSize() {
         return successSize;
     }
 
-    public int failureSize() {
-        return failure.size();
+    public IngestResponse setLeaderResponse(IngestLeaderShardResponse leaderResponse) {
+        this.leaderResponse = leaderResponse;
+        return this;
     }
 
-    public List<IngestItemFailure> failure() {
-        return failure;
+    public IngestLeaderShardResponse leaderShardResponse() {
+        return leaderResponse;
     }
 
-    /**
-     * How long the bulk execution took.
-     */
-    public TimeValue took() {
-        return new TimeValue(tookInMillis);
+    public IngestResponse addReplicaResponses(List<IngestReplicaShardResponse> response) {
+        this.replicaResponses.addAll(response);
+        return this;
     }
 
-    /**
-     * How long the bulk execution took.
-     */
-    public TimeValue getTook() {
-        return took();
+    public List<IngestReplicaShardResponse> replicaShardResponses() {
+        return replicaResponses;
     }
 
-    /**
-     * How long the bulk execution took in milliseconds.
-     */
+    public IngestResponse addFailure(IngestActionFailure failure) {
+        this.failures.add(failure);
+        return this;
+    }
+
+    public IngestResponse addFailures(List<IngestActionFailure> failures) {
+        this.failures.addAll(failures);
+        return this;
+    }
+
+    public List<IngestActionFailure> getFailures() {
+        return failures;
+    }
+
+    public IngestResponse setTookInMillis(long tookInMillis) {
+        this.tookInMillis = tookInMillis;
+        return this;
+    }
+
     public long tookInMillis() {
         return tookInMillis;
     }
 
-    /**
-     * How long the bulk execution took in milliseconds.
-     */
-    public long getTookInMillis() {
-        return tookInMillis();
-    }
-
-    /**
-     * Has anything failed with the execution.
-     */
-    public boolean hasFailures() {
-        return !failure.isEmpty();
-    }
-
-    public String buildFailureMessage() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("failure in bulk execution:");
-        for (IngestItemFailure f : failure) {
-            sb.append("\n[").append(f.pos()).append("], message [").append(f.message()).append("]");
-        }
-        return sb.toString();
-    }
-
     @Override
     public void readFrom(StreamInput in) throws IOException {
+        super.readFrom(in);
         successSize = in.readVInt();
-        failure = newLinkedList();
+        failures = newLinkedList();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
-            failure.add(new IngestItemFailure(in.readVInt(), in.readString()));
+            failures.add(IngestActionFailure.from(in));
         }
         tookInMillis = in.readVLong();
+        leaderResponse = new IngestLeaderShardResponse();
+        leaderResponse.readFrom(in);
+        replicaResponses = newLinkedList();
+        size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            IngestReplicaShardResponse r = new IngestReplicaShardResponse();
+            r.readFrom(in);
+            replicaResponses.add(r);
+        }
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        super.writeTo(out);
         out.writeVInt(successSize);
-        out.writeVInt(failure.size());
-        for (IngestItemFailure f : failure) {
-            out.writeVInt(f.pos());
-            out.writeString(f.message());
+        out.writeVInt(failures.size());
+        for (IngestActionFailure f : failures) {
+            f.writeTo(out);
         }
         out.writeVLong(tookInMillis);
+        leaderResponse.writeTo(out);
+        out.writeVInt(replicaResponses.size());
+        for (IngestReplicaShardResponse r : replicaResponses) {
+            r.writeTo(out);
+        }
     }
 }

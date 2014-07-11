@@ -136,6 +136,7 @@ public interface Feeder<T, R extends PipelineRequest, P extends Pipeline<T, R>>
 
     /**
      * Returns if the feeder has been interrupted.
+     *
      * @return true if interrupted
      */
     boolean isInterrupted();

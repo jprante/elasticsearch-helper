@@ -32,7 +32,7 @@ public interface Ingest extends Feeder {
     /**
      * Set the maximum concurent bulk requests
      *
-     * @param maxConcurentBulkRequests maximum number of concurrent bulk requests
+     * @param maxConcurentBulkRequests maximum number of concurrent ingest requests
      * @return this Ingest
      */
     Ingest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
@@ -46,12 +46,12 @@ public interface Ingest extends Feeder {
     Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
 
     /**
-     * Set the flush interval for automatic flushing outstanding bulk requests
+     * Set the flush interval for automatic flushing outstanding ingest requests
      *
      * @param flushInterval the flush interval, default is 30 seconds
      * @return this ingest
      */
-    Ingest flushInterval(TimeValue flushInterval);
+    Ingest flushIngestInterval(TimeValue flushInterval);
 
     /**
      * Set request timeout. Default is 60s.
@@ -153,15 +153,21 @@ public interface Ingest extends Feeder {
      *
      * @return this
      */
-    Ingest flush();
+    Ingest flushIngest();
 
     /**
      * Wait for all outstanding responses
+     *
      * @param maxWait maximum wait time
      * @return this ingest
      * @throws InterruptedException
      */
     Ingest waitForResponses(TimeValue maxWait) throws InterruptedException;
+
+    /**
+     * Flush the index
+     */
+    Ingest flush(String index);
 
     /**
      * Refresh the index.

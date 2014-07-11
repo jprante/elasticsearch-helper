@@ -1,7 +1,5 @@
 package org.xbib.elasticsearch.rest.action.ingest;
 
-import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
@@ -15,11 +13,11 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.xbib.elasticsearch.rest.action.support.XContentRestResponse;
-import org.xbib.elasticsearch.action.ingest.IngestItemFailure;
+import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
+import org.xbib.elasticsearch.rest.action.support.XContentRestResponse;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -70,60 +68,59 @@ public class RestIngestAction extends BaseRestHandler {
         ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("10m"));
         TimeValue waitingTime = settings.getAsTime("action.ingest.waitingtime", TimeValue.timeValueSeconds(60));
 
-        this.ingestProcessor = new IngestProcessor(client, concurrency, actions, volume, waitingTime);
+        this.ingestProcessor = new IngestProcessor(client)
+                .maxActions(actions)
+                .maxConcurrentRequests(concurrency)
+                .maxVolumePerRequest(volume)
+                .maxWaitForResponses(waitingTime);
     }
 
     @Override
     public void handleRequest(final RestRequest request, final RestChannel channel) {
 
-        final BulkIdHolder idHolder = new BulkIdHolder();
+        final IngestIdHolder idHolder = new IngestIdHolder();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        IngestProcessor.Listener listener = new IngestProcessor.Listener() {
+        IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
-            public void beforeBulk(long bulkId, int concurrency, IngestRequest ingestRequest) {
+            public void onRequest(int concurrency, IngestRequest ingestRequest) {
                 long v = volumeCounter.addAndGet(ingestRequest.estimatedSizeInBytes());
                 if (logger.isDebugEnabled()) {
-                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
-                            bulkId, ingestRequest.numberOfActions(), v, concurrency);
+                    logger.debug("ingest request [{}] of {} items, {} bytes, {} concurrent requests",
+                            ingestRequest.ingestId(), ingestRequest.numberOfActions(), v, concurrency);
                 }
-                idHolder.bulkId(bulkId);
+                idHolder.ingestId(ingestRequest.ingestId());
                 latch.countDown();
             }
 
             @Override
-            public void afterBulk(long bulkId, int concurrency, IngestResponse response) {
+            public void onResponse(int concurrency, IngestResponse response) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("after bulk [{}] [{} items succeeded] [{} items failed] [{}ms]",
-                            bulkId, response.successSize(), response.failureSize(), response.took().millis());
+                    logger.debug("ingest response [{}] [{} succeeded] [{} failed] [{}ms]",
+                            response.ingestId(),
+                            response.successSize(),
+                            response.getFailures().size(),
+                            response.tookInMillis());
                 }
-                if (!response.failure().isEmpty()) {
-                    for (IngestItemFailure f : response.failure()) {
-                        logger.error("bulk [{}] [{} failure reason: {}", bulkId, f.pos(), f.message());
+                if (!response.getFailures().isEmpty()) {
+                    for (IngestActionFailure f : response.getFailures()) {
+                        logger.error("ingest [{}] failure, reason: {}", response.ingestId(), f.message());
                     }
                 }
             }
 
             @Override
-            public void afterBulk(long bulkId, int concurrency, Throwable failure) {
-                logger.error("bulk [{}] error", bulkId, failure);
+            public void onFailure(int concurrency, long ingestId, Throwable failure) {
+                logger.error("ingest [{}] error", ingestId, failure);
             }
         };
-        String replicationType = request.param("replication");
-        if (replicationType != null) {
-            ingestProcessor.replicationType(ReplicationType.fromString(replicationType));
-        }
-        String consistencyLevel = request.param("consistency");
-        if (consistencyLevel != null) {
-            ingestProcessor.consistencyLevel(WriteConsistencyLevel.fromString(consistencyLevel));
-        }
         try {
             long t0 = System.currentTimeMillis();
             ingestProcessor.add(request.content(),
                     request.contentUnsafe(),
                     request.param("index"),
                     request.param("type"),
-                    listener);
+                    ingestListener);
             // estimation, should be enough time to wait for an ID
             boolean b = latch.await(100, TimeUnit.MILLISECONDS);
             long t1 = System.currentTimeMillis();
@@ -133,7 +130,7 @@ public class RestIngestAction extends BaseRestHandler {
             builder.field(Fields.TOOK, t1 - t0);
             // got ID?
             if (b) {
-                builder.field(Fields.ID, idHolder.bulkId());
+                builder.field(Fields.ID, idHolder.ingestId());
             }
             builder.endObject();
             channel.sendResponse(new XContentRestResponse(request, OK, builder));
@@ -152,15 +149,15 @@ public class RestIngestAction extends BaseRestHandler {
         static final XContentBuilderString ID = new XContentBuilderString("id");
     }
 
-    static final class BulkIdHolder {
-        private long bulkId;
+    static final class IngestIdHolder {
+        private long ingestId;
 
-        public void bulkId(long bulkId) {
-            this.bulkId = bulkId;
+        public void ingestId(long ingestId) {
+            this.ingestId = ingestId;
         }
 
-        public long bulkId() {
-            return bulkId;
+        public long ingestId() {
+            return ingestId;
         }
     }
 

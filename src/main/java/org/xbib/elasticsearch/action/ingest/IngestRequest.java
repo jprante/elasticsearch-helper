@@ -1,12 +1,9 @@
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
+import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -17,6 +14,10 @@ import org.elasticsearch.common.xcontent.XContent;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.VersionType;
+import org.xbib.elasticsearch.action.delete.DeleteRequest;
+import org.xbib.elasticsearch.action.index.IndexRequest;
+import org.xbib.elasticsearch.action.support.replication.Consistency;
+import org.xbib.elasticsearch.action.support.replication.leader.LeaderShardOperationRequest;
 
 import java.io.IOException;
 import java.util.Queue;
@@ -33,11 +34,49 @@ public class IngestRequest extends ActionRequest {
 
     private final AtomicLong sizeInBytes = new AtomicLong();
 
-    private ReplicationType replicationType = ReplicationType.DEFAULT;
+    private TimeValue timeout = LeaderShardOperationRequest.DEFAULT_TIMEOUT;
 
-    private WriteConsistencyLevel consistencyLevel = WriteConsistencyLevel.DEFAULT;
+    private Consistency requiredConsistency = LeaderShardOperationRequest.DEFAULT_CONSISTENCY;
 
-    private TimeValue timeout = IngestShardRequest.DEFAULT_TIMEOUT;
+    private long ingestId;
+
+    private boolean threadedOperation = false;
+
+    public IngestRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return this.timeout;
+    }
+
+    public IngestRequest requiredConsistency(Consistency requiredConsistency) {
+        this.requiredConsistency = requiredConsistency;
+        return this;
+    }
+
+    public Consistency requiredConsistency() {
+        return requiredConsistency;
+    }
+
+    public IngestRequest operationThreaded(boolean threadedOperation) {
+        this.threadedOperation = threadedOperation;
+        return this;
+    }
+
+    public boolean operationThreaded() {
+        return threadedOperation;
+    }
+
+    public IngestRequest ingestId(long ingestId) {
+        this.ingestId = ingestId;
+        return this;
+    }
+
+    public long ingestId() {
+        return ingestId;
+    }
 
     public Queue<ActionRequest> newQueue() {
         return newConcurrentLinkedQueue();
@@ -47,9 +86,6 @@ public class IngestRequest extends ActionRequest {
         return requests;
     }
 
-    /**
-     * Adds a list of requests to be executed. Either index or delete requests.
-     */
     public IngestRequest add(ActionRequest... requests) {
         for (ActionRequest request : requests) {
             add(request);
@@ -68,9 +104,6 @@ public class IngestRequest extends ActionRequest {
         return this;
     }
 
-    /**
-     * Adds a list of requests to be executed. Either index or delete requests.
-     */
     public IngestRequest add(Iterable<ActionRequest> requests) {
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {
@@ -84,26 +117,12 @@ public class IngestRequest extends ActionRequest {
         return this;
     }
 
-    /**
-     * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list of actions to execute. Follows
-     * the same behavior of {@link org.elasticsearch.action.index.IndexRequest} (for example, if no id is
-     * provided, one will be generated, or usage of the create flag).
-     */
     public IngestRequest add(IndexRequest request) {
         request.beforeLocalFork();
         return internalAdd(request);
     }
 
-    IngestRequest internalAdd(IndexRequest request) {
-        requests.offer(request);
-        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
-        sizeInBytes.addAndGet(length);
-        return this;
-    }
 
-    /**
-     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list of actions to execute.
-     */
     public IngestRequest add(DeleteRequest request) {
         requests.offer(request);
         sizeInBytes.addAndGet(REQUEST_OVERHEAD);
@@ -224,9 +243,6 @@ public class IngestRequest extends ActionRequest {
                     if (nextMarker == -1) {
                         break;
                     }
-                    // order is important, we set parent after routing, so routing will be set to parent if not set explicitly
-                    // we use internalAdd so we don't fork here, this allows us not to copy over the big byte array to small chunks
-                    // of index request. All index requests are still unsafe if applicable.
                     if ("index".equals(action)) {
                         if (opType == null) {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
@@ -241,7 +257,6 @@ public class IngestRequest extends ActionRequest {
                                 .create(true)
                                 .source(data.slice(from, nextMarker - from), contentUnsafe));
                     }
-                    // move pointers
                     from = nextMarker + 1;
                 }
             } finally {
@@ -249,43 +264,6 @@ public class IngestRequest extends ActionRequest {
             }
         }
         return this;
-    }
-
-    /**
-     * Sets the consistency level of write. Defaults to
-     * {@link org.elasticsearch.action.WriteConsistencyLevel#DEFAULT}
-     */
-    public IngestRequest consistencyLevel(WriteConsistencyLevel consistencyLevel) {
-        this.consistencyLevel = consistencyLevel;
-        return this;
-    }
-
-    public WriteConsistencyLevel consistencyLevel() {
-        return this.consistencyLevel;
-    }
-
-    /**
-     * Set the replication type for this operation.
-     */
-    public IngestRequest replicationType(ReplicationType replicationType) {
-        this.replicationType = replicationType;
-        return this;
-    }
-
-    public ReplicationType replicationType() {
-        return this.replicationType;
-    }
-
-    /**
-     * Set the timeout for this operation.
-     */
-    public IngestRequest timeout(TimeValue timeout) {
-        this.timeout = timeout;
-        return this;
-    }
-
-    public TimeValue timeout() {
-        return this.timeout;
     }
 
     /**
@@ -328,18 +306,11 @@ public class IngestRequest extends ActionRequest {
                 sizeInBytes.addAndGet(-length);
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);
+            } else {
+                throw new ElasticsearchIllegalStateException("action request not supported: " + actionRequest.getClass().getName());
             }
         }
         return request;
-    }
-
-    private int findNextMarker(byte marker, int from, BytesReference data, int length) {
-        for (int i = from; i < length; i++) {
-            if (data.get(i) == marker) {
-                return i;
-            }
-        }
-        return -1;
     }
 
     @Override
@@ -362,8 +333,6 @@ public class IngestRequest extends ActionRequest {
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
-        replicationType = ReplicationType.fromId(in.readByte());
-        consistencyLevel = WriteConsistencyLevel.fromId(in.readByte());
         timeout = TimeValue.readTimeValue(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
@@ -382,8 +351,6 @@ public class IngestRequest extends ActionRequest {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeByte(replicationType.id());
-        out.writeByte(consistencyLevel.id());
         timeout.writeTo(out);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
@@ -394,5 +361,22 @@ public class IngestRequest extends ActionRequest {
             }
             request.writeTo(out);
         }
+    }
+
+    IngestRequest internalAdd(IndexRequest request) {
+        requests.offer(request);
+        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
+        sizeInBytes.addAndGet(length);
+        return this;
+    }
+
+
+    private int findNextMarker(byte marker, int from, BytesReference data, int length) {
+        for (int i = from; i < length; i++) {
+            if (data.get(i) == marker) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

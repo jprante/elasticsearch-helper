@@ -8,10 +8,7 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -20,6 +17,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.action.delete.DeleteRequest;
+import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
@@ -91,20 +90,21 @@ public class NodeClient implements Ingest {
         return this;
     }
 
+    @Override
     public NodeClient maxRequestWait(TimeValue timeValue) {
         // ignore, not implemented
         return this;
     }
 
-    public NodeClient flushInterval(TimeValue flushInterval) {
+    @Override
+    public NodeClient flushIngestInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
     }
 
     @Override
     public NodeClient newClient(URI uri) {
-        // no-op
-        return this;
+        throw new UnsupportedOperationException();
     }
 
     public NodeClient newClient(Client client) {
@@ -118,8 +118,8 @@ public class NodeClient implements Ingest {
                 state.getSubmitted().inc(n);
                 state.getCurrentIngestNumDocs().inc(n);
                 state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
-                if (logger.isDebugEnabled()) {
-                    logger.debug("before bulk [{}] of {} items, {} bytes, {} outstanding bulk requests",
+                if (logger.isInfoEnabled()) {
+                    logger.info("before bulk [{}] of {} items, {} bytes, {} concurrent requests",
                             executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
                 }
             }
@@ -130,24 +130,26 @@ public class NodeClient implements Ingest {
                 state.getSucceeded().inc(response.getItems().length);
                 state.getFailed().inc(0);
                 state.getTotalIngest().inc(response.getTookInMillis());
-                if (response.hasFailures()) {
-                    closed = true;
-                    logger.error("bulk [{}] failed", executionId);
-                    for (BulkItemResponse itemResponse : response.getItems()) {
-                        if (itemResponse.isFailed()) {
-                            state.getSucceeded().dec(1);
-                            state.getFailed().inc(1);
-                        }
+                int n = 0;
+                for (BulkItemResponse itemResponse : response.getItems()) {
+                    if (itemResponse.isFailed()) {
+                        n++;
+                        state.getSucceeded().dec(1);
+                        state.getFailed().inc(1);
                     }
-                } else {
-                    state.getCurrentIngestNumDocs().dec(response.getItems().length);
                 }
-                if (logger.isDebugEnabled()) {
-                    logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms]",
+                if (logger.isInfoEnabled()) {
+                    logger.info("after bulk [{}] [succeeded={}] [failed={}] [{}ms]",
                             executionId,
                             state.getSucceeded().count(),
                             state.getFailed().count(),
                             response.getTook().millis());
+                }
+                if (n > 0) {
+                    logger.error("bulk [{}] failed with {} failed items, failure message = {}",
+                            executionId, n, response.buildFailureMessage());
+                } else {
+                    state.getCurrentIngestNumDocs().dec(response.getItems().length);
                 }
             }
 
@@ -189,7 +191,7 @@ public class NodeClient implements Ingest {
 
     @Override
     public NodeClient index(String index, String type, String id, String source) {
-        return index(Requests.indexRequest(index).type(type).id(id).create(false).source(source));
+        return index(new IndexRequest(index).type(type).id(id).create(false).source(source));
     }
 
     @Override
@@ -198,21 +200,25 @@ public class NodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
-            bulkProcessor.add(indexRequest);
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
+            bulkProcessor.add(new org.elasticsearch.action.index.IndexRequest(indexRequest.index()).type(indexRequest.type()).id(indexRequest.id()).create(false).source(indexRequest.source(), false));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
 
     @Override
     public NodeClient delete(String index, String type, String id) {
-        return delete(Requests.deleteRequest(index).type(type).id(id));
+        return delete(new DeleteRequest(index).type(type).id(id));
     }
 
     @Override
@@ -221,20 +227,24 @@ public class NodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
-            bulkProcessor.add(deleteRequest);
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
+            bulkProcessor.add(new org.elasticsearch.action.delete.DeleteRequest(deleteRequest.index()).type(deleteRequest.type()).id(deleteRequest.id()));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
 
     @Override
-    public NodeClient flush() {
+    public NodeClient flushIngest() {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -259,7 +269,7 @@ public class NodeClient implements Ingest {
         }
         if (!state.isBulk(index)) {
             state.startBulk(index);
-            ClientHelper.startBulk(client, index);
+            ClientHelper.disableRefresh(client, index);
         }
         return this;
     }
@@ -271,8 +281,14 @@ public class NodeClient implements Ingest {
         }
         if (state.isBulk(index)) {
             state.stopBulk(index);
-            ClientHelper.stopBulk(client, index);
+            ClientHelper.enableRefresh(client, index);
         }
+        return this;
+    }
+
+    @Override
+    public NodeClient flush(String index) {
+        ClientHelper.flush(client, index);
         return this;
     }
 
@@ -306,7 +322,7 @@ public class NodeClient implements Ingest {
                 logger.info("closing bulk processor...");
                 bulkProcessor.close();
             }
-            if (state.indices() != null && !state.indices().isEmpty()) {
+            if (state != null && state.indices() != null && !state.indices().isEmpty()) {
                 logger.info("stopping bulk mode for indices {}...", state.indices());
                 for (String index : ImmutableSet.copyOf(state.indices())) {
                     stopBulk(index);

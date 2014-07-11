@@ -108,9 +108,11 @@ public abstract class BaseTransportClient {
 
     public synchronized void shutdown() {
         if (client != null) {
+            logger.debug("shutdown started");
             client.close();
             client.threadPool().shutdown();
             client = null;
+            logger.debug("shutdown complete");
         }
         addresses.clear();
     }

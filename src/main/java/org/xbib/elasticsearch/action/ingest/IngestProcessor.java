@@ -2,142 +2,159 @@ package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.WriteConsistencyLevel;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.support.replication.ReplicationType;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.xbib.elasticsearch.action.delete.DeleteRequest;
+import org.xbib.elasticsearch.action.index.IndexRequest;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestProcessor {
 
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestProcessor.class.getName());
+
     private final Client client;
 
-    private final int concurrency;
+    private int concurrency = Runtime.getRuntime().availableProcessors() * 4;
 
-    private final int actions;
+    private int actions = 1000;
 
-    private final ByteSizeValue maxVolume;
+    private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
 
-    private final TimeValue waitForResponses;
+    private TimeValue maxWaitForResponses = new TimeValue(60, TimeUnit.SECONDS);
 
-    private final Semaphore semaphore;
+    private Semaphore semaphore = new Semaphore(concurrency);
 
-    private final AtomicLong bulkId;
+    private AtomicLong ingestId = new AtomicLong(0L);
 
-    private final IngestRequest ingestRequest;
+    private IngestRequest ingestRequest = new IngestRequest();
 
-    private Listener listener;
+    private IngestListener ingestListener;
+
+    private ScheduledThreadPoolExecutor scheduler;
+
+    private ScheduledFuture scheduledFuture;
 
     private volatile boolean closed = false;
 
-    public IngestProcessor(Client client, Integer concurrency, Integer actions,
-                           ByteSizeValue maxVolume, TimeValue waitForResponses) {
+    public IngestProcessor(Client client) {
         this.client = client;
-        this.concurrency = concurrency != null ?
-                Math.min(Math.abs(concurrency), 256) :
-                Runtime.getRuntime().availableProcessors() * 4;
-        this.actions = actions != null ? Math.min(actions, 32768) : 1000;
-        this.maxVolume = maxVolume != null ?
-                new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES) :
-                new ByteSizeValue(10, ByteSizeUnit.MB);
-        this.waitForResponses = waitForResponses != null ?
-                new TimeValue(Math.max(waitForResponses.millis(), 1000), TimeUnit.MILLISECONDS) :
-                new TimeValue(60, TimeUnit.SECONDS);
+    }
+
+    public IngestProcessor maxConcurrentRequests(int concurrency) {
+        this.concurrency = Math.min(Math.abs(concurrency), 256);
         this.semaphore = new Semaphore(this.concurrency);
-        this.bulkId = new AtomicLong(0L);
-        this.ingestRequest = new IngestRequest();
-    }
-
-    public IngestProcessor listener(Listener listener) {
-        this.listener = listener;
         return this;
     }
 
-    public IngestProcessor listenerThreaded(boolean threaded) {
-        ingestRequest.listenerThreaded(threaded);
+    public IngestProcessor maxActions(int actions) {
+        this.actions = Math.min(actions, 32768);
         return this;
     }
 
-    public IngestProcessor replicationType(ReplicationType type) {
-        ingestRequest.replicationType(type);
+    public IngestProcessor maxVolumePerRequest(ByteSizeValue maxVolume) {
+        this.maxVolume = new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES);
         return this;
     }
 
-    public IngestProcessor consistencyLevel(WriteConsistencyLevel level) {
-        ingestRequest.consistencyLevel(level);
+    public IngestProcessor maxWaitForResponses(TimeValue maxWaitForResponses) {
+        this.maxWaitForResponses = new TimeValue(Math.max(maxWaitForResponses.millis(), 1000), TimeUnit.MILLISECONDS);
         return this;
     }
 
-    /**
-     * Adds an {@link org.elasticsearch.action.index.IndexRequest} to the list
-     * of actions to execute. Follows the same behavior of
-     * {@link org.elasticsearch.action.index.IndexRequest} (for example, if no
-     * id is provided, one will be generated, or usage of the create flag).
-     */
+    public IngestProcessor flushInterval(TimeValue flushInterval) {
+        if (flushInterval != null && flushInterval.getMillis() > 0L) {
+            if (scheduler != null) {
+                scheduler.shutdown();
+            }
+            scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1, EsExecutors.daemonThreadFactory(((InternalClient) client).settings(), "ingest_processor"));
+            scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+            scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(false);
+            }
+            scheduledFuture = scheduler.scheduleWithFixedDelay(new FlushHelper(), flushInterval.millis(), flushInterval.millis(), TimeUnit.MILLISECONDS);
+        }
+        return this;
+    }
+
+    public IngestProcessor ingestId(long ingestId) {
+        this.ingestId = new AtomicLong(ingestId);
+        return this;
+    }
+
+    public IngestProcessor listener(IngestListener ingestListener) {
+        this.ingestListener = ingestListener;
+        return this;
+    }
+
     public IngestProcessor add(IndexRequest request) {
-        ingestRequest.add((ActionRequest) request);
-        flushIfNeeded(listener);
+        ingestRequest.add(request);
+        flushIfNeeded(ingestListener);
         return this;
     }
 
-    /**
-     * Adds an {@link org.elasticsearch.action.delete.DeleteRequest} to the list
-     * of actions to execute.
-     */
     public IngestProcessor add(DeleteRequest request) {
-        ingestRequest.add((ActionRequest) request);
-        flushIfNeeded(listener);
+        ingestRequest.add(request);
+        flushIfNeeded(ingestListener);
         return this;
     }
 
     /**
      * For REST API
      *
-     * @param data          the REST body data
-     * @param contentUnsafe if content is unsafe
-     * @param defaultIndex  default index
-     * @param defaultType   default type
-     * @param listener      the listener
+     * @param data           the REST body data
+     * @param contentUnsafe  if content is unsafe
+     * @param defaultIndex   default index
+     * @param defaultType    default type
+     * @param ingestListener the listener
      * @return this processor
      * @throws Exception
      */
     public IngestProcessor add(BytesReference data, boolean contentUnsafe,
                                @Nullable String defaultIndex, @Nullable String defaultType,
-                               Listener listener) throws Exception {
+                               IngestListener ingestListener) throws Exception {
         ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
-        flushIfNeeded(listener);
+        flushIfNeeded(ingestListener);
         return this;
     }
 
     /**
      * Closes the processor. If flushing by time is enabled, then it is shut down.
-     * Any remaining bulk actions are flushed, and for the bulk responses is being waited.
+     * Any remaining ingest actions are flushed, and the responses are awaited.
      */
     public void close() throws InterruptedException {
         if (closed) {
             throw new ElasticsearchIllegalStateException("processor already closed");
         }
         closed = true;
+        if (scheduledFuture != null) {
+            scheduledFuture.cancel(false);
+            scheduler.shutdown();
+        }
         flush();
-        waitForResponses(waitForResponses);
+        waitForResponses(maxWaitForResponses);
     }
 
     /**
-     * Flush this bulk processor, write all requests
+     * Flush this processor, write all requests
      */
     public synchronized void flush() {
         if (ingestRequest.numberOfActions() > 0) {
-            process(ingestRequest.takeAll(), listener);
+            process(ingestRequest.takeAll(), ingestListener);
         }
     }
 
@@ -153,45 +170,22 @@ public class IngestProcessor {
     }
 
     /**
-     * A listener for the execution.
-     */
-    public static interface Listener {
-
-        /**
-         * Callback before the bulk request is executed.
-         *
-         * @param bulkId the bulk job identifier
-         */
-        void beforeBulk(long bulkId, int concurrency, IngestRequest request);
-
-        /**
-         * Callback after a successful execution of a bulk request.
-         */
-        void afterBulk(long bulkId, int concurrency, IngestResponse response);
-
-        /**
-         * Callback after a failed execution of a bulk request.
-         */
-        void afterBulk(long bulkId, int concurrency, Throwable failure);
-    }
-
-    /**
      * Critical phase, check if flushing condition is met and
-     * push the part of the bulk requests that is required to push
+     * push the part of the requests that is required to push
      */
-    private synchronized void flushIfNeeded(Listener listener) {
+    private synchronized void flushIfNeeded(IngestListener ingestListener) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("processor already closed");
         }
         if (actions > 0) {
             while (ingestRequest.numberOfActions() >= actions) {
-                process(ingestRequest.take(actions), listener);
+                process(ingestRequest.take(actions), ingestListener);
             }
         } else {
             while (ingestRequest.numberOfActions() > 0
                     && maxVolume.bytesAsInt() > 0
                     && ingestRequest.estimatedSizeInBytes() > maxVolume.bytesAsInt()) {
-                process(ingestRequest.takeAll(), listener);
+                process(ingestRequest.takeAll(), ingestListener);
             }
         }
     }
@@ -201,20 +195,20 @@ public class IngestProcessor {
      *
      * @param request the ingest request
      */
-    private void process(final IngestRequest request, final Listener listener) {
-        if (listener == null) {
+    private void process(final IngestRequest request, final IngestListener ingestListener) {
+        if (ingestListener == null) {
             return;
         }
-        final long id = bulkId.incrementAndGet();
+        final long id = ingestId.incrementAndGet();
         boolean done = false;
         try {
             semaphore.acquire();
-            listener.beforeBulk(id, concurrency - semaphore.availablePermits(), request);
+            ingestListener.onRequest(concurrency - semaphore.availablePermits(), request);
             client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
                 @Override
                 public void onResponse(IngestResponse response) {
                     try {
-                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), response);
+                        ingestListener.onResponse(concurrency - semaphore.availablePermits(), response);
                     } finally {
                         semaphore.release();
                     }
@@ -223,7 +217,7 @@ public class IngestProcessor {
                 @Override
                 public void onFailure(Throwable e) {
                     try {
-                        listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+                        ingestListener.onFailure(concurrency - semaphore.availablePermits(), id, e);
                     } finally {
                         semaphore.release();
                     }
@@ -231,9 +225,8 @@ public class IngestProcessor {
             });
             done = true;
         } catch (InterruptedException e) {
-            // semaphore not acquired
             Thread.currentThread().interrupt();
-            listener.afterBulk(id, concurrency - semaphore.availablePermits(), e);
+            ingestListener.onFailure(concurrency - semaphore.availablePermits(), id, e);
         } finally {
             if (!done) {
                 semaphore.release();
@@ -241,5 +234,33 @@ public class IngestProcessor {
         }
     }
 
+    class FlushHelper implements Runnable {
+
+        @Override
+        public void run() {
+            flushIfNeeded(ingestListener);
+        }
+    }
+
+    /**
+     * A listener for ingest executions
+     */
+    public static interface IngestListener {
+
+        /**
+         * Called before the ingest request is executed.
+         */
+        void onRequest(int concurrency, IngestRequest request);
+
+        /**
+         * Called after a successful execution of an ingest request.
+         */
+        void onResponse(int concurrency, IngestResponse response);
+
+        /**
+         * Callback after a failed execution of an ingest request.
+         */
+        void onFailure(int concurrency, long ingestId, Throwable failure);
+    }
 
 }

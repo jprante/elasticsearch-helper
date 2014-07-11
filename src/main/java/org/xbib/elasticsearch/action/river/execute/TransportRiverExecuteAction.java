@@ -67,12 +67,12 @@ public class TransportRiverExecuteAction extends TransportNodesOperationAction<R
     }
 
     @Override
-    protected RiverExecuteResponse newResponse(RiverExecuteRequest request, AtomicReferenceArray shardsResponses) {
-        boolean[] b = new boolean[shardsResponses.length()];
-        for (int i = 0; i < shardsResponses.length(); i++) {
-            Object shardsResponse = shardsResponses.get(i);
-            if (shardsResponse instanceof NodeRiverExecuteResponse) {
-                NodeRiverExecuteResponse nodeRiverExecuteResponse = (NodeRiverExecuteResponse) shardsResponse;
+    protected RiverExecuteResponse newResponse(RiverExecuteRequest request, AtomicReferenceArray nodesResponses) {
+        boolean[] b = new boolean[nodesResponses.length()];
+        for (int i = 0; i < nodesResponses.length(); i++) {
+            Object nodesResponse = nodesResponses.get(i);
+            if (nodesResponse instanceof NodeRiverExecuteResponse) {
+                NodeRiverExecuteResponse nodeRiverExecuteResponse = (NodeRiverExecuteResponse) nodesResponse;
                 b[i] = nodeRiverExecuteResponse.isExecuted();
             }
         }
