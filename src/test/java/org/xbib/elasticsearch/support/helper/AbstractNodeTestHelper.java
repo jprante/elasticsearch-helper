@@ -68,7 +68,7 @@ public abstract class AbstractNodeTestHelper {
                 .put("index.store.type", "memory")
                 .put("http.enabled", false)
                 .put("discovery.zen.multicast.enabled", false)
-                .put("threadpool.bulk.queue_size", 50 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
+                .put("threadpool.bulk.queue_size", 10 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .build();
     }
 

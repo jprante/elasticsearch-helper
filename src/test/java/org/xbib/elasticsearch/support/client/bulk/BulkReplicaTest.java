@@ -13,7 +13,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -24,7 +23,7 @@ public class BulkReplicaTest extends AbstractNodeRandomTestHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkReplicaTest.class.getSimpleName());
 
     @Test
-    public void testReplicaLevel() throws IOException {
+    public void testReplicaLevel() throws Exception {
 
         // we need nodes for replica levels
         startNode("2");
@@ -46,15 +45,10 @@ public class BulkReplicaTest extends AbstractNodeRandomTestHelper {
             for (int i = 0; i < 1234; i++) {
                 ingest.index("test2", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
-            logger.info("flush ingest");
             ingest.flushIngest();
-            ingest.waitForResponses(TimeValue.timeValueSeconds(63));
+            ingest.waitForResponses(TimeValue.timeValueSeconds(60));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
-        } catch (InterruptedException e) {
-            logger.warn("interrupted");
-        } catch (Throwable e) {
-            logger.error(e.getMessage(), e);
         } finally {
             logger.info("refreshing");
             ingest.refresh("test1");

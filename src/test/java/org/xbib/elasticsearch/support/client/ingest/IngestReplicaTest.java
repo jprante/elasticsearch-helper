@@ -46,7 +46,7 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
                 ingest.index("test2", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             ingest.flushIngest();
-            ingest.waitForResponses(TimeValue.timeValueSeconds(30));
+            ingest.waitForResponses(TimeValue.timeValueSeconds(60));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
