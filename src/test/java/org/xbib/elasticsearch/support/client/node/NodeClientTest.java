@@ -116,6 +116,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
         int max = Runtime.getRuntime().availableProcessors();
         int maxactions = 1000;
         final int maxloop = 12345;
+        logger.info("NodeClient max={} maxactions={} maxloop={}", max, maxactions, maxloop);
         final NodeClient client = new NodeClient()
                 .maxActionsPerBulkRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test

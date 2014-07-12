@@ -35,7 +35,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     /**
      * The default size of a request
      */
-    private int maxActionsPerRequest = 1000;
+    private int maxActionsPerRequest = 100;
 
     /**
      * The default number of maximum concurrent requests

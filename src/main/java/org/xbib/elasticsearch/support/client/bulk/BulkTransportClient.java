@@ -34,7 +34,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     /**
      * The default size of a bulk request
      */
-    private int maxActionsPerBulkRequest = 1000;
+    private int maxActionsPerBulkRequest = 100;
     /**
      * The default number of maximum concurrent requests
      */

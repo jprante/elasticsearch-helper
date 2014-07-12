@@ -68,7 +68,7 @@ public abstract class AbstractNodeTestHelper {
                 .put("index.store.type", "memory")
                 .put("http.enabled", false)
                 .put("discovery.zen.multicast.enabled", false)
-                .put("threadpool.bulk.queue_size", 200) // default is 50, too low
+                .put("threadpool.bulk.queue_size", 50 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .build();
     }
 
@@ -104,6 +104,7 @@ public abstract class AbstractNodeTestHelper {
                 .put(getNodeSettings())
                 .put("name", id)
                 .build();
+        logger.info("settings={}", finalSettings.getAsMap());
         Node node = nodeBuilder().settings(finalSettings).build();
         Client client = node.client();
         nodes.put(id, node);
