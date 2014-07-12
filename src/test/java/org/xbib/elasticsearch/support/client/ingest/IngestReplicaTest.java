@@ -71,8 +71,12 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
                             commonShardStats.getIndexing().getTotal().getIndexCount());
                 }
             }
-            ingest.deleteIndex("test1")
-                    .deleteIndex("test2");
+            try {
+                ingest.deleteIndex("test1")
+                        .deleteIndex("test2");
+            } catch (Exception e) {
+                logger.error("delete index failed, ignored. Reason:", e);
+            }
             ingest.shutdown();
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
