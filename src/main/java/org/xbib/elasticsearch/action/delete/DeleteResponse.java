@@ -3,12 +3,12 @@ package org.xbib.elasticsearch.action.delete;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.xbib.elasticsearch.action.index.replica.IndexReplicaShardResponse;
+import org.xbib.elasticsearch.action.delete.replica.DeleteReplicaShardResponse;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DeleteResponse extends ActionResponse {
 
@@ -22,7 +22,12 @@ public class DeleteResponse extends ActionResponse {
 
     private boolean found;
 
-    private Queue<IndexReplicaShardResponse> replicaResponses = new ConcurrentLinkedQueue<IndexReplicaShardResponse>();
+    private int quorumShards;
+
+    private DeleteActionFailure failure;
+
+    @SuppressWarnings("unchecked")
+    private List<DeleteReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList());
 
     public DeleteResponse() {
     }
@@ -72,14 +77,28 @@ public class DeleteResponse extends ActionResponse {
         return found;
     }
 
-    public void addReplicaResponses(List<IndexReplicaShardResponse> replicaShardResponseList) {
-        this.replicaResponses.addAll(replicaShardResponseList);
+    public DeleteResponse setQuorumShards(int quorumShards) {
+        this.quorumShards = quorumShards;
+        return this;
     }
 
-    public Queue<IndexReplicaShardResponse> getReplicaResponses() {
+    public int getQuorumShards() {
+        return quorumShards;
+    }
+
+    public DeleteResponse addReplicaResponses(List<DeleteReplicaShardResponse> replicaShardResponseList) {
+        this.replicaResponses.addAll(replicaShardResponseList);
+        return this;
+    }
+
+    public List<DeleteReplicaShardResponse> getReplicaResponses() {
         return replicaResponses;
     }
 
+    public DeleteResponse setFailure(DeleteActionFailure failure) {
+        this.failure = failure;
+        return this;
+    }
 
     @Override
     public void readFrom(StreamInput in) throws IOException {
@@ -89,6 +108,17 @@ public class DeleteResponse extends ActionResponse {
         id = in.readString();
         version = in.readLong();
         found = in.readBoolean();
+        quorumShards = in.readVInt();
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            DeleteReplicaShardResponse r = new DeleteReplicaShardResponse();
+            r.readFrom(in);
+            replicaResponses.add(r);
+        }
+        if (in.readBoolean()) {
+            failure = new DeleteActionFailure();
+            failure.readFrom(in);
+        }
     }
 
     @Override
@@ -99,5 +129,16 @@ public class DeleteResponse extends ActionResponse {
         out.writeString(id);
         out.writeLong(version);
         out.writeBoolean(found);
+        out.writeVInt(quorumShards);
+        out.writeVInt(replicaResponses.size());
+        for (DeleteReplicaShardResponse r : replicaResponses) {
+            r.writeTo(out);
+        }
+        if (failure != null) {
+            out.writeBoolean(true);
+            failure.writeTo(out);
+        } else {
+            out.writeBoolean(false);
+        }
     }
 }

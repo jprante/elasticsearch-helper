@@ -131,12 +131,16 @@ public class TransportLeaderShardDeleteAction extends TransportLeaderShardOperat
                 // ignore
             }
         }
+
+        int quorumShards = findQuorum(clusterState, shards(clusterState, request), request);
+
         return new DeleteResponse()
             .setIndex(request.index())
             .setType(request.type())
             .setId(request.id())
             .setVersion(delete.version())
-            .setFound(delete.found());
+            .setFound(delete.found())
+            .setQuorumShards(quorumShards);
     }
 
 }

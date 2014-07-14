@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.elasticsearch.common.collect.Lists.newLinkedList;
+
 public class IndexResponse extends ActionResponse {
 
     private String index;
@@ -19,6 +21,10 @@ public class IndexResponse extends ActionResponse {
     private String type;
 
     private long version;
+
+    private int quorumShards;
+
+    private IndexActionFailure failure;
 
     @SuppressWarnings("unchecked")
     private List<IndexReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList());
@@ -53,7 +59,6 @@ public class IndexResponse extends ActionResponse {
         return this.id;
     }
 
-
     public IndexResponse setVersion(long version) {
         this.version = version;
         return this;
@@ -63,12 +68,31 @@ public class IndexResponse extends ActionResponse {
         return this.version;
     }
 
-    public void addReplicaResponses(List<IndexReplicaShardResponse> replicaShardResponseList) {
+    public IndexResponse setQuorumShards(int quorumShards) {
+        this.quorumShards = quorumShards;
+        return this;
+    }
+
+    public int getQuorumShards() {
+        return quorumShards;
+    }
+
+    public IndexResponse addReplicaResponses(List<IndexReplicaShardResponse> replicaShardResponseList) {
         this.replicaResponses.addAll(replicaShardResponseList);
+        return this;
     }
 
     public List<IndexReplicaShardResponse> getReplicaResponses() {
         return replicaResponses;
+    }
+
+    public IndexResponse setFailure(IndexActionFailure failure) {
+        this.failure = failure;
+        return this;
+    }
+
+    public IndexActionFailure getFailure() {
+        return failure;
     }
 
     @Override
@@ -78,6 +102,17 @@ public class IndexResponse extends ActionResponse {
         type = in.readSharedString();
         id = in.readString();
         version = in.readLong();
+        replicaResponses = newLinkedList();
+        int size = in.readVInt();
+        for (int i = 0; i < size; i++) {
+            IndexReplicaShardResponse r = new IndexReplicaShardResponse();
+            r.readFrom(in);
+            replicaResponses.add(r);
+        }
+        if (in.readBoolean()) {
+            failure = new IndexActionFailure();
+            failure.readFrom(in);
+        }
     }
 
     @Override
@@ -87,5 +122,15 @@ public class IndexResponse extends ActionResponse {
         out.writeSharedString(type);
         out.writeString(id);
         out.writeLong(version);
+        out.writeVInt(replicaResponses.size());
+        for (IndexReplicaShardResponse r : replicaResponses) {
+            r.writeTo(out);
+        }
+        if (failure != null) {
+            out.writeBoolean(true);
+            failure.writeTo(out);
+        } else {
+            out.writeBoolean(false);
+        }
     }
 }

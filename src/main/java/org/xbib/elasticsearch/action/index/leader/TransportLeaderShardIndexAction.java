@@ -143,7 +143,6 @@ public class TransportLeaderShardIndexAction extends TransportLeaderShardOperati
                 throw new RoutingMissingException(request.index(), request.type(), request.id());
             }
         }
-
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request().index()).shardSafe(shardRequest.shardId());
         SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, request.source()).type(request.type()).id(request.id())
                 .routing(request.routing()).parent(request.parent()).timestamp(request.timestamp()).ttl(request.ttl());
@@ -164,16 +163,26 @@ public class TransportLeaderShardIndexAction extends TransportLeaderShardOperati
             indexShard.create(create);
             version = create.version();
         }
+        if (request.refresh()) {
+            try {
+                indexShard.refresh(new Engine.Refresh("refresh_flag_index").force(false));
+            } catch (Exception e) {
+                // ignore?
+            }
+        }
         request.version(version);
         request.versionType(request.versionType().versionTypeForReplicationAndRecovery());
 
         assert request.versionType().validateVersionForWrites(request.version());
 
+        int quorumShards = findQuorum(clusterState, shards(clusterState, request), request);
+
         return new IndexResponse()
             .setIndex(request.index())
             .setType(request.type())
             .setId(request.id())
-            .setVersion(version);
+            .setVersion(version)
+            .setQuorumShards(quorumShards);
     }
 
 }

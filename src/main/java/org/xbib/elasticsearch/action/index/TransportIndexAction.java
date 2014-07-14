@@ -7,7 +7,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
@@ -18,7 +17,6 @@ import org.elasticsearch.transport.TransportService;
 import org.xbib.elasticsearch.action.index.leader.TransportLeaderShardIndexAction;
 import org.xbib.elasticsearch.action.index.replica.IndexReplicaShardRequest;
 import org.xbib.elasticsearch.action.index.replica.TransportReplicaShardIndexAction;
-import org.xbib.elasticsearch.action.support.replication.Consistency;
 import org.xbib.elasticsearch.action.support.replication.replica.TransportReplicaShardOperationAction;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,12 +43,11 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
         this.allowIdGeneration = settings.getAsBoolean("action.allow_id_generation", true);
 
         transportService.registerHandler(IndexAction.NAME, new IndexTransportHandler());
-
     }
 
     @Override
     protected void doExecute(final IndexRequest indexRequest, final ActionListener<IndexResponse> listener) {
-        ClusterState clusterState = clusterService.state();
+        final ClusterState clusterState = clusterService.state();
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
         try {
             MetaData metaData = clusterState.metaData();
@@ -65,37 +62,43 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
             listener.onFailure(e);
             return;
         }
-        final boolean skipReplica = shouldSkipReplica(indexRequest.requiredConsistency(), clusterState);
-        final AtomicInteger counter = new AtomicInteger(skipReplica ? 1 : 2);
+        final AtomicInteger counter = new AtomicInteger(1);
         final IndexResponse response = new IndexResponse();
         transportLeaderShardIndexAction.execute(indexRequest, new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
+                int quorumShards = indexResponse.getQuorumShards();
                 response.setIndex(indexRequest.index())
                         .setType(indexRequest.type())
                         .setId(indexRequest.id())
-                        .setVersion(indexResponse.getVersion());
+                        .setVersion(indexResponse.getVersion())
+                        .setQuorumShards(quorumShards);
+                ShardId shardId = clusterService.operationRouting().indexShards(clusterService.state(),
+                        indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
+                if (quorumShards < 0) {
+                    response.setFailure(new IndexActionFailure(shardId, "quorum not reached"));
+                } else if (quorumShards > 0) {
+                    counter.incrementAndGet();
+                    IndexReplicaShardRequest indexReplicaShardRequest = new IndexReplicaShardRequest(shardId, indexRequest);
+                    transportReplicaShardIndexAction.execute(indexReplicaShardRequest, new ActionListener<TransportReplicaShardOperationAction.ReplicaOperationResponse>() {
+                        @Override
+                        public void onResponse(TransportReplicaShardOperationAction.ReplicaOperationResponse replicaOperationResponse) {
+                            response.addReplicaResponses(replicaOperationResponse.responses());
+                            if (counter.decrementAndGet() == 0) {
+                                listener.onResponse(response);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Throwable e) {
+                            logger.error(e.getMessage(), e);
+                            listener.onFailure(e);
+                        }
+                    });
+                }
                 if (counter.decrementAndGet() == 0) {
                     listener.onResponse(response);
                 }
-                ShardId shardId = clusterService.operationRouting().indexShards(clusterService.state(),
-                        indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
-                IndexReplicaShardRequest indexReplicaShardRequest = new IndexReplicaShardRequest(shardId, indexRequest);
-                transportReplicaShardIndexAction.execute(indexReplicaShardRequest, new ActionListener<TransportReplicaShardOperationAction.ReplicaOperationResponse>() {
-                    @Override
-                    public void onResponse(TransportReplicaShardOperationAction.ReplicaOperationResponse replicaOperationResponse) {
-                        response.addReplicaResponses(replicaOperationResponse.responses());
-                        if (counter.decrementAndGet() == 0) {
-                            listener.onResponse(response);
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e) {
-                        logger.error(e.getMessage(), e);
-                        listener.onFailure(e);
-                    }
-                });
             }
 
             @Override
@@ -104,21 +107,6 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
                 listener.onFailure(e);
             }
         });
-    }
-
-    protected boolean shouldSkipReplica(Consistency consistency, ClusterState clusterState) {
-        if (consistency == Consistency.IGNORE) {
-            return true;
-        }
-        // find number of data nodes, they must be > 1 for replica making sense
-        int numberOfDataNodes = 0;
-        for (DiscoveryNode node : clusterState.getNodes()) {
-            if (node.isDataNode()) {
-                numberOfDataNodes++;
-            }
-        }
-        // if single data node cluster, replicas are not possible
-        return numberOfDataNodes == 1;
     }
 
     class IndexTransportHandler extends BaseTransportRequestHandler<IndexRequest> {

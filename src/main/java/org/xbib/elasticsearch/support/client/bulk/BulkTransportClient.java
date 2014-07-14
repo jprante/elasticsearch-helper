@@ -38,7 +38,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     /**
      * The default number of maximum concurrent requests
      */
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 4;
+    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
     /**
      * The maximum volume
      */
@@ -47,9 +47,9 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
 
     /**
-     * The outstanding requests
+     * The concurrent requests
      */
-    private final AtomicLong outstandingRequests = new AtomicLong(0L);
+    private final AtomicLong concurrentRequestCounter = new AtomicLong(0L);
 
     /**
      * The BulkProcessor
@@ -130,7 +130,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
-                long l = outstandingRequests.getAndIncrement();
+                long l = concurrentRequestCounter.getAndIncrement();
                 if (state != null) {
                     int n = request.numberOfActions();
                     state.getSubmitted().inc(n);
@@ -145,7 +145,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-                outstandingRequests.decrementAndGet();
+                concurrentRequestCounter.decrementAndGet();
                 if (state != null) {
                     state.getSucceeded().inc(response.getItems().length);
                     state.getTotalIngest().inc(response.getTookInMillis());
@@ -175,7 +175,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
             @Override
             public void afterBulk(long executionId, BulkRequest requst, Throwable failure) {
-                outstandingRequests.decrementAndGet();
+                concurrentRequestCounter.decrementAndGet();
                 throwable = failure;
                 closed = true;
                 logger.error("bulk [" + executionId + "] error", failure);

@@ -145,7 +145,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         }
         // third, for each shard, execute leader/replica action
         final AtomicInteger successCount = new AtomicInteger(0);
-        final AtomicInteger counter = new AtomicInteger(requestsByShard.size());
+        final AtomicInteger responseCounter = new AtomicInteger(requestsByShard.size());
         for (Map.Entry<ShardId, List<ActionRequest>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
             final List<ActionRequest> actionRequests = entry.getValue();
@@ -166,7 +166,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     if (quorumShards < 0) {
                         ingestResponse.addFailure(new IngestActionFailure(ingestRequest.ingestId(), shardId, "quorum not reached for shard " + shardId));
                     } else if (quorumShards > 0) {
-                        counter.incrementAndGet();
+                        responseCounter.incrementAndGet();
                         final IngestReplicaShardRequest ingestReplicaShardRequest =
                                 new IngestReplicaShardRequest(ingestLeaderShardRequest.getIngestId(),
                                         ingestLeaderShardRequest.getShardId(),
@@ -177,7 +177,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                             public void onResponse(TransportReplicaShardOperationAction.ReplicaOperationResponse response) {
                                 long millis = System.currentTimeMillis() - startTime;
                                 ingestResponse.addReplicaResponses(response.responses());
-                                if (counter.decrementAndGet() == 0) {
+                                if (responseCounter.decrementAndGet() == 0) {
                                     ingestResponse.setSuccessSize(successCount.get())
                                             .setTookInMillis(millis);
                                     listener.onResponse(ingestResponse);
@@ -189,7 +189,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                                 long millis = System.currentTimeMillis() - startTime;
                                 logger.error(e.getMessage(), e);
                                 ingestResponse.addFailure(new IngestActionFailure(ingestRequest.ingestId(), shardId, ExceptionsHelper.detailedMessage(e)));
-                                if (counter.decrementAndGet() == 0) {
+                                if (responseCounter.decrementAndGet() == 0) {
                                     ingestResponse.setSuccessSize(successCount.get())
                                             .setTookInMillis(millis);
                                     listener.onResponse(ingestResponse);
@@ -197,7 +197,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                             }
                         });
                     }
-                    if (counter.decrementAndGet() == 0) {
+                    if (responseCounter.decrementAndGet() == 0) {
                         ingestResponse.setSuccessSize(successCount.get())
                                 .setTookInMillis(millis);
                         listener.onResponse(ingestResponse);
@@ -209,7 +209,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     long millis = System.currentTimeMillis() - startTime;
                     logger.error(e.getMessage(), e);
                     ingestResponse.addFailure(new IngestActionFailure(-1L, shardId, ExceptionsHelper.detailedMessage(e)));
-                    if (counter.decrementAndGet() == 0) {
+                    if (responseCounter.decrementAndGet() == 0) {
                         ingestResponse.setSuccessSize(successCount.get())
                                 .setTookInMillis(millis);
                         listener.onResponse(ingestResponse);
