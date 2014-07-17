@@ -1,9 +1,9 @@
-package org.xbib.elasticsearch.support.helper;
+package org.xbib.elasticsearch.support;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.xbib.elasticsearch.support.AliasTest;
-import org.xbib.elasticsearch.support.NPETest;
+import org.xbib.elasticsearch.support.various.AliasTest;
+import org.xbib.elasticsearch.support.various.NPETest;
 import org.xbib.elasticsearch.support.client.bulk.BulkDuplicateIDTest;
 import org.xbib.elasticsearch.support.client.bulk.BulkReplicaTest;
 import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;
@@ -12,9 +12,12 @@ import org.xbib.elasticsearch.support.client.ingest.IngestDuplicateIDTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestReplicaTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestUpdateReplicaLevelTest;
-import org.xbib.elasticsearch.support.cron.CronTest;
 import org.xbib.elasticsearch.support.client.node.NodeClientTest;
+import org.xbib.elasticsearch.support.client.node.NodeDuplicateIDTest;
+import org.xbib.elasticsearch.support.client.node.NodeReplicaTest;
+import org.xbib.elasticsearch.support.client.node.NodeUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
+import org.xbib.elasticsearch.support.cron.CronTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -23,13 +26,16 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         NPETest.class,
         CronTest.class,
         NodeClientTest.class,
+        NodeDuplicateIDTest.class,
+        NodeReplicaTest.class,
+        NodeUpdateReplicaLevelTest.class,
+        BulkTransportClientTest.class,
         BulkDuplicateIDTest.class,
         BulkReplicaTest.class,
-        BulkTransportClientTest.class,
         BulkUpdateReplicaLevelTest.class,
+        IngestTransportClientTest.class,
         IngestDuplicateIDTest.class,
         IngestReplicaTest.class,
-        IngestTransportClientTest.class,
         IngestUpdateReplicaLevelTest.class
 })
 public class SupportTestSuite {

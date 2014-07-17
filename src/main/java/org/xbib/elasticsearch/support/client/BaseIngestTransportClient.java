@@ -51,7 +51,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(index);
+        CreateIndexRequest request = new CreateIndexRequest(index).listenerThreaded(false);
         if (getSettings() != null) {
             request.settings(getSettings());
         }
@@ -67,6 +67,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
+        logger.info("index {} created", index);
         return this;
     }
 

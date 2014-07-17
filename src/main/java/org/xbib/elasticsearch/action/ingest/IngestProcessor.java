@@ -6,8 +6,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
@@ -24,11 +22,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestProcessor {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestProcessor.class.getName());
-
     private final Client client;
 
-    private int concurrency = Runtime.getRuntime().availableProcessors() * 4;
+    private int maxConcurrency = Runtime.getRuntime().availableProcessors() * 2;
 
     private int actions = 1000;
 
@@ -36,7 +32,7 @@ public class IngestProcessor {
 
     private TimeValue maxWaitForResponses = new TimeValue(60, TimeUnit.SECONDS);
 
-    private Semaphore semaphore = new Semaphore(concurrency);
+    private Semaphore semaphore = new Semaphore(maxConcurrency);
 
     private AtomicLong ingestId = new AtomicLong(0L);
 
@@ -55,9 +51,13 @@ public class IngestProcessor {
     }
 
     public IngestProcessor maxConcurrentRequests(int concurrency) {
-        this.concurrency = Math.min(Math.abs(concurrency), 256);
-        this.semaphore = new Semaphore(this.concurrency);
+        this.maxConcurrency = Math.min(Math.abs(concurrency < 1 ? 1 : concurrency), 256);
+        this.semaphore = new Semaphore(this.maxConcurrency);
         return this;
+    }
+
+    public int getConcurrency() {
+        return maxConcurrency - semaphore.availablePermits();
     }
 
     public IngestProcessor maxActions(int actions) {
@@ -134,19 +134,20 @@ public class IngestProcessor {
 
     /**
      * Closes the processor. If flushing by time is enabled, then it is shut down.
-     * Any remaining ingest actions are flushed, and the responses are awaited.
+     * Any remaining ingest actions are flushed.
      */
     public void close() throws InterruptedException {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("processor already closed");
+            throw new ElasticsearchIllegalStateException("already closed");
         }
         closed = true;
         if (scheduledFuture != null) {
             scheduledFuture.cancel(false);
-            scheduler.shutdown();
         }
+        // do not automatically flush
+        scheduler.shutdown();
+        // flush manually but do not wait for responses
         flush();
-        waitForResponses(maxWaitForResponses);
     }
 
     /**
@@ -165,8 +166,12 @@ public class IngestProcessor {
      * @throws InterruptedException
      */
     public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
-        semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
-        return semaphore.availablePermits() == concurrency;
+        if (maxConcurrency - semaphore.availablePermits() > 0) {
+            semaphore.tryAcquire(maxConcurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
+            return semaphore.availablePermits() == maxConcurrency;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -203,12 +208,12 @@ public class IngestProcessor {
         boolean done = false;
         try {
             semaphore.acquire();
-            ingestListener.onRequest(concurrency - semaphore.availablePermits(), request);
+            ingestListener.onRequest(maxConcurrency - semaphore.availablePermits(), request);
             client.execute(IngestAction.INSTANCE, request, new ActionListener<IngestResponse>() {
                 @Override
                 public void onResponse(IngestResponse response) {
                     try {
-                        ingestListener.onResponse(concurrency - semaphore.availablePermits(), response);
+                        ingestListener.onResponse(maxConcurrency - semaphore.availablePermits(), response);
                     } finally {
                         semaphore.release();
                     }
@@ -217,7 +222,7 @@ public class IngestProcessor {
                 @Override
                 public void onFailure(Throwable e) {
                     try {
-                        ingestListener.onFailure(concurrency - semaphore.availablePermits(), id, e);
+                        ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), id, e);
                     } finally {
                         semaphore.release();
                     }
@@ -226,7 +231,7 @@ public class IngestProcessor {
             done = true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            ingestListener.onFailure(concurrency - semaphore.availablePermits(), id, e);
+            ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), id, e);
         } finally {
             if (!done) {
                 semaphore.release();

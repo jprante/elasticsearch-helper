@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.various;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.various;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequest;

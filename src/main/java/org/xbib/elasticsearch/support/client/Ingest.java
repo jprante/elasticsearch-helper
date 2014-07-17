@@ -1,6 +1,8 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -15,7 +17,7 @@ import java.util.Map;
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
  */
-public interface Ingest extends Feeder {
+public interface Ingest extends Feed {
 
     Ingest newClient(Client client);
 
@@ -120,6 +122,24 @@ public interface Ingest extends Feeder {
 
     Map<String, String> getMappings();
 
+    Ingest putMapping(String index);
+
+    Ingest deleteMapping(String index, String type);
+
+    /**
+     * Create a new index
+     *
+     * @return this ingest
+     */
+    Ingest newIndex(String index);
+
+    /**
+     * Delete index
+     *
+     * @return this ingest
+     */
+    Ingest deleteIndex(String index);
+
     /**
      * Start bulk mode
      *
@@ -135,18 +155,20 @@ public interface Ingest extends Feeder {
     Ingest stopBulk(String index) throws IOException;
 
     /**
-     * Create a new index
-     *
+     * Bulked index request. Each request will be added to a queue for bulking requests.
+     * Submitting request will be done when bulk limits are exceeded.
+     * @param indexRequest the index request to add
      * @return this ingest
      */
-    Ingest newIndex(String index);
+    Ingest bulkIndex(IndexRequest indexRequest);
 
     /**
-     * Delete index
-     *
+     * Bulked delete request. Each request will be added to a queue for bulking requests.
+     * Submitting request will be done when bulk limits are exceeded.
+     * @param deleteRequest the delete request to add
      * @return this ingest
      */
-    Ingest deleteIndex(String index);
+    Ingest bulkDelete(DeleteRequest deleteRequest);
 
     /**
      * Flush ingest, move all pending documents to the bulk indexer

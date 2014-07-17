@@ -95,7 +95,6 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
     protected IngestLeaderShardResponse shardOperationOnLeader(ClusterState clusterState, int replicaLevel, LeaderOperationRequest shardRequest) {
         final long t0 = shardRequest.startTime();
         final IngestLeaderShardRequest request = shardRequest.request();
-        final IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(shardRequest.shardId());
         int successCount = 0;
         List<IngestActionFailure> failures = newLinkedList();
         int size = request.getActionRequests().size();
@@ -124,6 +123,7 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
                 }
             } else if (actionRequest instanceof DeleteRequest) {
                 try {
+                    IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(shardRequest.shardId());
                     DeleteRequest deleteRequest = (DeleteRequest) actionRequest;
                     Engine.Delete delete = indexShard.prepareDelete(deleteRequest.type(), deleteRequest.id(), deleteRequest.version(), deleteRequest.versionType(), Engine.Operation.Origin.PRIMARY);
                     indexShard.delete(delete);

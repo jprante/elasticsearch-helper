@@ -19,7 +19,7 @@ public class IngestResponse extends ActionResponse {
 
     protected int successSize;
 
-    protected IngestLeaderShardResponse leaderResponse;
+    protected IngestLeaderShardResponse leaderResponse = new IngestLeaderShardResponse();
 
     @SuppressWarnings("unchecked")
     protected List<IngestReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList());
@@ -70,11 +70,6 @@ public class IngestResponse extends ActionResponse {
 
     public IngestResponse addFailure(IngestActionFailure failure) {
         this.failures.add(failure);
-        return this;
-    }
-
-    public IngestResponse addFailures(List<IngestActionFailure> failures) {
-        this.failures.addAll(failures);
         return this;
     }
 

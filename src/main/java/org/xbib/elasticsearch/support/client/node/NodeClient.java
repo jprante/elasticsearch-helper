@@ -8,6 +8,8 @@ import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
@@ -17,8 +19,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
@@ -48,7 +48,7 @@ public class NodeClient implements Ingest {
 
     private final ConfigHelper configHelper = new ConfigHelper();
 
-    private final AtomicLong outstandingBulkRequests = new AtomicLong(0L);
+    private final AtomicLong concurrentRequestCounter = new AtomicLong(0L);
 
     private Client client;
 
@@ -113,20 +113,23 @@ public class NodeClient implements Ingest {
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
-                long l = outstandingBulkRequests.getAndIncrement();
+                long l = concurrentRequestCounter.getAndIncrement();
                 int n = request.numberOfActions();
                 state.getSubmitted().inc(n);
                 state.getCurrentIngestNumDocs().inc(n);
                 state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 if (logger.isInfoEnabled()) {
-                    logger.info("before bulk [{}] of {} items, {} bytes, {} concurrent requests",
-                            executionId, request.numberOfActions(), request.estimatedSizeInBytes(), l);
+                    logger.info("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                            executionId,
+                            request.numberOfActions(),
+                            request.estimatedSizeInBytes(),
+                            l);
                 }
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-                outstandingBulkRequests.decrementAndGet();
+                long l = concurrentRequestCounter.decrementAndGet();
                 state.getSucceeded().inc(response.getItems().length);
                 state.getFailed().inc(0);
                 state.getTotalIngest().inc(response.getTookInMillis());
@@ -139,11 +142,12 @@ public class NodeClient implements Ingest {
                     }
                 }
                 if (logger.isInfoEnabled()) {
-                    logger.info("after bulk [{}] [succeeded={}] [failed={}] [{}ms]",
+                    logger.info("after bulk [{}] [succeeded={}] [failed={}] [{}ms] {} concurrent requests",
                             executionId,
                             state.getSucceeded().count(),
                             state.getFailed().count(),
-                            response.getTook().millis());
+                            response.getTook().millis(),
+                            l);
                 }
                 if (n > 0) {
                     logger.error("bulk [{}] failed with {} failed items, failure message = {}",
@@ -155,7 +159,7 @@ public class NodeClient implements Ingest {
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-                outstandingBulkRequests.decrementAndGet();
+                concurrentRequestCounter.decrementAndGet();
                 throwable = failure;
                 closed = true;
                 logger.error("after bulk [" + executionId + "] error", failure);
@@ -190,12 +194,27 @@ public class NodeClient implements Ingest {
     }
 
     @Override
-    public NodeClient index(String index, String type, String id, String source) {
-        return index(new IndexRequest(index).type(type).id(id).create(false).source(source));
+    public NodeClient putMapping(String index) {
+        if (client == null) {
+            logger.warn("no client for put mapping");
+            return this;
+        }
+        configHelper.putMapping(client, index);
+        return this;
     }
 
     @Override
-    public NodeClient index(IndexRequest indexRequest) {
+    public NodeClient deleteMapping(String index, String type) {
+        if (client == null) {
+            logger.warn("no client for delete mapping");
+            return this;
+        }
+        configHelper.deleteMapping(client, index, type);
+        return this;
+    }
+
+    @Override
+    public NodeClient index(String index, String type, String id, String source) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -203,7 +222,29 @@ public class NodeClient implements Ingest {
             if (state != null) {
                 state.getCurrentIngest().inc();
             }
-            bulkProcessor.add(new org.elasticsearch.action.index.IndexRequest(indexRequest.index()).type(indexRequest.type()).id(indexRequest.id()).create(false).source(indexRequest.source(), false));
+            bulkProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
+        } catch (Exception e) {
+            throwable = e;
+            closed = true;
+            logger.error("bulk add of index request failed: " + e.getMessage(), e);
+        } finally {
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public NodeClient bulkIndex(IndexRequest indexRequest) {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        try {
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
+            bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
@@ -218,11 +259,6 @@ public class NodeClient implements Ingest {
 
     @Override
     public NodeClient delete(String index, String type, String id) {
-        return delete(new DeleteRequest(index).type(type).id(id));
-    }
-
-    @Override
-    public NodeClient delete(DeleteRequest deleteRequest) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -230,7 +266,7 @@ public class NodeClient implements Ingest {
             if (state != null) {
                 state.getCurrentIngest().inc();
             }
-            bulkProcessor.add(new org.elasticsearch.action.delete.DeleteRequest(deleteRequest.index()).type(deleteRequest.type()).id(deleteRequest.id()));
+            bulkProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
             throwable = e;
             closed = true;
@@ -243,6 +279,27 @@ public class NodeClient implements Ingest {
         return this;
     }
 
+    @Override
+    public NodeClient bulkDelete(DeleteRequest deleteRequest) {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        try {
+            if (state != null) {
+                state.getCurrentIngest().inc();
+            }
+            bulkProcessor.add(deleteRequest);
+        } catch (Exception e) {
+            throwable = e;
+            closed = true;
+            logger.error("bulk add of delete failed: " + e.getMessage(), e);
+        } finally {
+            if (state != null) {
+                state.getCurrentIngest().dec();
+            }
+        }
+        return this;
+    }
     @Override
     public NodeClient flushIngest() {
         if (closed) {
@@ -359,7 +416,7 @@ public class NodeClient implements Ingest {
             }
         }
         logger.info("creating index {} with settings = {}, mappings = {}",
-                index, getSettings().getAsMap(), getMappings());
+                index, getSettings() != null ? getSettings().getAsMap() : "", getMappings());
         try {
             client.admin().indices().create(request).actionGet();
         } catch (Exception e) {
@@ -404,10 +461,6 @@ public class NodeClient implements Ingest {
         return configHelper.settingsBuilder();
     }
 
-    public void resetSettings() {
-        configHelper.reset();
-    }
-
     public void addSetting(InputStream in) throws IOException {
         configHelper.setting(in);
     }
@@ -438,10 +491,6 @@ public class NodeClient implements Ingest {
 
     public void addMapping(String type, String mapping) {
         configHelper.mapping(type, mapping);
-    }
-
-    public String defaultMapping() throws IOException {
-        return configHelper.defaultMapping();
     }
 
     public Map<String, String> getMappings() {

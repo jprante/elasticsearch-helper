@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package org.xbib.elasticsearch.support.various;
 
 import java.io.IOException;
 import org.elasticsearch.client.Client;

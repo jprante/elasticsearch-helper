@@ -21,7 +21,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
-
+    @Test
     public void testNewIndexIngest() {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getAddress())
@@ -35,7 +35,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         assertFalse(ingest.hasThrowable());
     }
 
-
+    @Test
     public void testDeleteIndexIngestClient() {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getAddress())
@@ -84,7 +84,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         }
     }
 
-
+    @Test
     public void testRandomDocsIngestClient() throws Exception {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
@@ -116,7 +116,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         }
     }
 
-
+    @Test
     public void testThreadedRandomDocsIngestClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
         int maxactions = 1000;

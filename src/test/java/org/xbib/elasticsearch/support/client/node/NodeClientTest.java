@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
@@ -7,10 +6,8 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.xbib.elasticsearch.support.client.bulk.BulkTransportClient;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;

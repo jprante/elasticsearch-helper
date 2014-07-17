@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.ingest;
+package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
@@ -18,9 +18,9 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
+public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestReplicaTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeReplicaTest.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws Exception {
@@ -30,8 +30,8 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
         startNode("3");
         //startNode("4");
 
-        final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getAddress())
+        final NodeClient ingest = new NodeClient()
+                .newClient(client("1"))
                 .shards(2)
                 .replica(3)
                 .newIndex("test1")
@@ -77,11 +77,11 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
             } catch (Exception e) {
                 logger.error("delete index failed, ignored. Reason:", e);
             }
+            ingest.shutdown();
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
             assertFalse(ingest.hasThrowable());
-            ingest.shutdown();
         }
 
         //stopNode("4");

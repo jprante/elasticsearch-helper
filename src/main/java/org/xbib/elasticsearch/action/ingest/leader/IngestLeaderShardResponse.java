@@ -105,7 +105,9 @@ public class IngestLeaderShardResponse extends ActionResponse {
         super.readFrom(in);
         tookInMillis = in.readLong();
         ingestId = in.readLong();
-        shardId = ShardId.readShardId(in);
+        if (in.readBoolean()) {
+            shardId = ShardId.readShardId(in);
+        }
         successCount = in.readVInt();
         quorumShards = in.readVInt();
         actionRequests = newLinkedList();
@@ -139,7 +141,12 @@ public class IngestLeaderShardResponse extends ActionResponse {
         super.writeTo(out);
         out.writeLong(tookInMillis);
         out.writeLong(ingestId);
-        shardId.writeTo(out);
+        if (shardId == null) {
+            out.writeBoolean(false);
+        } else {
+            out.writeBoolean(true);
+            shardId.writeTo(out);
+        }
         out.writeVInt(successCount);
         out.writeVInt(quorumShards);
         out.writeVInt(actionRequests.size());

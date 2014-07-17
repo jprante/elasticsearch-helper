@@ -144,6 +144,9 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             client.stopBulk("test");
             logger.info("bulk requests = {}", client.getState().getTotalIngest().count() );
             assertEquals(maxthreads * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
+            if (client.hasThrowable()) {
+                logger.error("error", client.getThrowable());
+            }
             assertFalse(client.hasThrowable());
             client.refresh("test");
             assertEquals(maxthreads * maxloop,

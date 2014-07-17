@@ -57,6 +57,8 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     private Throwable throwable;
 
+    private int currentConcurrency;
+
     private volatile boolean closed = false;
 
     @Override
@@ -87,6 +89,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient maxRequestWait(TimeValue timeout) {
         this.maxWaitForResponses = timeout;
         return this;
+    }
+
+    public void setCurrentConcurrency(int concurrency) {
+        this.currentConcurrency = concurrency;
     }
 
     /**
@@ -123,6 +129,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
             public void onRequest(int concurrency, IngestRequest request) {
+                setCurrentConcurrency(concurrency);
                 int num = request.numberOfActions();
                 if (state != null) {
                     state.getSubmitted().inc(num);
@@ -130,26 +137,32 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                     state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 }
                 if (logger.isInfoEnabled()) {
-                    logger.info("ingest request [{}] of {} items, {} bytes, {} concurrent requests",
-                            request.ingestId(), num, request.estimatedSizeInBytes(), concurrency);
+                    logger.info("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                            request.ingestId(),
+                            num,
+                            request.estimatedSizeInBytes(),
+                            concurrency);
                 }
             }
 
             @Override
             public void onResponse(int concurrency, IngestResponse response) {
+                setCurrentConcurrency(concurrency);
                 if (state != null) {
                     state.getSucceeded().inc(response.successSize());
                     state.getFailed().inc(response.getFailures().size());
                     state.getTotalIngest().inc(response.tookInMillis());
                 }
                 if (logger.isInfoEnabled()) {
-                    logger.info("ingest response [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}]",
+                    logger.info("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
                             response.ingestId(),
                             state.getSucceeded().count(),
                             state.getFailed().count(),
                             response.tookInMillis(),
                             response.leaderShardResponse(),
-                            response.replicaShardResponses());
+                            response.replicaShardResponses(),
+                            concurrency
+                    );
                 }
                 if (!response.getFailures().isEmpty()) {
                     for (IngestActionFailure f : response.getFailures()) {
@@ -290,11 +303,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     @Override
     public IngestTransportClient index(String index, String type, String id, String source) {
-        return index(new IndexRequest(index).type(type).id(id).create(false).source(source));
-    }
-
-    @Override
-    public IngestTransportClient index(IndexRequest indexRequest) {
         if (closed) {
             if (throwable != null) {
                 throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
@@ -304,11 +312,33 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             state.getCurrentIngest().inc();
-            ingestProcessor.add(indexRequest);
+            ingestProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
-            //closed = true;
+            closed = true;
+        } finally {
+            state.getCurrentIngest().dec();
+        }
+        return this;
+    }
+
+    @Override
+    public IngestTransportClient bulkIndex(org.elasticsearch.action.index.IndexRequest indexRequest) {
+        if (closed) {
+            if (throwable != null) {
+                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+            } else {
+                throw new ElasticsearchIllegalStateException("client is closed");
+            }
+        }
+        try {
+            state.getCurrentIngest().inc();
+            ingestProcessor.add(new IndexRequest(indexRequest));
+        } catch (Exception e) {
+            logger.error("add of index request failed: " + e.getMessage(), e);
+            throwable = e;
+            closed = true;
         } finally {
             state.getCurrentIngest().dec();
         }
@@ -317,11 +347,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     @Override
     public IngestTransportClient delete(String index, String type, String id) {
-        return delete(new DeleteRequest(index).type(type).id(id));
-    }
-
-    @Override
-    public IngestTransportClient delete(DeleteRequest deleteRequest) {
         if (closed) {
             if (throwable != null) {
                 throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
@@ -331,7 +356,29 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             state.getCurrentIngest().inc();
-            ingestProcessor.add(deleteRequest);
+            ingestProcessor.add(new DeleteRequest(index).type(type).id(id));
+        } catch (Exception e) {
+            logger.error("add of delete request failed: " + e.getMessage(), e);
+            throwable = e;
+            closed = true;
+        } finally {
+            state.getCurrentIngest().dec();
+        }
+        return this;
+    }
+
+    @Override
+    public IngestTransportClient bulkDelete(org.elasticsearch.action.delete.DeleteRequest deleteRequest) {
+        if (closed) {
+            if (throwable != null) {
+                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+            } else {
+                throw new ElasticsearchIllegalStateException("client is closed");
+            }
+        }
+        try {
+            state.getCurrentIngest().inc();
+            ingestProcessor.add(new DeleteRequest(deleteRequest));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
@@ -408,7 +455,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             if (ingestProcessor != null) {
-                logger.info("closing ingest processor...");
+                logger.info("closing ingest with {} current concurrent requests ", currentConcurrency);
                 ingestProcessor.close();
             }
             if (state.indices() != null && !state.indices().isEmpty()) {

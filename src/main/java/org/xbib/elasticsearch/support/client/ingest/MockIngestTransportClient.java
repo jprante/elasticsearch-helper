@@ -1,11 +1,11 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -54,17 +54,17 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockIngestTransportClient index(IndexRequest indexRequest) {
-        return this;
-    }
-
-    @Override
     public MockIngestTransportClient delete(String index, String type, String id) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient delete(DeleteRequest deleteRequest) {
+    public MockIngestTransportClient bulkIndex(IndexRequest indexRequest) {
+        return this;
+    }
+
+    @Override
+    public MockIngestTransportClient bulkDelete(DeleteRequest deleteRequest) {
         return this;
     }
 

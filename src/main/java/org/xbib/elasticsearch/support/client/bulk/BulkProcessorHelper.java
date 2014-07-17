@@ -47,7 +47,8 @@ public class BulkProcessorHelper {
                 Field concurrentField = bulkProcessor.getClass().getDeclaredField("concurrentRequests");
                 concurrentField.setAccessible(true);
                 int concurrency = concurrentField.getInt(bulkProcessor);
-                if (concurrency > 0) {
+                // concurreny == 1 means there is no concurrency (default start value)
+                if (concurrency > 1) {
                     semaphore = (Semaphore) field.get(bulkProcessor);
                     acquired = semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
                     return semaphore.availablePermits() == concurrency;

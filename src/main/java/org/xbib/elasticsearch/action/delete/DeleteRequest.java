@@ -22,6 +22,9 @@ public class DeleteRequest extends LeaderShardOperationRequest<DeleteRequest> {
     private long version = Versions.MATCH_ANY;
     private VersionType versionType = VersionType.INTERNAL;
 
+    public DeleteRequest() {
+    }
+
     public DeleteRequest(String index) {
         this.index = index;
     }
@@ -42,9 +45,15 @@ public class DeleteRequest extends LeaderShardOperationRequest<DeleteRequest> {
         this.versionType = request.versionType();
     }
 
-    public DeleteRequest() {
+    public DeleteRequest(org.elasticsearch.action.delete.DeleteRequest indexRequest) {
+        this.index = indexRequest.index();
+        this.type = indexRequest.type();
+        this.id = indexRequest.id();
+        this.routing = indexRequest.routing();
+        this.version = indexRequest.version();
+        this.versionType = indexRequest.versionType();
+        this.refresh = indexRequest.refresh();
     }
-
     @Override
     public ActionRequestValidationException validate() {
         ActionRequestValidationException validationException = super.validate();
