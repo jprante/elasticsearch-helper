@@ -35,7 +35,7 @@
 <span class="sourceLineNo">027</span>    }<a name="line.27"></a>
 <span class="sourceLineNo">028</span><a name="line.28"></a>
 <span class="sourceLineNo">029</span>    @Override<a name="line.29"></a>
-<span class="sourceLineNo">030</span>    public void handleRequest(final RestRequest request, RestChannel channel) {<a name="line.30"></a>
+<span class="sourceLineNo">030</span>    public void handleRequest(final RestRequest request, final RestChannel channel, final Client client) {<a name="line.30"></a>
 <span class="sourceLineNo">031</span>        String riverName = request.param("riverName");<a name="line.31"></a>
 <span class="sourceLineNo">032</span>        if (riverName == null || riverName.isEmpty()) {<a name="line.32"></a>
 <span class="sourceLineNo">033</span>            respond(false, request, channel, "parameter 'riverName' is required", RestStatus.BAD_REQUEST);<a name="line.33"></a>
@@ -45,7 +45,7 @@
 <span class="sourceLineNo">037</span>        RiverExecuteRequest riverExecuteRequest = new RiverExecuteRequest()<a name="line.37"></a>
 <span class="sourceLineNo">038</span>                .setRiverName(riverName)<a name="line.38"></a>
 <span class="sourceLineNo">039</span>                .setRiverType(riverType);<a name="line.39"></a>
-<span class="sourceLineNo">040</span>        RiverExecuteResponse riverExecuteResponse = client<a name="line.40"></a>
+<span class="sourceLineNo">040</span>        RiverExecuteResponse riverExecuteResponse = client.admin().cluster()<a name="line.40"></a>
 <span class="sourceLineNo">041</span>                .execute(RiverExecuteAction.INSTANCE, riverExecuteRequest).actionGet();<a name="line.41"></a>
 <span class="sourceLineNo">042</span>        boolean isExecuted = false;<a name="line.42"></a>
 <span class="sourceLineNo">043</span>        for (int i = 0; i &lt; riverExecuteResponse.isExecuted().length; i++) {<a name="line.43"></a>

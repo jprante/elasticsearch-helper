@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package org.xbib.elasticsearch.support.client.ingest;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import org.elasticsearch.action.admin.indices.stats.CommonStats;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import org.elasticsearch.action.admin.indices.stats.IndexShardStats;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import org.elasticsearch.action.admin.indices.stats.IndexStats;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.elasticsearch.client.transport.NoNodeAvailableException;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.elasticsearch.common.logging.ESLogger;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.elasticsearch.common.logging.ESLoggerFactory;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.elasticsearch.common.unit.TimeValue;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.elasticsearch.index.indexing.IndexingStats;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.elasticsearch.index.query.QueryBuilders;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.junit.Test;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;<a name="line.14"></a>
+<span class="sourceLineNo">015</span><a name="line.15"></a>
+<span class="sourceLineNo">016</span>import java.util.Map;<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>import static org.junit.Assert.assertEquals;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import static org.junit.Assert.assertFalse;<a name="line.19"></a>
+<span class="sourceLineNo">020</span><a name="line.20"></a>
+<span class="sourceLineNo">021</span>public class IngestReplicaTest extends AbstractNodeRandomTestHelper {<a name="line.21"></a>
+<span class="sourceLineNo">022</span><a name="line.22"></a>
+<span class="sourceLineNo">023</span>    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestReplicaTest.class.getSimpleName());<a name="line.23"></a>
+<span class="sourceLineNo">024</span><a name="line.24"></a>
+<span class="sourceLineNo">025</span>    @Test<a name="line.25"></a>
+<span class="sourceLineNo">026</span>    public void testReplicaLevel() throws Exception {<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>        // we need nodes for quorum. 4 nodes =&gt; quorum = 2<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        startNode("2");<a name="line.29"></a>
+<span class="sourceLineNo">030</span>        startNode("3");<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        startNode("4");<a name="line.31"></a>
+<span class="sourceLineNo">032</span><a name="line.32"></a>
+<span class="sourceLineNo">033</span>        final IngestTransportClient ingest = new IngestTransportClient()<a name="line.33"></a>
+<span class="sourceLineNo">034</span>                .newClient(getAddress())<a name="line.34"></a>
+<span class="sourceLineNo">035</span>                .shards(2)<a name="line.35"></a>
+<span class="sourceLineNo">036</span>                .replica(3)<a name="line.36"></a>
+<span class="sourceLineNo">037</span>                .newIndex("test1")<a name="line.37"></a>
+<span class="sourceLineNo">038</span>                .shards(2)<a name="line.38"></a>
+<span class="sourceLineNo">039</span>                .replica(1)<a name="line.39"></a>
+<span class="sourceLineNo">040</span>                .newIndex("test2");<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        try {<a name="line.41"></a>
+<span class="sourceLineNo">042</span>            for (int i = 0; i &lt; 1234; i++) {<a name="line.42"></a>
+<span class="sourceLineNo">043</span>                ingest.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.43"></a>
+<span class="sourceLineNo">044</span>            }<a name="line.44"></a>
+<span class="sourceLineNo">045</span>            for (int i = 0; i &lt; 1234; i++) {<a name="line.45"></a>
+<span class="sourceLineNo">046</span>                ingest.index("test2", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");<a name="line.46"></a>
+<span class="sourceLineNo">047</span>            }<a name="line.47"></a>
+<span class="sourceLineNo">048</span>            ingest.flushIngest();<a name="line.48"></a>
+<span class="sourceLineNo">049</span>            ingest.waitForResponses(TimeValue.timeValueSeconds(60));<a name="line.49"></a>
+<span class="sourceLineNo">050</span>        } catch (NoNodeAvailableException e) {<a name="line.50"></a>
+<span class="sourceLineNo">051</span>            logger.warn("skipping, no node available");<a name="line.51"></a>
+<span class="sourceLineNo">052</span>        } finally {<a name="line.52"></a>
+<span class="sourceLineNo">053</span>            logger.info("refreshing");<a name="line.53"></a>
+<span class="sourceLineNo">054</span>            ingest.refresh("test1");<a name="line.54"></a>
+<span class="sourceLineNo">055</span>            ingest.refresh("test2");<a name="line.55"></a>
+<span class="sourceLineNo">056</span>            long hits = ingest.client().prepareSearch("test1","test2")<a name="line.56"></a>
+<span class="sourceLineNo">057</span>                    .setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getHits().getTotalHits();<a name="line.57"></a>
+<span class="sourceLineNo">058</span>            logger.info("query total hits={}", hits);<a name="line.58"></a>
+<span class="sourceLineNo">059</span>            assertEquals(2468, hits);<a name="line.59"></a>
+<span class="sourceLineNo">060</span>            IndicesStatsResponse response = ingest.client().admin().indices().prepareStats().all().execute().actionGet();<a name="line.60"></a>
+<span class="sourceLineNo">061</span>            for (Map.Entry&lt;String,IndexStats&gt; m : response.getIndices().entrySet()) {<a name="line.61"></a>
+<span class="sourceLineNo">062</span>                IndexStats indexStats = m.getValue();<a name="line.62"></a>
+<span class="sourceLineNo">063</span>                CommonStats commonStats = indexStats.getTotal();<a name="line.63"></a>
+<span class="sourceLineNo">064</span>                IndexingStats indexingStats = commonStats.getIndexing();<a name="line.64"></a>
+<span class="sourceLineNo">065</span>                IndexingStats.Stats stats = indexingStats.getTotal();<a name="line.65"></a>
+<span class="sourceLineNo">066</span>                logger.info("index {}: count = {}", m.getKey(), stats.getIndexCount());<a name="line.66"></a>
+<span class="sourceLineNo">067</span>                for (Map.Entry&lt;Integer,IndexShardStats&gt; me : indexStats.getIndexShards().entrySet()) {<a name="line.67"></a>
+<span class="sourceLineNo">068</span>                    IndexShardStats indexShardStats = me.getValue();<a name="line.68"></a>
+<span class="sourceLineNo">069</span>                    CommonStats commonShardStats = indexShardStats.getTotal();<a name="line.69"></a>
+<span class="sourceLineNo">070</span>                    logger.info("shard {} count = {}", me.getKey(),<a name="line.70"></a>
+<span class="sourceLineNo">071</span>                            commonShardStats.getIndexing().getTotal().getIndexCount());<a name="line.71"></a>
+<span class="sourceLineNo">072</span>                }<a name="line.72"></a>
+<span class="sourceLineNo">073</span>            }<a name="line.73"></a>
+<span class="sourceLineNo">074</span>            try {<a name="line.74"></a>
+<span class="sourceLineNo">075</span>                ingest.deleteIndex("test1")<a name="line.75"></a>
+<span class="sourceLineNo">076</span>                        .deleteIndex("test2");<a name="line.76"></a>
+<span class="sourceLineNo">077</span>            } catch (Exception e) {<a name="line.77"></a>
+<span class="sourceLineNo">078</span>                logger.error("delete index failed, ignored. Reason:", e);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>            }<a name="line.79"></a>
+<span class="sourceLineNo">080</span>            if (ingest.hasThrowable()) {<a name="line.80"></a>
+<span class="sourceLineNo">081</span>                logger.error("error", ingest.getThrowable());<a name="line.81"></a>
+<span class="sourceLineNo">082</span>            }<a name="line.82"></a>
+<span class="sourceLineNo">083</span>            assertFalse(ingest.hasThrowable());<a name="line.83"></a>
+<span class="sourceLineNo">084</span>            ingest.shutdown();<a name="line.84"></a>
+<span class="sourceLineNo">085</span>        }<a name="line.85"></a>
+<span class="sourceLineNo">086</span><a name="line.86"></a>
+<span class="sourceLineNo">087</span>        stopNode("4");<a name="line.87"></a>
+<span class="sourceLineNo">088</span>        stopNode("3");<a name="line.88"></a>
+<span class="sourceLineNo">089</span>        stopNode("2");<a name="line.89"></a>
+<span class="sourceLineNo">090</span>    }<a name="line.90"></a>
+<span class="sourceLineNo">091</span><a name="line.91"></a>
+<span class="sourceLineNo">092</span>}<a name="line.92"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
