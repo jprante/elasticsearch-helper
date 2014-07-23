@@ -27,7 +27,7 @@ public class RestRiverExecuteAction extends AbstractRestRiverAction {
     }
 
     @Override
-    public void handleRequest(final RestRequest request, RestChannel channel) {
+    public void handleRequest(final RestRequest request, final RestChannel channel, final Client client) {
         String riverName = request.param("riverName");
         if (riverName == null || riverName.isEmpty()) {
             respond(false, request, channel, "parameter 'riverName' is required", RestStatus.BAD_REQUEST);
@@ -37,7 +37,7 @@ public class RestRiverExecuteAction extends AbstractRestRiverAction {
         RiverExecuteRequest riverExecuteRequest = new RiverExecuteRequest()
                 .setRiverName(riverName)
                 .setRiverType(riverType);
-        RiverExecuteResponse riverExecuteResponse = client
+        RiverExecuteResponse riverExecuteResponse = client.admin().cluster()
                 .execute(RiverExecuteAction.INSTANCE, riverExecuteRequest).actionGet();
         boolean isExecuted = false;
         for (int i = 0; i < riverExecuteResponse.isExecuted().length; i++) {

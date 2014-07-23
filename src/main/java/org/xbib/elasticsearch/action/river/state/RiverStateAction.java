@@ -1,9 +1,9 @@
 package org.xbib.elasticsearch.action.river.state;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ClusterAdminClient;
 
-public class RiverStateAction extends Action<RiverStateRequest, RiverStateResponse, RiverStateRequestBuilder> {
+public class RiverStateAction extends Action<RiverStateRequest, RiverStateResponse, RiverStateRequestBuilder, ClusterAdminClient> {
 
     public static final RiverStateAction INSTANCE = new RiverStateAction();
 
@@ -14,7 +14,7 @@ public class RiverStateAction extends Action<RiverStateRequest, RiverStateRespon
     }
 
     @Override
-    public RiverStateRequestBuilder newRequestBuilder(Client client) {
+    public RiverStateRequestBuilder newRequestBuilder(ClusterAdminClient client) {
         return new RiverStateRequestBuilder(client);
     }
 

@@ -36,7 +36,7 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
                                 TransportService transportService, ClusterService clusterService,
                                 TransportLeaderShardIndexAction transportLeaderShardIndexAction,
                                 TransportReplicaShardIndexAction transportReplicaShardIndexAction) {
-        super(settings, threadPool);
+        super(settings, IndexAction.NAME, threadPool);
         this.clusterService = clusterService;
         this.transportLeaderShardIndexAction = transportLeaderShardIndexAction;
         this.transportReplicaShardIndexAction = transportReplicaShardIndexAction;

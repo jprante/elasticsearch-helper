@@ -23,7 +23,7 @@ public class TransportReplicaShardDeleteAction
     @Inject
     public TransportReplicaShardDeleteAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                              IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
+        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
     }
 
     @Override

@@ -1,9 +1,9 @@
 package org.xbib.elasticsearch.action.river.execute;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ClusterAdminClient;
 
-public class RiverExecuteAction extends Action<RiverExecuteRequest, RiverExecuteResponse, RiverExecuteRequestBuilder> {
+public class RiverExecuteAction extends Action<RiverExecuteRequest, RiverExecuteResponse, RiverExecuteRequestBuilder, ClusterAdminClient> {
 
     public static final RiverExecuteAction INSTANCE = new RiverExecuteAction();
 
@@ -14,7 +14,7 @@ public class RiverExecuteAction extends Action<RiverExecuteRequest, RiverExecute
     }
 
     @Override
-    public RiverExecuteRequestBuilder newRequestBuilder(Client client) {
+    public RiverExecuteRequestBuilder newRequestBuilder(ClusterAdminClient client) {
         return new RiverExecuteRequestBuilder(client);
     }
 

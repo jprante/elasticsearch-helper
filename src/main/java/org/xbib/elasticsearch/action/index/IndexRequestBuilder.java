@@ -2,7 +2,6 @@ package org.xbib.elasticsearch.action.index;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -15,11 +14,11 @@ import java.util.Map;
 public class IndexRequestBuilder extends LeaderShardOperationRequestBuilder<IndexRequest, IndexResponse, IndexRequestBuilder> {
 
     public IndexRequestBuilder(Client client) {
-        super((InternalClient) client, new IndexRequest());
+        super(client, new IndexRequest());
     }
 
     public IndexRequestBuilder(Client client, @Nullable String index) {
-        super((InternalClient) client, new IndexRequest(index));
+        super(client, new IndexRequest(index));
     }
 
     public IndexRequestBuilder setType(String type) {
@@ -159,6 +158,6 @@ public class IndexRequestBuilder extends LeaderShardOperationRequestBuilder<Inde
 
     @Override
     protected void doExecute(ActionListener<IndexResponse> listener) {
-        ((Client) client).execute(IndexAction.INSTANCE, request, listener);
+        client.execute(IndexAction.INSTANCE, request, listener);
     }
 }

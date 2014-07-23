@@ -24,7 +24,7 @@ public class TransportReplicaShardIndexAction
     @Inject
     public TransportReplicaShardIndexAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                              IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
+        super(settings, IndexAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
     }
 
     @Override

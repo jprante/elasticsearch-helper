@@ -9,7 +9,7 @@ import org.elasticsearch.transport.TransportRequestOptions;
 /**
  * The ingest action replaces the bulk action, for using the IngestProcessor
  */
-public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder> {
+public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder, Client> {
 
     public static final IngestAction INSTANCE = new IngestAction();
 

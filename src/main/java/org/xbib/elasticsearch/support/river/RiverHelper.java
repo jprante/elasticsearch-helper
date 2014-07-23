@@ -1,6 +1,6 @@
 package org.xbib.elasticsearch.support.river;
 
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ClusterAdminClient;
 import org.elasticsearch.common.collect.ImmutableMap;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.indices.IndexMissingException;
@@ -20,11 +20,11 @@ public class RiverHelper {
     private RiverHelper() {
     }
 
-    public void waitForRiverEnabled(Client client, String riverName) throws InterruptedException, IOException {
+    public void waitForRiverEnabled(ClusterAdminClient client, String riverName) throws InterruptedException, IOException {
         waitForRiverEnabled(client, riverName, 15);
     }
 
-    public static void waitForRiverEnabled(Client client, String riverName, int seconds) throws InterruptedException, IOException {
+    public static void waitForRiverEnabled(ClusterAdminClient client, String riverName, int seconds) throws InterruptedException, IOException {
         RiverStateRequest riverStateRequest = new RiverStateRequest()
                 .setRiverName(riverName);
         RiverStateResponse riverStateResponse = client
@@ -57,11 +57,11 @@ public class RiverHelper {
         return false;
     }
 
-    public static void waitForInactiveRiver(Client client, String riverName) throws InterruptedException, IOException {
+    public static void waitForInactiveRiver(ClusterAdminClient client, String riverName) throws InterruptedException, IOException {
         waitForInactiveRiver(client, riverName, 30);
     }
 
-    public static void waitForInactiveRiver(Client client, String riverName, int seconds) throws InterruptedException, IOException {
+    public static void waitForInactiveRiver(ClusterAdminClient client, String riverName, int seconds) throws InterruptedException, IOException {
         RiverStateRequest riverStateRequest = new RiverStateRequest()
                 .setRiverName(riverName);
         RiverStateResponse riverStateResponse = client

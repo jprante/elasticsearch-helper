@@ -5,7 +5,6 @@ import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ListenableActionFuture;
 import org.elasticsearch.action.support.PlainListenableActionFuture;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.action.delete.DeleteRequest;
@@ -13,14 +12,14 @@ import org.xbib.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.index.IndexRequestBuilder;
 
-public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
+public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder, Client> {
 
     public IngestRequestBuilder(Client client) {
         this(client, new IngestRequest());
     }
 
     public IngestRequestBuilder(Client client, IngestRequest request) {
-        super((InternalClient) client, request);
+        super(client, request);
     }
 
     @Override
@@ -83,6 +82,6 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
     }
 
     protected void doExecute(ActionListener<IngestResponse> listener) {
-        ((InternalClient) client).execute(IngestAction.INSTANCE, request, listener);
+        client.execute(IngestAction.INSTANCE, request, listener);
     }
 }

@@ -28,14 +28,9 @@ public class TransportRiverStateAction extends TransportNodesOperationAction<Riv
     public TransportRiverStateAction(Settings settings, ClusterName clusterName, ThreadPool threadPool,
                                      ClusterService clusterService, TransportService transportService,
                                      NodeService nodeService, Injector injector) {
-        super(settings, clusterName, threadPool, clusterService, transportService);
+        super(settings, RiverStateAction.NAME, clusterName, threadPool, clusterService, transportService);
         this.nodeService = nodeService;
         this.injector = injector;
-    }
-
-    @Override
-    protected String transportAction() {
-        return RiverStateAction.NAME;
     }
 
     @Override

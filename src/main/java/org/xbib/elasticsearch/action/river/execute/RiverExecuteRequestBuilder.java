@@ -2,13 +2,12 @@ package org.xbib.elasticsearch.action.river.execute;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.nodes.NodesOperationRequestBuilder;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalGenericClient;
+import org.elasticsearch.client.ClusterAdminClient;
 
 public class RiverExecuteRequestBuilder extends NodesOperationRequestBuilder<RiverExecuteRequest, RiverExecuteResponse, RiverExecuteRequestBuilder> {
 
-    public RiverExecuteRequestBuilder(Client client) {
-        super((InternalGenericClient) client, new RiverExecuteRequest());
+    public RiverExecuteRequestBuilder(ClusterAdminClient client) {
+        super(client, new RiverExecuteRequest());
     }
 
     public RiverExecuteRequestBuilder setRiverType(String riverType) {
@@ -23,6 +22,6 @@ public class RiverExecuteRequestBuilder extends NodesOperationRequestBuilder<Riv
 
     @Override
     protected void doExecute(ActionListener<RiverExecuteResponse> listener) {
-        ((Client) client).execute(RiverExecuteAction.INSTANCE, request, listener);
+        client.execute(RiverExecuteAction.INSTANCE, request, listener);
     }
 }

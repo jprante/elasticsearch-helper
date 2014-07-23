@@ -2,7 +2,6 @@ package org.xbib.elasticsearch.action.delete;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.index.VersionType;
 import org.xbib.elasticsearch.action.support.replication.leader.LeaderShardOperationRequestBuilder;
@@ -10,11 +9,11 @@ import org.xbib.elasticsearch.action.support.replication.leader.LeaderShardOpera
 public class DeleteRequestBuilder extends LeaderShardOperationRequestBuilder<DeleteRequest, DeleteResponse, DeleteRequestBuilder> {
 
     public DeleteRequestBuilder(Client client) {
-        super((InternalClient) client, new DeleteRequest());
+        super(client, new DeleteRequest());
     }
 
     public DeleteRequestBuilder(Client client, @Nullable String index) {
-        super((InternalClient) client, new DeleteRequest(index));
+        super(client, new DeleteRequest(index));
     }
 
     public DeleteRequestBuilder setType(String type) {
@@ -54,6 +53,6 @@ public class DeleteRequestBuilder extends LeaderShardOperationRequestBuilder<Del
 
     @Override
     protected void doExecute(ActionListener<DeleteResponse> listener) {
-        ((Client) client).execute(DeleteAction.INSTANCE, request, listener);
+        client.execute(DeleteAction.INSTANCE, request, listener);
     }
 }

@@ -1,7 +1,6 @@
 package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalArgumentException;
-import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
@@ -11,7 +10,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.inject.Inject;
@@ -28,7 +26,6 @@ import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardResponse;
 import org.xbib.elasticsearch.action.ingest.leader.TransportLeaderShardIngestAction;
 import org.xbib.elasticsearch.action.ingest.replica.IngestReplicaShardRequest;
 import org.xbib.elasticsearch.action.ingest.replica.TransportReplicaShardIngestAction;
-import org.xbib.elasticsearch.action.support.replication.Consistency;
 import org.xbib.elasticsearch.action.support.replication.replica.TransportReplicaShardOperationAction;
 
 import java.util.List;
@@ -53,7 +50,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardIngestAction leaderShardIngestAction,
                                  TransportReplicaShardIngestAction replicaShardIngestAction) {
-        super(settings, threadPool);
+        super(settings, IngestAction.NAME, threadPool);
         this.clusterService = clusterService;
         this.leaderShardIngestAction = leaderShardIngestAction;
         this.replicaShardIngestAction = replicaShardIngestAction;

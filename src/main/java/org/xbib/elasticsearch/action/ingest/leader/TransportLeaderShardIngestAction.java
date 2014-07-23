@@ -12,14 +12,15 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.ShardIterator;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.index.mapper.DocumentMapper;
 import org.elasticsearch.index.mapper.SourceToParse;
+import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -47,7 +48,7 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
     public TransportLeaderShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
                                             MappingUpdatedAction mappingUpdatedAction) {
-        super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
+        super(settings, IngestAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.mappingUpdatedAction = mappingUpdatedAction;
     }
 
@@ -99,7 +100,8 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
         List<IngestActionFailure> failures = newLinkedList();
         int size = request.getActionRequests().size();
         long[] versions = new long[size];
-        Set<Tuple<String, String>> mappingsToUpdate = newHashSet();
+        Set<String> mappingsToUpdate = newHashSet();
+        IndexService indexService = indicesService.indexServiceSafe(request.index());
         for (int i = 0; i < size; i++) {
             ActionRequest actionRequest = request.getActionRequests().get(i);
             if (actionRequest instanceof IndexRequest) {
@@ -123,7 +125,7 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
                 }
             } else if (actionRequest instanceof DeleteRequest) {
                 try {
-                    IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(shardRequest.shardId());
+                    IndexShard indexShard = indexService.shardSafe(shardRequest.shardId());
                     DeleteRequest deleteRequest = (DeleteRequest) actionRequest;
                     Engine.Delete delete = indexShard.prepareDelete(deleteRequest.type(), deleteRequest.id(), deleteRequest.version(), deleteRequest.versionType(), Engine.Operation.Origin.PRIMARY);
                     indexShard.delete(delete);
@@ -144,8 +146,9 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
             }
         }
         if (!mappingsToUpdate.isEmpty()) {
-            for (Tuple<String, String> mappingToUpdate : mappingsToUpdate) {
-                mappingUpdatedAction.updateMappingOnMaster(mappingToUpdate.v1(), mappingToUpdate.v2(), true);
+            for (String mappingToUpdate : mappingsToUpdate) {
+                DocumentMapper docMapper = indexService.mapperService().documentMapper(mappingToUpdate);
+                mappingUpdatedAction.updateMappingOnMaster(indexService.index().name(), docMapper, indexService.indexUUID());
             }
         }
         int quorumShards = findQuorum(clusterState, shards(clusterState, request), request);
@@ -160,7 +163,7 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
     }
 
     private long indexOperationOnLeader(ClusterState clusterState, IndexRequest indexRequest,
-                                        IngestLeaderShardRequest request, Set<Tuple<String, String>> mappingsToUpdate) {
+                                        IngestLeaderShardRequest request, Set<String> mappingsToUpdate) {
         boolean mappingsModified = false;
         try {
             MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
@@ -200,7 +203,7 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
             }
         } finally {
             if (mappingsModified) {
-                mappingsToUpdate.add(Tuple.tuple(indexRequest.index(), indexRequest.type()));
+                mappingsToUpdate.add(indexRequest.type());
             }
         }
     }

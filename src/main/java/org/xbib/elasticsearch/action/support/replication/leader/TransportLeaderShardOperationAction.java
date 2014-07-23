@@ -57,10 +57,10 @@ public abstract class TransportLeaderShardOperationAction<Request extends Leader
 
     final String executor;
 
-    protected TransportLeaderShardOperationAction(Settings settings, TransportService transportService,
+    protected TransportLeaderShardOperationAction(Settings settings, String actionName, TransportService transportService,
                                                   ClusterService clusterService, IndicesService indicesService,
                                                   ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, threadPool);
+        super(settings, actionName, threadPool);
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;

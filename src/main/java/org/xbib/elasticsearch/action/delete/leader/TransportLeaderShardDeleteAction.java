@@ -36,7 +36,7 @@ public class TransportLeaderShardDeleteAction extends TransportLeaderShardOperat
     public TransportLeaderShardDeleteAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
                                             TransportCreateIndexAction createIndexAction, MappingUpdatedAction mappingUpdatedAction) {
-        super(settings, transportService, clusterService, indicesService, threadPool, shardStateAction);
+        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
         this.createIndexAction = createIndexAction;
         this.autoCreateIndex = new AutoCreateIndex(settings);
     }

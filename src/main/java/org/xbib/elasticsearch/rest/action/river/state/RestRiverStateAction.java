@@ -30,14 +30,14 @@ public class RestRiverStateAction extends AbstractRestRiverAction {
     }
 
     @Override
-    public void handleRequest(RestRequest request, RestChannel channel) {
+    public void handleRequest(RestRequest request, RestChannel channel, Client client) {
         try {
             String riverName = request.param("riverName");
             String riverType = request.param("riverType");
             RiverStateRequest riverStateRequest = new RiverStateRequest()
                     .setRiverName(riverName)
                     .setRiverType(riverType);
-            RiverStateResponse riverStateResponse = client
+            RiverStateResponse riverStateResponse = client.admin().cluster()
                     .execute(RiverStateAction.INSTANCE, riverStateRequest).actionGet();
             XContentBuilder builder = RestXContentBuilder.restContentBuilder(request);
             builder.startObject();

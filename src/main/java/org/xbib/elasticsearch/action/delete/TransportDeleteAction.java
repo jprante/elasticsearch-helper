@@ -32,7 +32,7 @@ public class TransportDeleteAction extends TransportAction<DeleteRequest, Delete
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardDeleteAction transportLeaderShardDeleteAction,
                                  TransportReplicaShardDeleteAction transportReplicaShardDeleteAction) {
-        super(settings, threadPool);
+        super(settings, DeleteAction.NAME, threadPool);
         this.clusterService = clusterService;
         this.transportLeaderShardDeleteAction = transportLeaderShardDeleteAction;
         this.transportReplicaShardDeleteAction = transportReplicaShardDeleteAction;

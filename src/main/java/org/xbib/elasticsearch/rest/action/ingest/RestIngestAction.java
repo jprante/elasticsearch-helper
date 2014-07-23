@@ -76,7 +76,7 @@ public class RestIngestAction extends BaseRestHandler {
     }
 
     @Override
-    public void handleRequest(final RestRequest request, final RestChannel channel) {
+    public void handleRequest(final RestRequest request, final RestChannel channel, final Client client) {
 
         final IngestIdHolder idHolder = new IngestIdHolder();
         final CountDownLatch latch = new CountDownLatch(1);

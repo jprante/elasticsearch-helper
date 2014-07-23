@@ -3,7 +3,6 @@ package org.xbib.elasticsearch.action.ingest;
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.internal.InternalClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -80,7 +79,7 @@ public class IngestProcessor {
             if (scheduler != null) {
                 scheduler.shutdown();
             }
-            scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1, EsExecutors.daemonThreadFactory(((InternalClient) client).settings(), "ingest_processor"));
+            scheduler = (ScheduledThreadPoolExecutor) Executors.newScheduledThreadPool(1, EsExecutors.daemonThreadFactory((client).settings(), "ingest_processor"));
             scheduler.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
             scheduler.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
             if (scheduledFuture != null) {

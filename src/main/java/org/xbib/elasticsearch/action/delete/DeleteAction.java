@@ -1,9 +1,9 @@
 package org.xbib.elasticsearch.action.delete;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ClientAction;
 import org.elasticsearch.client.Client;
 
-public class DeleteAction extends Action<DeleteRequest, DeleteResponse, DeleteRequestBuilder> {
+public class DeleteAction extends ClientAction<DeleteRequest, DeleteResponse, DeleteRequestBuilder> {
 
     public static final DeleteAction INSTANCE = new DeleteAction();
 
