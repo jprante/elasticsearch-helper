@@ -28,7 +28,7 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
         // we need nodes for quorum. 4 nodes => quorum = 2
         startNode("2");
         startNode("3");
-        startNode("4");
+        //startNode("4");
 
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getAddress())
@@ -84,7 +84,7 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
             ingest.shutdown();
         }
 
-        stopNode("4");
+        //stopNode("4");
         stopNode("3");
         stopNode("2");
     }

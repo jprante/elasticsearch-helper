@@ -17,14 +17,12 @@ import org.xbib.elasticsearch.support.client.node.NodeDuplicateIDTest;
 import org.xbib.elasticsearch.support.client.node.NodeReplicaTest;
 import org.xbib.elasticsearch.support.client.node.NodeUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
-import org.xbib.elasticsearch.support.cron.CronTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
-        CronTest.class,
         NodeClientTest.class,
         NodeDuplicateIDTest.class,
         NodeReplicaTest.class,

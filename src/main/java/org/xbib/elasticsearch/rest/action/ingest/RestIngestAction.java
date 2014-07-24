@@ -8,8 +8,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentBuilderString;
 import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
@@ -17,18 +17,17 @@ import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
-import org.xbib.elasticsearch.rest.action.support.XContentRestResponse;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 import static org.elasticsearch.rest.RestRequest.Method.PUT;
 import static org.elasticsearch.rest.RestStatus.BAD_REQUEST;
 import static org.elasticsearch.rest.RestStatus.OK;
-import static org.xbib.elasticsearch.rest.action.support.RestXContentBuilder.restContentBuilder;
 
 /**
  * <pre>
@@ -66,21 +65,19 @@ public class RestIngestAction extends BaseRestHandler {
         int actions = settings.getAsInt("action.ingest.maxactions", 1000);
         int concurrency = settings.getAsInt("action.ingest.maxconcurrency", Runtime.getRuntime().availableProcessors() * 4);
         ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("10m"));
-        TimeValue waitingTime = settings.getAsTime("action.ingest.waitingtime", TimeValue.timeValueSeconds(60));
+        TimeValue maxwait = settings.getAsTime("action.ingest.maxwait", TimeValue.timeValueSeconds(60));
 
         this.ingestProcessor = new IngestProcessor(client)
                 .maxActions(actions)
                 .maxConcurrentRequests(concurrency)
                 .maxVolumePerRequest(volume)
-                .maxWaitForResponses(waitingTime);
+                .maxWaitForResponses(maxwait);
     }
 
     @Override
     public void handleRequest(final RestRequest request, final RestChannel channel, final Client client) {
-
         final IngestIdHolder idHolder = new IngestIdHolder();
         final CountDownLatch latch = new CountDownLatch(1);
-
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
             public void onRequest(int concurrency, IngestRequest ingestRequest) {
@@ -124,29 +121,24 @@ public class RestIngestAction extends BaseRestHandler {
             // estimation, should be enough time to wait for an ID
             boolean b = latch.await(100, TimeUnit.MILLISECONDS);
             long t1 = System.currentTimeMillis();
-
-            XContentBuilder builder = restContentBuilder(request);
+            XContentBuilder builder = jsonBuilder();
             builder.startObject();
-            builder.field(Fields.TOOK, t1 - t0);
+            builder.field("took", t1 - t0);
             // got ID?
             if (b) {
-                builder.field(Fields.ID, idHolder.ingestId());
+                builder.field("id", idHolder.ingestId());
             }
             builder.endObject();
-            channel.sendResponse(new XContentRestResponse(request, OK, builder));
+            channel.sendResponse(new BytesRestResponse(OK, builder));
         } catch (Exception e) {
             try {
-                XContentBuilder builder = restContentBuilder(request);
-                channel.sendResponse(new XContentRestResponse(request, BAD_REQUEST, builder.startObject().field("error", e.getMessage()).endObject()));
+                XContentBuilder builder = jsonBuilder();
+                builder.startObject().field("error", e.getMessage()).endObject();
+                channel.sendResponse(new BytesRestResponse(BAD_REQUEST, builder));
             } catch (IOException e1) {
                 logger.error("Failed to send failure response", e1);
             }
         }
-    }
-
-    static final class Fields {
-        static final XContentBuilderString TOOK = new XContentBuilderString("took");
-        static final XContentBuilderString ID = new XContentBuilderString("id");
     }
 
     static final class IngestIdHolder {

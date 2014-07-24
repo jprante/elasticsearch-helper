@@ -95,7 +95,6 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         }
         // second, go over all the requests and create a shard request map
         Map<ShardId, List<ActionRequest>> requestsByShard = newHashMap();
-        int i = 0;
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
@@ -129,7 +128,6 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     list.add(request);
                 }
             }
-            i++;
         }
         if (requestsByShard.isEmpty()) {
             logger.error("no shards to execute ingest");
