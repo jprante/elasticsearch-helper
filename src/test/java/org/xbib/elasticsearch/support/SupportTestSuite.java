@@ -25,7 +25,6 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
-        ClusterBlockTest.class,
         BulkNodeClientTest.class,
         NodeDuplicateIDTest.class,
         NodeReplicaTest.class,
