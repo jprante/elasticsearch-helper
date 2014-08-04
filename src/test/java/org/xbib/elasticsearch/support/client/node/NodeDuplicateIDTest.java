@@ -18,7 +18,7 @@ public class NodeDuplicateIDTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testDuplicateDocIDs() throws Exception {
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .newClient(client("1"))
                 .newIndex("test");

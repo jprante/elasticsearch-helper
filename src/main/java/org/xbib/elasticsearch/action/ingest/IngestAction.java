@@ -1,6 +1,6 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ClientAction;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -9,7 +9,7 @@ import org.elasticsearch.transport.TransportRequestOptions;
 /**
  * The ingest action replaces the bulk action, for using the IngestProcessor
  */
-public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder, Client> {
+public class IngestAction extends ClientAction<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
     public static final IngestAction INSTANCE = new IngestAction();
 

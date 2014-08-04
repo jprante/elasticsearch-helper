@@ -30,7 +30,7 @@ public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
         startNode("3");
         //startNode("4");
 
-        final NodeClient ingest = new NodeClient()
+        final BulkNodeClient ingest = new BulkNodeClient()
                 .newClient(client("1"))
                 .shards(2)
                 .replica(3)

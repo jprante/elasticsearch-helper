@@ -19,13 +19,13 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class NodeClientTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeClientTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClientTest.class.getSimpleName());
 
     @Test
     public void testNewIndexNodeClient() throws Exception {
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"))
                 .newIndex("test");
@@ -38,7 +38,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testMappingNodeClient() throws Exception {
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"));
         client.addMapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}}}}");
@@ -56,7 +56,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testSingleDocNodeClient() {
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(client("1"))
@@ -84,7 +84,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testRandomDocsNodeClient() throws Exception {
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(10))
                 .newClient(client("1"))
@@ -114,7 +114,7 @@ public class NodeClientTest extends AbstractNodeRandomTestHelper {
         int maxactions = 1000;
         final int maxloop = 12345;
         logger.info("NodeClient max={} maxactions={} maxloop={}", max, maxactions, maxloop);
-        final NodeClient client = new NodeClient()
+        final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
                 .newClient(client("1"))

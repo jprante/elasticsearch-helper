@@ -23,9 +23,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 ## Installation
 
-```
-./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.3.0.0/elasticsearch-support-1.3.0.0.zip
-```
+    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.3.0.0/elasticsearch-support-1.3.0.0.zip
 
 Do not forget to restart the node after installing.
 

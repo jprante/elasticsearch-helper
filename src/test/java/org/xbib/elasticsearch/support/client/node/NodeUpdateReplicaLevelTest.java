@@ -27,7 +27,7 @@ public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
         int shardsAfterReplica;
 
-        final NodeClient ingest = new NodeClient()
+        final BulkNodeClient ingest = new BulkNodeClient()
                 .newClient(client("1"))
                 .shards(numberOfShards)
                 .replica(0)

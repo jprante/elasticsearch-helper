@@ -7,6 +7,7 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
@@ -64,8 +65,12 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         final long startTime = System.currentTimeMillis();
         final IngestResponse ingestResponse = new IngestResponse();
         ClusterState clusterState = clusterService.state();
-        // TODO use timeout to wait here if its blocked...
-        clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
+        try {
+            clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
+        } catch (ClusterBlockException e) {
+            listener.onFailure(e);
+            return;
+        }
         MetaData metaData = clusterState.metaData();
         final List<ActionRequest> requests = newLinkedList();
         // first, iterate over all requests and parse them for mapping, filter out erraneous requests
