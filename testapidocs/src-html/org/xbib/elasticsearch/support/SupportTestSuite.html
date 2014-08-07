@@ -10,45 +10,48 @@
 <span class="sourceLineNo">002</span><a name="line.2"></a>
 <span class="sourceLineNo">003</span>import org.junit.runner.RunWith;<a name="line.3"></a>
 <span class="sourceLineNo">004</span>import org.junit.runners.Suite;<a name="line.4"></a>
-<span class="sourceLineNo">005</span>import org.xbib.elasticsearch.support.various.AliasTest;<a name="line.5"></a>
-<span class="sourceLineNo">006</span>import org.xbib.elasticsearch.support.various.NPETest;<a name="line.6"></a>
-<span class="sourceLineNo">007</span>import org.xbib.elasticsearch.support.client.bulk.BulkDuplicateIDTest;<a name="line.7"></a>
-<span class="sourceLineNo">008</span>import org.xbib.elasticsearch.support.client.bulk.BulkReplicaTest;<a name="line.8"></a>
-<span class="sourceLineNo">009</span>import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;<a name="line.9"></a>
-<span class="sourceLineNo">010</span>import org.xbib.elasticsearch.support.client.bulk.BulkUpdateReplicaLevelTest;<a name="line.10"></a>
-<span class="sourceLineNo">011</span>import org.xbib.elasticsearch.support.client.ingest.IngestDuplicateIDTest;<a name="line.11"></a>
-<span class="sourceLineNo">012</span>import org.xbib.elasticsearch.support.client.ingest.IngestReplicaTest;<a name="line.12"></a>
-<span class="sourceLineNo">013</span>import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;<a name="line.13"></a>
-<span class="sourceLineNo">014</span>import org.xbib.elasticsearch.support.client.ingest.IngestUpdateReplicaLevelTest;<a name="line.14"></a>
-<span class="sourceLineNo">015</span>import org.xbib.elasticsearch.support.client.node.NodeClientTest;<a name="line.15"></a>
-<span class="sourceLineNo">016</span>import org.xbib.elasticsearch.support.client.node.NodeDuplicateIDTest;<a name="line.16"></a>
-<span class="sourceLineNo">017</span>import org.xbib.elasticsearch.support.client.node.NodeReplicaTest;<a name="line.17"></a>
-<span class="sourceLineNo">018</span>import org.xbib.elasticsearch.support.client.node.NodeUpdateReplicaLevelTest;<a name="line.18"></a>
-<span class="sourceLineNo">019</span>import org.xbib.elasticsearch.support.client.ConfigHelperTest;<a name="line.19"></a>
-<span class="sourceLineNo">020</span>import org.xbib.elasticsearch.support.cron.CronTest;<a name="line.20"></a>
-<span class="sourceLineNo">021</span><a name="line.21"></a>
-<span class="sourceLineNo">022</span>@RunWith(Suite.class)<a name="line.22"></a>
-<span class="sourceLineNo">023</span>@Suite.SuiteClasses({<a name="line.23"></a>
-<span class="sourceLineNo">024</span>        ConfigHelperTest.class,<a name="line.24"></a>
-<span class="sourceLineNo">025</span>        AliasTest.class,<a name="line.25"></a>
-<span class="sourceLineNo">026</span>        NPETest.class,<a name="line.26"></a>
-<span class="sourceLineNo">027</span>        CronTest.class,<a name="line.27"></a>
-<span class="sourceLineNo">028</span>        NodeClientTest.class,<a name="line.28"></a>
-<span class="sourceLineNo">029</span>        NodeDuplicateIDTest.class,<a name="line.29"></a>
-<span class="sourceLineNo">030</span>        NodeReplicaTest.class,<a name="line.30"></a>
-<span class="sourceLineNo">031</span>        NodeUpdateReplicaLevelTest.class,<a name="line.31"></a>
-<span class="sourceLineNo">032</span>        BulkTransportClientTest.class,<a name="line.32"></a>
-<span class="sourceLineNo">033</span>        BulkDuplicateIDTest.class,<a name="line.33"></a>
-<span class="sourceLineNo">034</span>        BulkReplicaTest.class,<a name="line.34"></a>
-<span class="sourceLineNo">035</span>        BulkUpdateReplicaLevelTest.class,<a name="line.35"></a>
-<span class="sourceLineNo">036</span>        IngestTransportClientTest.class,<a name="line.36"></a>
-<span class="sourceLineNo">037</span>        IngestDuplicateIDTest.class,<a name="line.37"></a>
-<span class="sourceLineNo">038</span>        IngestReplicaTest.class,<a name="line.38"></a>
-<span class="sourceLineNo">039</span>        IngestUpdateReplicaLevelTest.class<a name="line.39"></a>
-<span class="sourceLineNo">040</span>})<a name="line.40"></a>
-<span class="sourceLineNo">041</span>public class SupportTestSuite {<a name="line.41"></a>
-<span class="sourceLineNo">042</span><a name="line.42"></a>
-<span class="sourceLineNo">043</span>}<a name="line.43"></a>
+<span class="sourceLineNo">005</span>import org.xbib.elasticsearch.support.client.ingest.IngestClusterBlockTest;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.xbib.elasticsearch.support.client.ingest.IngestIndexCreationTest;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import org.xbib.elasticsearch.support.client.node.BulkNodeClientTest;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import org.xbib.elasticsearch.support.various.AliasTest;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import org.xbib.elasticsearch.support.various.ClusterBlockTest;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.xbib.elasticsearch.support.various.NPETest;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import org.xbib.elasticsearch.support.client.bulk.BulkDuplicateIDTest;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import org.xbib.elasticsearch.support.client.bulk.BulkReplicaTest;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import org.xbib.elasticsearch.support.client.bulk.BulkTransportClientTest;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import org.xbib.elasticsearch.support.client.bulk.BulkUpdateReplicaLevelTest;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import org.xbib.elasticsearch.support.client.ingest.IngestDuplicateIDTest;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import org.xbib.elasticsearch.support.client.ingest.IngestReplicaTest;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import org.xbib.elasticsearch.support.client.ingest.IngestUpdateReplicaLevelTest;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import org.xbib.elasticsearch.support.client.node.NodeDuplicateIDTest;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import org.xbib.elasticsearch.support.client.node.NodeReplicaTest;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import org.xbib.elasticsearch.support.client.node.NodeUpdateReplicaLevelTest;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import org.xbib.elasticsearch.support.client.ConfigHelperTest;<a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span>@RunWith(Suite.class)<a name="line.24"></a>
+<span class="sourceLineNo">025</span>@Suite.SuiteClasses({<a name="line.25"></a>
+<span class="sourceLineNo">026</span>        ConfigHelperTest.class,<a name="line.26"></a>
+<span class="sourceLineNo">027</span>        AliasTest.class,<a name="line.27"></a>
+<span class="sourceLineNo">028</span>        NPETest.class,<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        BulkNodeClientTest.class,<a name="line.29"></a>
+<span class="sourceLineNo">030</span>        NodeDuplicateIDTest.class,<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        NodeReplicaTest.class,<a name="line.31"></a>
+<span class="sourceLineNo">032</span>        NodeUpdateReplicaLevelTest.class,<a name="line.32"></a>
+<span class="sourceLineNo">033</span>        BulkTransportClientTest.class,<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        BulkDuplicateIDTest.class,<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        BulkReplicaTest.class,<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        BulkUpdateReplicaLevelTest.class,<a name="line.36"></a>
+<span class="sourceLineNo">037</span>        IngestIndexCreationTest.class,<a name="line.37"></a>
+<span class="sourceLineNo">038</span>        IngestClusterBlockTest.class,<a name="line.38"></a>
+<span class="sourceLineNo">039</span>        IngestTransportClientTest.class,<a name="line.39"></a>
+<span class="sourceLineNo">040</span>        IngestDuplicateIDTest.class,<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        IngestReplicaTest.class,<a name="line.41"></a>
+<span class="sourceLineNo">042</span>        IngestUpdateReplicaLevelTest.class<a name="line.42"></a>
+<span class="sourceLineNo">043</span>})<a name="line.43"></a>
+<span class="sourceLineNo">044</span>public class SupportTestSuite {<a name="line.44"></a>
+<span class="sourceLineNo">045</span><a name="line.45"></a>
+<span class="sourceLineNo">046</span>}<a name="line.46"></a>
 
 
 

@@ -36,7 +36,7 @@
 <span class="sourceLineNo">028</span>        // we need nodes for quorum. 4 nodes =&gt; quorum = 2<a name="line.28"></a>
 <span class="sourceLineNo">029</span>        startNode("2");<a name="line.29"></a>
 <span class="sourceLineNo">030</span>        startNode("3");<a name="line.30"></a>
-<span class="sourceLineNo">031</span>        startNode("4");<a name="line.31"></a>
+<span class="sourceLineNo">031</span>        //startNode("4");<a name="line.31"></a>
 <span class="sourceLineNo">032</span><a name="line.32"></a>
 <span class="sourceLineNo">033</span>        final IngestTransportClient ingest = new IngestTransportClient()<a name="line.33"></a>
 <span class="sourceLineNo">034</span>                .newClient(getAddress())<a name="line.34"></a>
@@ -92,7 +92,7 @@
 <span class="sourceLineNo">084</span>            ingest.shutdown();<a name="line.84"></a>
 <span class="sourceLineNo">085</span>        }<a name="line.85"></a>
 <span class="sourceLineNo">086</span><a name="line.86"></a>
-<span class="sourceLineNo">087</span>        stopNode("4");<a name="line.87"></a>
+<span class="sourceLineNo">087</span>        //stopNode("4");<a name="line.87"></a>
 <span class="sourceLineNo">088</span>        stopNode("3");<a name="line.88"></a>
 <span class="sourceLineNo">089</span>        stopNode("2");<a name="line.89"></a>
 <span class="sourceLineNo">090</span>    }<a name="line.90"></a>
