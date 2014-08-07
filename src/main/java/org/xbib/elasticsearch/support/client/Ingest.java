@@ -8,7 +8,6 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,6 +132,10 @@ public interface Ingest extends Feed {
      * @return this ingest
      */
     Ingest newIndex(String index);
+
+    Ingest newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException;
+
+    Ingest newIndex(String index, Settings settings, Map<String,String> mappings);
 
     /**
      * Delete index

@@ -34,6 +34,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         return newIndex(index, (Settings)null, (Map<String,String>)null);
     }
 
+    @Override
     public BaseIngestTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
         configHelper.reset();
         configHelper.setting(settings);
@@ -41,6 +42,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         return newIndex(index, configHelper.settings(), configHelper.mappings());
     }
 
+    @Override
     public BaseIngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (client == null) {
             logger.warn("no client for create index");

@@ -398,6 +398,7 @@ public class BulkNodeClient implements Ingest {
         return newIndex(index, (Settings)null, (Map<String,String>)null);
     }
 
+    @Override
     public BulkNodeClient newIndex(String index, String type, InputStream settings,  InputStream mappings) throws IOException {
         configHelper.reset();
         configHelper.setting(settings);
@@ -405,6 +406,7 @@ public class BulkNodeClient implements Ingest {
         return newIndex(index, configHelper.settings(), configHelper.mappings());
     }
 
+    @Override
     public BulkNodeClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");

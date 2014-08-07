@@ -10,7 +10,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 | Elasticsearch version    | Plugin      | Release date |
 | ------------------------ | ----------- | -------------|
-| 1.3.1                    | 1.3.0.2     | Aug  8, 2014 |
+| 1.3.1                    | 1.3.0.3     | Aug  8, 2014 |
 | 1.3.1                    | 1.3.0.1     | Aug  4, 2014 |
 | 1.3.0                    | 1.3.0.0     | Jul 23, 2014 |
 | 1.2.2                    | 1.2.2.0     | Jul 19, 2014 |
@@ -25,7 +25,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 ## Installation
 
-    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.3.0.2/elasticsearch-support-1.3.0.2.zip
+    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.3.0.3/elasticsearch-support-1.3.0.3.zip
 
 Do not forget to restart the node after installing.
 
@@ -33,7 +33,8 @@ Do not forget to restart the node after installing.
 
 | File                                          | SHA1                                     |
 | --------------------------------------------- | -----------------------------------------|
-| elasticsearch-support-1.3.0.2.zip             | 65859bb469c60e72b31a0f190192f8728eb58bd5 |
+| elasticsearch-support-1.3.0.3.zip             | 51d9c4197feebe6bfc73131d3fef3b75d7768103 |
+| elasticsearch-support-1.3.0.2.zip             | (retracted) |
 | elasticsearch-support-1.3.0.1.zip             | 9d7b72bff66fba8aa9c9e031603c141b6f28d861 |
 | elasticsearch-support-1.3.0.0.zip             | c5135e5675cf304868759413b87d94f858bce302 |
 | elasticsearch-support-1.2.2.0.zip             | 45f21f8ef93d347de7e8b1f08565243df79b81e0 |
