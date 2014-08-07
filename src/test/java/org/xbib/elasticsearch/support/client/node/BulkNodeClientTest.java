@@ -7,6 +7,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -41,10 +43,19 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
                 .newClient(client("1"));
-        client.addMapping("test", "{\"test\":{\"properties\":{\"location\":{\"type\":\"geo_point\"}}}}");
+        XContentBuilder builder = jsonBuilder()
+                .startObject()
+                .startObject("test")
+                .startObject("properties")
+                .startObject("location")
+                .field("type", "geo_point")
+                .endObject()
+                .endObject()
+                .endObject()
+                .endObject();
+        client.mapping("test", builder.string());
         client.newIndex("test");
-        GetMappingsRequest getMappingsRequest = new GetMappingsRequest()
-                .indices("test");
+        GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
         GetMappingsResponse getMappingsResponse = client.client().admin().indices().getMappings(getMappingsRequest).actionGet();
         logger.info("mappings={}", getMappingsResponse.getMappings());
         if (client.hasThrowable()) {

@@ -8,6 +8,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,6 +87,13 @@ public interface Ingest extends Feed {
     Settings getSettings();
 
     /**
+     * Create settings
+     *
+     * @param in the input stream with settings
+     */
+    void setting(InputStream in) throws IOException;
+
+    /**
      * Create a key/value in the settings
      *
      * @param key   the key
@@ -109,16 +117,9 @@ public interface Ingest extends Feed {
      */
     void addSetting(String key, Integer value);
 
-    /**
-     * Create a key/value in the settings
-     *
-     * @param in the input stream with settings
-     */
-    void addSetting(InputStream in) throws IOException;
+    void mapping(String type, InputStream in) throws IOException;
 
-    void addMapping(String type, InputStream in) throws IOException;
-
-    void addMapping(String type, String mapping);
+    void mapping(String type, String mapping) throws IOException;
 
     Map<String, String> getMappings();
 

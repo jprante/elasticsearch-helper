@@ -89,8 +89,8 @@ public class BasicSearchRequest {
         return this;
     }
 
-    public BasicSearchRequest facets(String facets) {
-        searchRequestBuilder.setFacets(facets.getBytes());
+    public BasicSearchRequest aggregations(String aggregations) {
+        searchRequestBuilder.setAggregations(aggregations.getBytes());
         return this;
     }
 

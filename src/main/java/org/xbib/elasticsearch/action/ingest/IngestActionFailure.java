@@ -45,14 +45,21 @@ public class IngestActionFailure implements Streamable {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         ingestId = in.readLong();
-        shardId = ShardId.readShardId(in);
+        if (in.readBoolean()) {
+            shardId = ShardId.readShardId(in);
+        }
         message = in.readString();
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeLong(ingestId);
-        shardId.writeTo(out);
+        if (shardId != null) {
+            out.writeBoolean(true);
+            shardId.writeTo(out);
+        } else {
+            out.writeBoolean(false);
+        }
         out.writeString(message);
     }
 

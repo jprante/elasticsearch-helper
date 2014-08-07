@@ -21,7 +21,6 @@ public class ClusterBlockTest extends AbstractNodeTestHelper {
                 .put("gateway.type", "none")
                 .put("index.store.type", "memory")
                 .put("http.enabled", false)
-                .put("threadpool.bulk.queue_size", 10 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .put("discovery.zen.multicast.enabled", true)
                 .put("discovery.zen.minimum_master_nodes", 2) // block until we have two nodes
                 .build();
@@ -30,7 +29,7 @@ public class ClusterBlockTest extends AbstractNodeTestHelper {
     // HANGS!
     public void testClusterBlock() throws Exception {
         BulkRequestBuilder brb = client("1").prepareBulk();
-        XContentBuilder builder = jsonBuilder().startObject().field("bfield1", "bvalue1").endObject();
+        XContentBuilder builder = jsonBuilder().startObject().field("field1", "value1").endObject();
         String jsonString = builder.string();
         IndexRequestBuilder irb = client("1").prepareIndex("test", "test", "1").setSource(jsonString);
         brb.add(irb);

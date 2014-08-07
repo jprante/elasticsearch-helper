@@ -1,13 +1,15 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 public abstract class BaseIngestTransportClient extends BaseTransportClient
@@ -27,22 +29,19 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         return this;
     }
 
-    public String timeStampField() {
-        return configHelper.timeStampField();
-    }
-
-    public BaseIngestTransportClient timeStampFieldEnabled(boolean enable) {
-        configHelper.timeStampFieldEnabled(enable);
-        return this;
-    }
-
-    public BaseIngestTransportClient kibanaEnabled(boolean enable) {
-        configHelper.kibanaEnabled(enable);
-        return this;
-    }
-
     @Override
     public BaseIngestTransportClient newIndex(String index) {
+        return newIndex(index, (Settings)null, (Map<String,String>)null);
+    }
+
+    public BaseIngestTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
+        configHelper.reset();
+        configHelper.setting(settings);
+        configHelper.mapping(type, mappings);
+        return newIndex(index, configHelper.settings(), configHelper.mappings());
+    }
+
+    public BaseIngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (client == null) {
             logger.warn("no client for create index");
             return this;
@@ -51,23 +50,32 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(index).listenerThreaded(false);
-        if (getSettings() != null) {
-            request.settings(getSettings());
+        CreateIndexRequestBuilder createIndexRequestBuilder =
+                new CreateIndexRequestBuilder(client.admin().indices()).setIndex(index);
+        Settings concreteSettings;
+        if (settings == null && getSettings() != null) {
+            concreteSettings = getSettings();
+        } else if (settings != null) {
+            concreteSettings = settings;
+        } else {
+            concreteSettings = null;
         }
-        if (getMappings() != null) {
-            for (Map.Entry<String, String> me : getMappings().entrySet()) {
-                request.mapping(me.getKey(), me.getValue());
+        if (concreteSettings != null) {
+            createIndexRequestBuilder.setSettings(getSettings());
+        }
+        if (mappings == null && getMappings() != null) {
+            for (String type : getMappings().keySet()) {
+                createIndexRequestBuilder.addMapping(type, getMappings().get(type));
+            }
+        } else if (mappings != null) {
+            for (String type : mappings.keySet()) {
+                createIndexRequestBuilder.addMapping(type, mappings.get(type));
             }
         }
-        logger.info("creating index {} with settings = {}, mappings = {}",
-                index, getSettings() != null ? getSettings().getAsMap() : null, getMappings());
-        try {
-            client.admin().indices().create(request).actionGet();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        logger.info("index {} created", index);
+        createIndexRequestBuilder.execute().actionGet();
+        logger.info("index {} created with settings {} and {} mappings", index,
+                concreteSettings != null ? concreteSettings.getAsMap() : "",
+                mappings != null ? mappings.size() : 0);
         return this;
     }
 
@@ -81,11 +89,9 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             logger.warn("no index name given to delete index");
             return this;
         }
-        try {
-            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+        DeleteIndexRequestBuilder deleteIndexRequestBuilder =
+                    new DeleteIndexRequestBuilder(client.admin().indices(), index);
+        deleteIndexRequestBuilder.execute().actionGet();
         return this;
     }
 

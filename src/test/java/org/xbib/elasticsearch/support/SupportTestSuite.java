@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.support.client.ingest.IngestClusterBlockTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestIndexCreationTest;
 import org.xbib.elasticsearch.support.client.node.BulkNodeClientTest;
 import org.xbib.elasticsearch.support.various.AliasTest;
 import org.xbib.elasticsearch.support.various.ClusterBlockTest;
@@ -33,6 +34,7 @@ import org.xbib.elasticsearch.support.client.ConfigHelperTest;
         BulkDuplicateIDTest.class,
         BulkReplicaTest.class,
         BulkUpdateReplicaLevelTest.class,
+        IngestIndexCreationTest.class,
         IngestClusterBlockTest.class,
         IngestTransportClientTest.class,
         IngestDuplicateIDTest.class,

@@ -2,8 +2,8 @@ package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -395,33 +395,54 @@ public class BulkNodeClient implements Ingest {
 
     @Override
     public BulkNodeClient newIndex(String index) {
+        return newIndex(index, (Settings)null, (Map<String,String>)null);
+    }
+
+    public BulkNodeClient newIndex(String index, String type, InputStream settings,  InputStream mappings) throws IOException {
+        configHelper.reset();
+        configHelper.setting(settings);
+        configHelper.mapping(type, mappings);
+        return newIndex(index, configHelper.settings(), configHelper.mappings());
+    }
+
+    public BulkNodeClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         if (client == null) {
-            logger.warn("no client");
+            logger.warn("no client for create index");
             return this;
         }
         if (index == null) {
             logger.warn("no index name given to create index");
             return this;
         }
-        CreateIndexRequest request = new CreateIndexRequest(index);
-        if (getSettings() != null) {
-            request.settings(getSettings());
+        CreateIndexRequestBuilder createIndexRequestBuilder =
+                new CreateIndexRequestBuilder(client.admin().indices()).setIndex(index);
+        Settings concreteSettings;
+        if (settings == null && getSettings() != null) {
+            concreteSettings = getSettings();
+        } else if (settings != null) {
+            concreteSettings = settings;
+        } else {
+            concreteSettings = null;
         }
-        if (getMappings() != null) {
-            for (Map.Entry<String, String> me : getMappings().entrySet()) {
-                request.mapping(me.getKey(), me.getValue());
+        if (concreteSettings != null) {
+            createIndexRequestBuilder.setSettings(getSettings());
+        }
+        if (mappings == null && getMappings() != null) {
+            for (String type : getMappings().keySet()) {
+                createIndexRequestBuilder.addMapping(type, getMappings().get(type));
+            }
+        } else if (mappings != null) {
+            for (String type : mappings.keySet()) {
+                createIndexRequestBuilder.addMapping(type, mappings.get(type));
             }
         }
-        logger.info("creating index {} with settings = {}, mappings = {}",
-                index, getSettings() != null ? getSettings().getAsMap() : "", getMappings());
-        try {
-            client.admin().indices().create(request).actionGet();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+        createIndexRequestBuilder.execute().actionGet();
+        logger.info("index {} created with settings {} and {} mappings", index,
+                concreteSettings != null ? concreteSettings.getAsMap() : "",
+                mappings != null ? mappings.size() : 0);
         return this;
     }
 
@@ -438,11 +459,9 @@ public class BulkNodeClient implements Ingest {
             logger.warn("no index name given to delete index");
             return this;
         }
-        try {
-            client.admin().indices().delete(new DeleteIndexRequest(index)).actionGet();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+        DeleteIndexRequestBuilder deleteIndexRequestBuilder =
+                    new DeleteIndexRequestBuilder(client.admin().indices(), index);
+        deleteIndexRequestBuilder.execute().actionGet();
         return this;
     }
 
@@ -456,12 +475,19 @@ public class BulkNodeClient implements Ingest {
         return throwable;
     }
 
+    public void setSettings(Settings settings) {
+        configHelper.settings(settings);
+    }
+
+    public Settings getSettings() {
+        return configHelper.settings();
+    }
 
     public ImmutableSettings.Builder getSettingsBuilder() {
         return configHelper.settingsBuilder();
     }
 
-    public void addSetting(InputStream in) throws IOException {
+    public void setting(InputStream in) throws IOException {
         configHelper.setting(in);
     }
 
@@ -477,19 +503,11 @@ public class BulkNodeClient implements Ingest {
         configHelper.setting(key, value);
     }
 
-    public void setSettings(Settings settings) {
-        configHelper.settings(settings);
-    }
-
-    public Settings getSettings() {
-        return configHelper.settings();
-    }
-
-    public void addMapping(String type, InputStream in) throws IOException {
+    public void mapping(String type, InputStream in) throws IOException {
         configHelper.mapping(type, in);
     }
 
-    public void addMapping(String type, String mapping) {
+    public void mapping(String type, String mapping) throws IOException {
         configHelper.mapping(type, mapping);
     }
 

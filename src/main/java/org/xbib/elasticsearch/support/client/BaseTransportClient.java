@@ -286,7 +286,7 @@ public abstract class BaseTransportClient {
         configHelper.reset();
     }
 
-    public void addSetting(InputStream in) throws IOException {
+    public void setting(InputStream in) throws IOException {
         configHelper.setting(in);
     }
 
@@ -310,16 +310,12 @@ public abstract class BaseTransportClient {
         return configHelper.settings();
     }
 
-    public void addMapping(String type, InputStream in) throws IOException {
-        configHelper.mapping(type, in);
-    }
-
-    public void addMapping(String type, String mapping) {
+    public void mapping(String type, String mapping) throws IOException {
         configHelper.mapping(type, mapping);
     }
 
-    public String defaultMapping() throws IOException {
-        return configHelper.defaultMapping();
+    public void mapping(String type, InputStream in) throws IOException {
+        configHelper.mapping(type, in);
     }
 
     public Map<String, String> getMappings() {
