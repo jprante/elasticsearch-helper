@@ -5,9 +5,10 @@ import org.elasticsearch.common.settings.Settings;
 import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 import org.xbib.elasticsearch.support.client.BaseTransportClient;
+import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Search;
 
-import java.net.URI;
+import java.util.Map;
 
 /**
  * Search client support
@@ -36,19 +37,13 @@ public class SearchClient extends BaseTransportClient implements Search {
         return type;
     }
 
-    public SearchClient newClient() {
-        this.newClient(findURI());
+    public SearchClient newClient(Settings settings) {
+        super.createClient(settings);
         return this;
     }
 
-    public SearchClient newClient(URI uri) {
-        this.newClient(uri, defaultSettings(uri));
-        return this;
-    }
-
-    @Override
-    public SearchClient newClient(URI uri, Settings settings) {
-        super.newClient(uri, settings);
+    public SearchClient newClient(Map<String,String> settings) {
+        super.createClient(settings);
         return this;
     }
 
@@ -59,7 +54,7 @@ public class SearchClient extends BaseTransportClient implements Search {
     @Override
     public BasicSearchRequest newSearchRequest() {
         return new BasicSearchRequest()
-                .newRequest(client.prepareSearch().setPreference("_primary_first"));
+                .newRequest(client.prepareSearch());
     }
 
     @Override
@@ -67,5 +62,14 @@ public class SearchClient extends BaseTransportClient implements Search {
         return new BasicGetRequest()
                 .newRequest(client.prepareGet());
     }
+
+    public String clusterName() {
+        return ClientHelper.clusterName(client);
+    }
+
+    public String healthColor() {
+        return ClientHelper.healthColor(client);
+    }
+
 
 }

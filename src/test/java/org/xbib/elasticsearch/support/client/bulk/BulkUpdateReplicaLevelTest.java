@@ -29,7 +29,7 @@ public class BulkUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
         int shardsAfterReplica;
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(numberOfShards)
                 .replica(0)
                 .newIndex("replicatest");

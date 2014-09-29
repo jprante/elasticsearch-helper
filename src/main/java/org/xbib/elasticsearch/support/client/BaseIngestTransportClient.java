@@ -17,6 +17,11 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getSimpleName());
 
+    public Ingest newClient(Settings settings) {
+        super.createClient(settings);
+        return this;
+    }
+
     @Override
     public BaseIngestTransportClient shards(int shards) {
         super.addSetting("index.number_of_shards", shards);
@@ -31,7 +36,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
 
     @Override
     public BaseIngestTransportClient newIndex(String index) {
-        return newIndex(index, (Settings)null, (Map<String,String>)null);
+        return newIndex(index, null, null);
     }
 
     @Override
@@ -92,7 +97,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             return this;
         }
         DeleteIndexRequestBuilder deleteIndexRequestBuilder =
-                    new DeleteIndexRequestBuilder(client.admin().indices(), index);
+                new DeleteIndexRequestBuilder(client.admin().indices(), index);
         deleteIndexRequestBuilder.execute().actionGet();
         return this;
     }

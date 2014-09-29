@@ -12,6 +12,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -22,7 +23,7 @@ import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.State;
 
 import java.io.IOException;
-import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -56,7 +57,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
      */
     private BulkProcessor bulkProcessor;
 
-    private State state;
+    private State state = new State();
 
     private Throwable throwable;
 
@@ -92,35 +93,19 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         return this;
     }
 
+    @Override
     public BulkTransportClient newClient(Client client) {
-        return this.newClient(findURI());
-    }
-
-    /**
-     * Create a new client
-     *
-     * @return this client
-     */
-    public BulkTransportClient newClient() {
-        return this.newClient(findURI());
-    }
-
-    /**
-     * Create new client
-     * The URI describes host and port of the node the client should connect to,
-     * with the parameter <tt>es.cluster.name</tt> for the cluster name.
-     *
-     * @param uri the cluster URI
-     * @return this client
-     */
-    @Override
-    public BulkTransportClient newClient(URI uri) {
-        return this.newClient(uri, defaultSettings(uri));
+        return this.newClient(findSettings());
     }
 
     @Override
-    public BulkTransportClient newClient(URI uri, Settings settings) {
-        super.newClient(uri, settings);
+    public BulkTransportClient newClient(Map<String,String> settings) {
+        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+    }
+
+    @Override
+    public BulkTransportClient newClient(Settings settings) {
+        super.newClient(settings);
         resetSettings();
         this.state = new State();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {

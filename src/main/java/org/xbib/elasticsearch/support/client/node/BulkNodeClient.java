@@ -54,7 +54,7 @@ public class BulkNodeClient implements Ingest {
 
     private BulkProcessor bulkProcessor;
 
-    private State state;
+    private State state = new State();
 
     private boolean closed = false;
 
@@ -103,10 +103,16 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient newClient(URI uri) {
+    public BulkNodeClient newClient(Settings settings) {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public BulkNodeClient newClient(Map<String,String> settings) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public BulkNodeClient newClient(Client client) {
         this.client = client;
         this.state = new State();

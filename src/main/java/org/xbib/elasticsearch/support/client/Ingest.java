@@ -11,17 +11,41 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Map;
 
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
  */
-public interface Ingest extends Feed {
+public interface Ingest {
+
+    /**
+     * Index document
+     *
+     * @param index  the index
+     * @param type   the type
+     * @param id     the id
+     * @param source the source
+     * @return this
+     */
+    Ingest index(String index, String type, String id, String source);
+
+    /**
+     * Delete document
+     *
+     * @param index the index
+     * @param type  the type
+     * @param id    the id
+     * @return this
+     */
+    Ingest delete(String index, String type, String id);
 
     Ingest newClient(Client client);
 
-    Ingest newClient(URI uri);
+    Ingest newClient(Settings settings);
+
+    Ingest newClient(Map<String,String> settings);
+
+    Client client();
 
     /**
      * Set the maximum number of actions per bulk request

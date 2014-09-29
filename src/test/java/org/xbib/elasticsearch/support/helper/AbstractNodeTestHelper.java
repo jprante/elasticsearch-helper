@@ -1,7 +1,5 @@
-
 package org.xbib.elasticsearch.support.helper;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,10 +37,6 @@ public abstract class AbstractNodeTestHelper {
 
     private int port;
 
-    protected URI getAddress() {
-        return URI.create("es://" + getHost() + ":" + getPort() + "?es.cluster.name=" + getClusterName());
-    }
-
     protected void setClusterName() {
         this.cluster = "test-support-cluster-" + NetworkUtils.getLocalAddress().getHostName() + "-" + counter.incrementAndGet();
     }
@@ -51,18 +45,17 @@ public abstract class AbstractNodeTestHelper {
         return cluster;
     }
 
-    protected String getHost() {
-        return host;
-    }
-
-    protected int getPort() {
-        return port;
+    protected Settings getSettings() {
+        return ImmutableSettings.settingsBuilder()
+                .put("host", host)
+                .put("port", port)
+                .put("cluster.name", cluster)
+                .build();
     }
 
     protected Settings getNodeSettings() {
-        return ImmutableSettings
-                .settingsBuilder()
-                .put("cluster.name", getClusterName())
+        return ImmutableSettings.settingsBuilder()
+                .put("cluster.name", cluster)
                 .put("cluster.routing.schedule", "50ms")
                 .put("gateway.type", "none")
                 .put("index.store.type", "memory")
@@ -105,7 +98,8 @@ public abstract class AbstractNodeTestHelper {
                 .put("name", id)
                 .build();
         logger.info("settings={}", finalSettings.getAsMap());
-        Node node = nodeBuilder().settings(finalSettings).build();
+        Node node = nodeBuilder()
+                .settings(finalSettings).build();
         Client client = node.client();
         nodes.put(id, node);
         clients.put(id, client);
@@ -116,12 +110,10 @@ public abstract class AbstractNodeTestHelper {
         Client client = clients.remove(id);
         if (client != null) {
             client.close();
-            client = null;
         }
         Node node = nodes.remove(id);
         if (node != null) {
             node.close();
-            node = null;
         }
     }
 
@@ -138,7 +130,6 @@ public abstract class AbstractNodeTestHelper {
         for (Node node : nodes.values()) {
             if (node != null) {
                 node.close();
-                node = null;
             }
         }
         nodes.clear();

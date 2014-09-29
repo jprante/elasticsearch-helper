@@ -24,7 +24,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testNewIndexIngest() {
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(0)
                 .newIndex("test");
@@ -38,7 +38,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testDeleteIndexIngestClient() {
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(0)
                 .newIndex("test");
@@ -61,7 +61,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     public void testSingleDocIngestClient() {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(0)
                 .newIndex("test");
@@ -89,7 +89,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(1000)
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(0)
                 .newIndex("test")
@@ -124,7 +124,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(maxactions)
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(0)
                 .newIndex("test")

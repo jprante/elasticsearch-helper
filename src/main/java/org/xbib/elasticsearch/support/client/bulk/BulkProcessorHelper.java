@@ -11,9 +11,6 @@ import java.lang.reflect.Method;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Ugly hacks, as long as BulkProcessor pull requests are not accepted
- */
 public class BulkProcessorHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkProcessorHelper.class.getSimpleName());

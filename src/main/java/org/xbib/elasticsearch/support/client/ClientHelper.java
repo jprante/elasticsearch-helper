@@ -3,6 +3,8 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
@@ -70,6 +72,23 @@ public class ClientHelper {
             }
         } catch (ElasticsearchTimeoutException e) {
             throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+        }
+    }
+
+    public static String clusterName(Client client) {
+        try {
+            ClusterStateRequestBuilder clusterStateRequestBuilder =
+                    new ClusterStateRequestBuilder(client.admin().cluster()).all();
+            ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
+            String name = clusterStateResponse.getClusterName().value();
+            int nodeCount = clusterStateResponse.getState().getNodes().size();
+            return  name + " (" + nodeCount + " nodes connected)";
+        } catch (ElasticsearchTimeoutException e) {
+            return "TIMEOUT";
+        } catch (NoNodeAvailableException e) {
+            return "DISCONNECTED";
+        } catch (Throwable t) {
+            return "[" + t.getMessage() + "]";
         }
     }
 

@@ -8,7 +8,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.net.URI;
+import java.util.Map;
 
 /**
  * Mock ingest client, it does not perform actions on a cluster.
@@ -17,20 +17,12 @@ import java.net.URI;
 public class MockIngestTransportClient extends IngestTransportClient {
 
     @Override
-    public MockIngestTransportClient newClient() {
-        super.newClient();
+    public MockIngestTransportClient newClient(Map<String,String> settings) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient newClient(URI uri) {
-        super.newClient(uri);
-        return this;
-    }
-
-    @Override
-    public MockIngestTransportClient newClient(URI uri, Settings settings) {
-        super.newClient(uri, settings);
+    public MockIngestTransportClient newClient(Settings settings) {
         return this;
     }
 

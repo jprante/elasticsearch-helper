@@ -6,6 +6,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -22,7 +23,7 @@ import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.State;
 
 import java.io.IOException;
-import java.net.URI;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -53,7 +54,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     private IngestProcessor ingestProcessor;
 
-    private State state;
+    private State state = new State();
 
     private Throwable throwable;
 
@@ -95,35 +96,19 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         this.currentConcurrency = concurrency;
     }
 
-    /**
-     * Create a new client
-     *
-     * @return this indexer
-     */
-    public IngestTransportClient newClient() {
-        return this.newClient(findURI());
-    }
-
+    @Override
     public IngestTransportClient newClient(Client client) {
-        return this.newClient(findURI());
-    }
-
-    /**
-     * Create new client.
-     * The URI describes host and port of the node the client should connect to,
-     * with the parameter <tt>es.cluster.name</tt> for the cluster name.
-     *
-     * @param uri the cluster URI
-     * @return this indexer
-     */
-    @Override
-    public IngestTransportClient newClient(URI uri) {
-        return this.newClient(uri, defaultSettings(uri));
+        return this.newClient(findSettings());
     }
 
     @Override
-    public IngestTransportClient newClient(URI uri, Settings settings) {
-        super.newClient(uri, settings);
+    public IngestTransportClient newClient(Map<String,String> settings) {
+        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+    }
+
+    @Override
+    public IngestTransportClient newClient(Settings settings) {
+        super.newClient(settings);
         this.state = new State();
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
@@ -311,14 +296,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            state.getCurrentIngest().dec();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -333,14 +322,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(new IndexRequest(indexRequest));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            state.getCurrentIngest().dec();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -355,14 +348,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            state.getCurrentIngest().dec();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -377,14 +374,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            state.getCurrentIngest().inc();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().inc();
+            }
             ingestProcessor.add(new DeleteRequest(deleteRequest));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            state.getCurrentIngest().dec();
+            if (state.getCurrentIngest() != null) {
+                state.getCurrentIngest().dec();
+            }
         }
         return this;
     }
@@ -458,7 +459,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 logger.info("closing ingest with {} current concurrent requests ", currentConcurrency);
                 ingestProcessor.close();
             }
-            if (state.indices() != null && !state.indices().isEmpty()) {
+            if (state != null && state.indices() != null && !state.indices().isEmpty()) {
                 logger.info("stopping ingest mode for indices {}...", state.indices());
                 for (String index : ImmutableSet.copyOf(state.indices())) {
                     stopBulk(index);

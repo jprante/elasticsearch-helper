@@ -30,7 +30,7 @@ public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
         int shardsAfterReplica;
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(numberOfShards)
                 .replica(0)
                 .newIndex("replicatest");

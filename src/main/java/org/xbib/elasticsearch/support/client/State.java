@@ -3,12 +3,13 @@ package org.xbib.elasticsearch.support.client;
 import org.xbib.metrics.CounterMetric;
 import org.xbib.metrics.MeanMetric;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 public class State {
 
-    private final Set<String> indexNames = new HashSet();
+    private final Set<String> indexNames = Collections.synchronizedSet(new HashSet<String>());
 
     private final MeanMetric totalIngest = new MeanMetric();
 
@@ -53,9 +54,7 @@ public class State {
     }
 
     public State startBulk(String indexName) {
-        synchronized (indexNames) {
-            indexNames.add(indexName);
-        }
+        indexNames.add(indexName);
         return this;
     }
 
@@ -64,9 +63,7 @@ public class State {
     }
 
     public State stopBulk(String indexName) {
-        synchronized (indexNames) {
-            indexNames.remove(indexName);
-        }
+        indexNames.remove(indexName);
         return this;
     }
 

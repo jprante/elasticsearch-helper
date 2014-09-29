@@ -120,7 +120,7 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
             return true;
         }
         Throwable cause = ExceptionsHelper.unwrapCause(e);
-        return cause instanceof ConnectTransportException || cause instanceof VersionConflictEngineException || cause instanceof DocumentAlreadyExistsException;
+        return cause instanceof VersionConflictEngineException;
     }
 
     protected class AsyncShardOperationAction {

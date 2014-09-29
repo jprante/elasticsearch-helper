@@ -31,7 +31,7 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
         //startNode("4");
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(3)
                 .newIndex("test1")

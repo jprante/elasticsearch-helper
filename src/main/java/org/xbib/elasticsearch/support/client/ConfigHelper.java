@@ -25,6 +25,8 @@ public class ConfigHelper {
 
     public ConfigHelper reset() {
         settingsBuilder = ImmutableSettings.settingsBuilder();
+        settings = null;
+        mappings = newHashMap();
         return this;
     }
 

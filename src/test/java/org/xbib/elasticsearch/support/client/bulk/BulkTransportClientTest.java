@@ -25,7 +25,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     public void testBulkClient() {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .newIndex("test");
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -51,7 +51,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .newIndex("test");
         try {
             client.deleteIndex("test");
@@ -79,7 +79,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .newIndex("test");
         try {
             for (int i = 0; i < 12345; i++) {
@@ -111,7 +111,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
                 .maxActionsPerBulkRequest(maxactions)
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(5)
                 .replica(1)
                 .newIndex("test")

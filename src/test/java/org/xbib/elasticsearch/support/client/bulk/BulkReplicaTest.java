@@ -31,7 +31,7 @@ public class BulkReplicaTest extends AbstractNodeRandomTestHelper {
         //startNode("4");
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .newClient(getAddress())
+                .newClient(getSettings())
                 .shards(2)
                 .replica(3)
                 .newIndex("test1")
