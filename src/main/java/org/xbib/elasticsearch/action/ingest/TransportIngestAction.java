@@ -4,6 +4,7 @@ import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
@@ -50,8 +51,9 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
     public TransportIngestAction(Settings settings, ThreadPool threadPool,
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardIngestAction leaderShardIngestAction,
-                                 TransportReplicaShardIngestAction replicaShardIngestAction) {
-        super(settings, IngestAction.NAME, threadPool);
+                                 TransportReplicaShardIngestAction replicaShardIngestAction,
+                                 ActionFilters actionFilter) {
+        super(settings, IngestAction.NAME, threadPool, actionFilter);
         this.clusterService = clusterService;
         this.leaderShardIngestAction = leaderShardIngestAction;
         this.replicaShardIngestAction = replicaShardIngestAction;
@@ -78,7 +80,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             if (request instanceof IndexRequest) {
                 try {
                     IndexRequest indexRequest = (IndexRequest) request;
-                    indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index()));
+                    indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index(), indexRequest.indicesOptions()));
                     MappingMetaData mappingMd = null;
                     if (metaData.hasIndex(indexRequest.index())) {
                         mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());
@@ -92,7 +94,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
                 deleteRequest.routing(clusterState.metaData().resolveIndexRouting(deleteRequest.routing(), deleteRequest.index()));
-                deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index()));
+                deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index(), deleteRequest.indicesOptions()));
                 requests.add(deleteRequest);
             } else {
                 throw new ElasticsearchIllegalArgumentException("action request not known: " + request.getClass().getName());

@@ -6,6 +6,7 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.UnavailableShardsException;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.cluster.ClusterService;
@@ -26,7 +27,6 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.index.engine.DocumentAlreadyExistsException;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.index.shard.service.IndexShard;
@@ -35,7 +35,6 @@ import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BaseTransportRequestHandler;
 import org.elasticsearch.transport.BaseTransportResponseHandler;
-import org.elasticsearch.transport.ConnectTransportException;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequest;
@@ -69,8 +68,9 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
 
     protected TransportReplicaShardOperationAction(Settings settings, String actionName, TransportService transportService,
                                                    ClusterService clusterService, IndicesService indicesService,
-                                                   ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, actionName, threadPool);
+                                                   ThreadPool threadPool, ShardStateAction shardStateAction,
+                                                   ActionFilters actionFilters) {
+        super(settings, actionName, threadPool, actionFilters);
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -107,7 +107,7 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
     protected abstract ClusterBlockException checkRequestBlock(ClusterState state, Request request);
 
     protected boolean resolveRequest(ClusterState state, Request request) {
-        request.index(state.metaData().concreteSingleIndex(request.index()));
+        request.index(state.metaData().concreteSingleIndex(request.index(), request.indicesOptions()));
         return true;
     }
 

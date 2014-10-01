@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.action.index;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
@@ -35,8 +36,9 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
     public TransportIndexAction(Settings settings, ThreadPool threadPool,
                                 TransportService transportService, ClusterService clusterService,
                                 TransportLeaderShardIndexAction transportLeaderShardIndexAction,
-                                TransportReplicaShardIndexAction transportReplicaShardIndexAction) {
-        super(settings, IndexAction.NAME, threadPool);
+                                TransportReplicaShardIndexAction transportReplicaShardIndexAction,
+                                ActionFilters actionFilters) {
+        super(settings, IndexAction.NAME, threadPool, actionFilters);
         this.clusterService = clusterService;
         this.transportLeaderShardIndexAction = transportLeaderShardIndexAction;
         this.transportReplicaShardIndexAction = transportReplicaShardIndexAction;
@@ -51,7 +53,7 @@ public class TransportIndexAction extends TransportAction<IndexRequest, IndexRes
         clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
         try {
             MetaData metaData = clusterState.metaData();
-            indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index()));
+            indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index(), indexRequest.indicesOptions()));
             MappingMetaData mappingMd = null;
             if (metaData.hasIndex(indexRequest.index())) {
                 mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());

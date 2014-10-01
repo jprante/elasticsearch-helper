@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.action.delete;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
@@ -31,8 +32,9 @@ public class TransportDeleteAction extends TransportAction<DeleteRequest, Delete
     public TransportDeleteAction(Settings settings, ThreadPool threadPool,
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardDeleteAction transportLeaderShardDeleteAction,
-                                 TransportReplicaShardDeleteAction transportReplicaShardDeleteAction) {
-        super(settings, DeleteAction.NAME, threadPool);
+                                 TransportReplicaShardDeleteAction transportReplicaShardDeleteAction,
+                                 ActionFilters actionFilters) {
+        super(settings, DeleteAction.NAME, threadPool, actionFilters);
         this.clusterService = clusterService;
         this.transportLeaderShardDeleteAction = transportLeaderShardDeleteAction;
         this.transportReplicaShardDeleteAction = transportReplicaShardDeleteAction;

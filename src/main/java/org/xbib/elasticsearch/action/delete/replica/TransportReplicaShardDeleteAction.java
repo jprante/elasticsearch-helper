@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.action.delete.replica;
 
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
@@ -22,8 +23,9 @@ public class TransportReplicaShardDeleteAction
 
     @Inject
     public TransportReplicaShardDeleteAction(Settings settings, TransportService transportService, ClusterService clusterService,
-                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
+                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
+                                             ActionFilters actionFilters) {
+        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters);
     }
 
     @Override

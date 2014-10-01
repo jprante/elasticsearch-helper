@@ -5,6 +5,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.create.TransportCreateIndexAction;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
@@ -35,8 +36,9 @@ public class TransportLeaderShardDeleteAction extends TransportLeaderShardOperat
     @Inject
     public TransportLeaderShardDeleteAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                            TransportCreateIndexAction createIndexAction, MappingUpdatedAction mappingUpdatedAction) {
-        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
+                                            TransportCreateIndexAction createIndexAction,
+                                            ActionFilters actionFilters) {
+        super(settings, DeleteAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters);
         this.createIndexAction = createIndexAction;
         this.autoCreateIndex = new AutoCreateIndex(settings);
     }
@@ -69,7 +71,7 @@ public class TransportLeaderShardDeleteAction extends TransportLeaderShardOperat
     @Override
     protected boolean resolveRequest(ClusterState state, DeleteRequest request, ActionListener<DeleteResponse> indexResponseActionListener) {
         request.routing(state.metaData().resolveIndexRouting(request.routing(), request.index()));
-        request.index(state.metaData().concreteSingleIndex(request.index()));
+        request.index(state.metaData().concreteSingleIndex(request.index(), request.indicesOptions()));
         return true;
     }
 

@@ -2,6 +2,8 @@ package org.xbib.elasticsearch.action.support.replication.replica;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.action.IndicesRequest;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -11,7 +13,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public abstract class ReplicaShardOperationRequest<T extends ReplicaShardOperationRequest> extends ActionRequest<T> {
+public abstract class ReplicaShardOperationRequest<T extends ReplicaShardOperationRequest> extends ActionRequest<T>
+        implements IndicesRequest {
 
     public static final TimeValue DEFAULT_TIMEOUT = new TimeValue(1, TimeUnit.MINUTES);
 
@@ -67,6 +70,16 @@ public abstract class ReplicaShardOperationRequest<T extends ReplicaShardOperati
     public final T index(String index) {
         this.index = index;
         return (T) this;
+    }
+
+    @Override
+    public String[] indices() {
+        return new String[]{index};
+    }
+
+    @Override
+    public IndicesOptions indicesOptions() {
+        return IndicesOptions.strictSingleIndexNoExpandForbidClosed();
     }
 
     @Override

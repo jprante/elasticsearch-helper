@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.action.index.replica;
 
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
@@ -23,8 +24,9 @@ public class TransportReplicaShardIndexAction
 
     @Inject
     public TransportReplicaShardIndexAction(Settings settings, TransportService transportService, ClusterService clusterService,
-                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction) {
-        super(settings, IndexAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
+                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
+                                             ActionFilters actionFilters) {
+        super(settings, IndexAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters);
     }
 
     @Override

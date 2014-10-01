@@ -52,8 +52,8 @@ public class RestIngestAction extends BaseRestHandler {
     private final IngestProcessor ingestProcessor;
 
     @Inject
-    public RestIngestAction(Settings settings, Client client, RestController controller) {
-        super(settings, client);
+    public RestIngestAction(Settings settings, RestController controller, Client client) {
+        super(settings, controller, client);
 
         controller.registerHandler(POST, "/_ingest", this);
         controller.registerHandler(PUT, "/_ingest", this);

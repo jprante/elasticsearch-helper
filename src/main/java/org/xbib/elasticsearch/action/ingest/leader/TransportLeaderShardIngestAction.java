@@ -4,6 +4,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.RoutingMissingException;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
@@ -47,8 +48,8 @@ public class TransportLeaderShardIngestAction extends TransportLeaderShardOperat
     @Inject
     public TransportLeaderShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                            MappingUpdatedAction mappingUpdatedAction) {
-        super(settings, IngestAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
+                                            MappingUpdatedAction mappingUpdatedAction, ActionFilters actionFilters) {
+        super(settings, IngestAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters);
         this.mappingUpdatedAction = mappingUpdatedAction;
     }
 

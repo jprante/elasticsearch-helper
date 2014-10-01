@@ -6,6 +6,7 @@ import org.elasticsearch.action.RoutingMissingException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.create.TransportCreateIndexAction;
+import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
@@ -44,8 +45,9 @@ public class TransportLeaderShardIndexAction extends TransportLeaderShardOperati
     @Inject
     public TransportLeaderShardIndexAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                            IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                           TransportCreateIndexAction createIndexAction, MappingUpdatedAction mappingUpdatedAction) {
-        super(settings, IndexAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction);
+                                           TransportCreateIndexAction createIndexAction, MappingUpdatedAction mappingUpdatedAction,
+                                           ActionFilters actionFilters) {
+        super(settings, IndexAction.NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters);
         this.createIndexAction = createIndexAction;
         this.mappingUpdatedAction = mappingUpdatedAction;
         this.autoCreateIndex = new AutoCreateIndex(settings);
@@ -84,7 +86,7 @@ public class TransportLeaderShardIndexAction extends TransportLeaderShardOperati
     protected boolean resolveRequest(ClusterState state, IndexRequest request, ActionListener<IndexResponse> indexResponseActionListener) {
         MetaData metaData = clusterService.state().metaData();
         String aliasOrIndex = request.index();
-        request.index(metaData.concreteSingleIndex(request.index()));
+        request.index(metaData.concreteSingleIndex(request.index(), request.indicesOptions()));
         MappingMetaData mappingMd = null;
         if (metaData.hasIndex(request.index())) {
             mappingMd = metaData.index(request.index()).mappingOrDefault(request.type());
