@@ -403,7 +403,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             logger.warn("no client");
             return this;
         }
-        ingestProcessor.flush();
+        if (ingestProcessor != null) {
+            ingestProcessor.flush();
+        }
         return this;
     }
 
@@ -420,7 +422,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             logger.warn("no client");
             return this;
         }
-        ingestProcessor.waitForResponses(maxWaitTime);
+        if (ingestProcessor != null) {
+            ingestProcessor.waitForResponses(maxWaitTime);
+        }
         return this;
     }
 

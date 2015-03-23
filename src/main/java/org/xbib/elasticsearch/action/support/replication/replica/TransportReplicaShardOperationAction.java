@@ -340,6 +340,7 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
 
         private void retry(@Nullable final Throwable failure) {
             if (observer.isTimedOut()) {
+                listener.onFailure(failure);
                 return;
             }
             request.operationThreaded(true);

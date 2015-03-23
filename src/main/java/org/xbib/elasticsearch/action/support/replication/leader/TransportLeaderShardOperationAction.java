@@ -273,6 +273,7 @@ public abstract class TransportLeaderShardOperationAction<Request extends Leader
 
         private void retry(@Nullable final Throwable failure) {
             if (observer.isTimedOut()) {
+                listener.onFailure(failure);
                 return;
             }
             request.beforeLocalFork();

@@ -9,7 +9,7 @@ import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public class SimpleTest {
@@ -38,7 +38,7 @@ public class SimpleTest {
                 .source(jsonBuilder().startObject().field(FIELD, "1%2fPJJP3JV2C24iDfEu9XpHBaYxXh%2fdHTbmchB35SDznXO2g8Vz4D7GTIvY54iMiX_149c95f02a8").endObject())
                 .refresh(true)).actionGet();
         String doc = client.prepareSearch(INDEX).setTypes(TYPE)
-                .setQuery(matchAllQuery())
+                .setQuery(matchQuery("field", "1%2fPJJP3JV2C24iDfEu9XpHBaYxXh%2fdHTbmchB35SDznXO2g8Vz4D7GTIvY54iMiX_149c95f02a8"))
                 .execute().actionGet().getHits().getAt(0).getSourceAsString();
 
         logger.info("{}", doc);
