@@ -27,9 +27,9 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
+import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.service.IndexService;
-import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -266,8 +266,15 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
                         if (request.operationThreaded()) {
                             try {
                                 threadPool.executor(executor).execute(new AbstractRunnable() {
+
                                     @Override
-                                    public void run() {
+                                    public void onFailure(Throwable e) {
+                                        logger.error(e.getMessage(), e);
+                                        failReplicaIfNeeded(shardRouting.index(), shardRouting.id(), e);
+                                    }
+
+                                    @Override
+                                    protected void doRun() throws Exception {
                                         try {
                                             response.add(shardOperationOnReplica(replicaRequest));
                                             if (replicas.decrementAndGet() == 0) {
@@ -285,7 +292,7 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
                                 });
                             } catch (Throwable e) {
                                 logger.error(e.getMessage(), e);
-                                failReplicaIfNeeded(shard.index(), shard.id(), e);
+                                failReplicaIfNeeded(shardRouting.index(), shardRouting.id(), e);
                             }
                         } else {
                             try {
@@ -295,7 +302,7 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
                                 }
                             } catch (Throwable e) {
                                 logger.error(e.getMessage(), e);
-                                failReplicaIfNeeded(shard.index(), shard.id(), e);
+                                failReplicaIfNeeded(shardRouting.index(), shardRouting.id(), e);
                             }
                         }
                     } else {

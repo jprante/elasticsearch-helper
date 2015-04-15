@@ -9,6 +9,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +23,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
     @Test
-    public void testBulkClient() {
+    public void testBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(getSettings())
@@ -47,7 +48,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testSingleDocBulkClient() {
+    public void testSingleDocBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
@@ -75,7 +76,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testRandomDocsBulkClient() {
+    public void testRandomDocsBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))

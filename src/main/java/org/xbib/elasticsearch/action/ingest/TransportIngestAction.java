@@ -66,6 +66,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
     protected void doExecute(final IngestRequest ingestRequest, final ActionListener<IngestResponse> listener) {
         final long startTime = System.currentTimeMillis();
         final IngestResponse ingestResponse = new IngestResponse();
+        ingestResponse.setIngestId(ingestRequest.ingestId());
         ClusterState clusterState = clusterService.state();
         try {
             clusterState.blocks().globalBlockedRaiseException(ClusterBlockLevel.WRITE);
@@ -138,8 +139,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         }
         if (requestsByShard.isEmpty()) {
             logger.error("no shards to execute ingest");
-            ingestResponse.setIngestId(ingestRequest.ingestId())
-                    .setSuccessSize(0)
+            ingestResponse.setSuccessSize(0)
                     .addFailure(new IngestActionFailure(-1L, null, "no shards to execute ingest"))
                     .setTookInMillis(System.currentTimeMillis() - startTime);
             listener.onResponse(ingestResponse);
@@ -157,11 +157,11 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     .setActionRequests(actionRequests)
                     .timeout(ingestRequest.timeout())
                     .requiredConsistency(ingestRequest.requiredConsistency());
-            ingestResponse.setIngestId(ingestRequest.ingestId());
             leaderShardIngestAction.execute(ingestLeaderShardRequest, new ActionListener<IngestLeaderShardResponse>() {
                 @Override
                 public void onResponse(IngestLeaderShardResponse ingestLeaderShardResponse) {
                     long millis = System.currentTimeMillis() - startTime;
+                    ingestResponse.setIngestId(ingestRequest.ingestId());
                     ingestResponse.setLeaderResponse(ingestLeaderShardResponse);
                     successCount.addAndGet(ingestLeaderShardResponse.getSuccessCount());
                     int quorumShards = ingestLeaderShardResponse.getQuorumShards();

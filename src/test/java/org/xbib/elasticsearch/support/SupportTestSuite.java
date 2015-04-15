@@ -23,7 +23,7 @@ import org.xbib.elasticsearch.support.various.SimpleTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-        SimpleTest.class,
+        /*SimpleTest.class,
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
@@ -36,11 +36,11 @@ import org.xbib.elasticsearch.support.various.SimpleTest;
         BulkReplicaTest.class,
         BulkUpdateReplicaLevelTest.class,
         IngestIndexCreationTest.class,
-        IngestClusterBlockTest.class,
-        IngestTransportClientTest.class,
+        IngestClusterBlockTest.class,*/
+        IngestTransportClientTest.class/*,
         IngestDuplicateIDTest.class,
         IngestReplicaTest.class,
-        IngestUpdateReplicaLevelTest.class
+        IngestUpdateReplicaLevelTest.class*/
 })
 public class SupportTestSuite {
 

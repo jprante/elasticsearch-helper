@@ -1,6 +1,13 @@
 
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
+import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
@@ -9,6 +16,10 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +33,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
     @Test
-    public void testNewIndexIngest() {
+    public void testNewIndexIngest() throws IOException {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
                 .shards(2)
@@ -36,7 +47,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testDeleteIndexIngestClient() {
+    public void testDeleteIndexIngestClient() throws IOException {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
                 .shards(2)
@@ -58,7 +69,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testSingleDocIngestClient() {
+    public void testSingleDocIngestClient() throws IOException {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .newClient(getSettings())
@@ -167,6 +178,32 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             );
             ingest.shutdown();
         }
+    }
+
+    @Test
+    public void testClusterConnect() throws IOException {
+        startNode("2");
+        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.builder();
+        settingsBuilder.put("cluster.name", getClusterName());
+        settingsBuilder.put("autodiscover", true);
+        int i = 0;
+        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
+        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
+        for (NodeInfo nodeInfo : response) {
+            TransportAddress ta = nodeInfo.getTransport().getAddress().publishAddress();
+            if (ta instanceof InetSocketTransportAddress) {
+                InetSocketTransportAddress address = (InetSocketTransportAddress) ta;
+                settingsBuilder.put("host." + i++, address.address().getHostName() + ":" + address.address().getPort());
+            }
+        }
+        final IngestTransportClient ingest = new IngestTransportClient()
+                .newClient(settingsBuilder.build())
+                .newIndex("test");
+        ingest.shutdown();
+        if (ingest.hasThrowable()) {
+            logger.error("error", ingest.getThrowable());
+        }
+        assertFalse(ingest.hasThrowable());
     }
 
 }

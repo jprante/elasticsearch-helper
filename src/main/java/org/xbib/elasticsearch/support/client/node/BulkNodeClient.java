@@ -91,12 +91,6 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient maxRequestWait(TimeValue timeValue) {
-        // ignore, not implemented
-        return this;
-    }
-
-    @Override
     public BulkNodeClient flushIngestInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;

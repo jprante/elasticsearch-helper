@@ -29,8 +29,6 @@ public class IngestProcessor {
 
     private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
 
-    private TimeValue maxWaitForResponses = new TimeValue(60, TimeUnit.SECONDS);
-
     private Semaphore semaphore = new Semaphore(maxConcurrency);
 
     private AtomicLong ingestId = new AtomicLong(0L);
@@ -66,11 +64,6 @@ public class IngestProcessor {
 
     public IngestProcessor maxVolumePerRequest(ByteSizeValue maxVolume) {
         this.maxVolume = new ByteSizeValue(Math.max(maxVolume.bytes(), 1024), ByteSizeUnit.BYTES);
-        return this;
-    }
-
-    public IngestProcessor maxWaitForResponses(TimeValue maxWaitForResponses) {
-        this.maxWaitForResponses = new TimeValue(Math.max(maxWaitForResponses.millis(), 1000), TimeUnit.MILLISECONDS);
         return this;
     }
 
@@ -203,7 +196,7 @@ public class IngestProcessor {
         if (ingestListener == null) {
             return;
         }
-        final long id = ingestId.incrementAndGet();
+        request.ingestId(ingestId.incrementAndGet());
         boolean done = false;
         try {
             semaphore.acquire();
@@ -221,7 +214,7 @@ public class IngestProcessor {
                 @Override
                 public void onFailure(Throwable e) {
                     try {
-                        ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), id, e);
+                        ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), request.ingestId(), e);
                     } finally {
                         semaphore.release();
                     }
@@ -230,7 +223,7 @@ public class IngestProcessor {
             done = true;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), id, e);
+            ingestListener.onFailure(maxConcurrency - semaphore.availablePermits(), request.ingestId(), e);
         } finally {
             if (!done) {
                 semaphore.release();

@@ -8,6 +8,7 @@ import org.xbib.elasticsearch.support.client.BaseTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Search;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -37,12 +38,12 @@ public class SearchClient extends BaseTransportClient implements Search {
         return type;
     }
 
-    public SearchClient newClient(Settings settings) {
+    public SearchClient newClient(Settings settings) throws IOException {
         super.createClient(settings);
         return this;
     }
 
-    public SearchClient newClient(Map<String,String> settings) {
+    public SearchClient newClient(Map<String,String> settings) throws IOException {
         super.createClient(settings);
         return this;
     }

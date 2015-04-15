@@ -89,6 +89,7 @@ public class IngestResponse extends ActionResponse {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
+        ingestId = in.readLong();
         successSize = in.readVInt();
         failures = newLinkedList();
         int size = in.readVInt();
@@ -110,6 +111,7 @@ public class IngestResponse extends ActionResponse {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
+        out.writeLong(ingestId);
         out.writeVInt(successSize);
         out.writeVInt(failures.size());
         for (IngestActionFailure f : failures) {

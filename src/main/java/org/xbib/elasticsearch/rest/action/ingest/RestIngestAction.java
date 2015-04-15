@@ -65,13 +65,11 @@ public class RestIngestAction extends BaseRestHandler {
         int actions = settings.getAsInt("action.ingest.maxactions", 1000);
         int concurrency = settings.getAsInt("action.ingest.maxconcurrency", Runtime.getRuntime().availableProcessors() * 4);
         ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("10m"));
-        TimeValue maxwait = settings.getAsTime("action.ingest.maxwait", TimeValue.timeValueSeconds(60));
 
         this.ingestProcessor = new IngestProcessor(client)
                 .maxActions(actions)
                 .maxConcurrentRequests(concurrency)
-                .maxVolumePerRequest(volume)
-                .maxWaitForResponses(maxwait);
+                .maxVolumePerRequest(volume);
     }
 
     @Override

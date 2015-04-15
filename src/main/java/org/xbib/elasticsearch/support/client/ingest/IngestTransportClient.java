@@ -47,11 +47,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
 
-    /**
-     * The maximum wait time for responses when shutting down
-     */
-    private TimeValue maxWaitForResponses = new TimeValue(60, TimeUnit.SECONDS);
-
     private IngestProcessor ingestProcessor;
 
     private State state = new State();
@@ -86,28 +81,22 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return this;
     }
 
-    @Override
-    public IngestTransportClient maxRequestWait(TimeValue timeout) {
-        this.maxWaitForResponses = timeout;
-        return this;
-    }
-
     public void setCurrentConcurrency(int concurrency) {
         this.currentConcurrency = concurrency;
     }
 
     @Override
-    public IngestTransportClient newClient(Client client) {
+    public IngestTransportClient newClient(Client client) throws IOException {
         return this.newClient(findSettings());
     }
 
     @Override
-    public IngestTransportClient newClient(Map<String,String> settings) {
+    public IngestTransportClient newClient(Map<String,String> settings) throws IOException {
         return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public IngestTransportClient newClient(Settings settings) {
+    public IngestTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
         this.state = new State();
         resetSettings();
@@ -171,7 +160,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 .maxActions(maxActionsPerRequest)
                 .maxVolumePerRequest(maxVolumePerBulkRequest)
                 .flushInterval(flushInterval)
-                .maxWaitForResponses(maxWaitForResponses)
                 .listener(ingestListener);
         this.closed = false;
         return this;

@@ -12,12 +12,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public abstract class BaseIngestTransportClient extends BaseTransportClient
-        implements Ingest {
+public abstract class BaseIngestTransportClient extends BaseTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getSimpleName());
 
-    public Ingest newClient(Settings settings) {
+    public Ingest newClient(Settings settings) throws IOException {
         super.createClient(settings);
         return this;
     }
