@@ -83,8 +83,8 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("bulk requests = {}", client.getState().getTotalIngest().count());
-            assertEquals(1, client.getState().getTotalIngest().count());
+            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
+            assertEquals(1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -110,7 +110,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            assertEquals(13, client.getState().getTotalIngest().count());
+            assertEquals(13, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -130,7 +130,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
                 .newClient(client("1"))
                 .newIndex("test")
-                .startBulk("test");
+                .startBulk("test", -1, 1000);
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
                     EsExecutors.daemonThreadFactory("nodeclient-test"));
@@ -157,8 +157,8 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("total bulk requests = {}", client.getState().getTotalIngest().count());
-            assertEquals(max * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
+            logger.info("total bulk requests = {}", client.getMetric().getTotalIngest().count());
+            assertEquals(max * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

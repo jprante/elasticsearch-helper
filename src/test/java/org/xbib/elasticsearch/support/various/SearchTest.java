@@ -48,7 +48,7 @@ public class SearchTest extends AbstractNodeTestHelper {
         for (int i = 0; i < 100; i++) {
             t1 = System.currentTimeMillis();
             QueryBuilder queryStringBuilder =
-                    QueryBuilders.queryString("rs:" + 1234);
+                    QueryBuilders.queryStringQuery("rs:" + 1234);
             SearchRequestBuilder requestBuilder = client.prepareSearch()
                     .setIndices("pages")
                     .setTypes("row")

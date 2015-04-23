@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -20,11 +20,11 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.State;
+import org.xbib.elasticsearch.support.client.Metric;
+import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Client using the BulkProcessor of Elasticsearch
@@ -32,32 +32,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getSimpleName());
-    /**
-     * The default size of a bulk request
-     */
+
     private int maxActionsPerBulkRequest = 100;
-    /**
-     * The default number of maximum concurrent requests
-     */
+
     private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
-    /**
-     * The maximum volume
-     */
+
     private ByteSizeValue maxVolumePerBulkRequest = new ByteSizeValue(10, ByteSizeUnit.MB);
 
     private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
 
-    /**
-     * The concurrent requests
-     */
-    private final AtomicLong concurrentRequestCounter = new AtomicLong(0L);
-
-    /**
-     * The BulkProcessor
-     */
     private BulkProcessor bulkProcessor;
 
-    private State state = new State();
+    private Metric metric = new Metric();
 
     private Throwable throwable;
 
@@ -82,85 +68,74 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient maxRequestWait(TimeValue timeout) {
-        // ignore, not supported
-        return this;
-    }
-
-    @Override
     public BulkTransportClient flushIngestInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
     }
 
     @Override
-    public BulkTransportClient newClient(Client client) {
+    public BulkTransportClient newClient(Client client) throws IOException {
         return this.newClient(findSettings());
     }
 
     @Override
-    public BulkTransportClient newClient(Map<String,String> settings) {
+    public BulkTransportClient newClient(Map<String,String> settings) throws IOException {
         return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public BulkTransportClient newClient(Settings settings) {
+    public BulkTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
+        this.metric = new Metric();
+        metric.start();
         resetSettings();
-        this.state = new State();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
-                long l = concurrentRequestCounter.getAndIncrement();
-                if (state != null) {
-                    int n = request.numberOfActions();
-                    state.getSubmitted().inc(n);
-                    state.getCurrentIngestNumDocs().inc(n);
-                    state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
-                }
-                if (logger.isInfoEnabled()) {
-                    logger.info("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                metric.getCurrentIngest().inc();
+                long l = metric.getCurrentIngest().count();
+                int n = request.numberOfActions();
+                metric.getSubmitted().inc(n);
+                metric.getCurrentIngestNumDocs().inc(n);
+                metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                logger.debug("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
                             executionId,
                             request.numberOfActions(),
                             request.estimatedSizeInBytes(),
                             l);
-                }
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-                long l = concurrentRequestCounter.decrementAndGet();
-                if (state != null) {
-                    state.getSucceeded().inc(response.getItems().length);
-                    state.getTotalIngest().inc(response.getTookInMillis());
-                }
+                metric.getCurrentIngest().dec();
+                long l = metric.getCurrentIngest().count();
+                metric.getSucceeded().inc(response.getItems().length);
+                metric.getTotalIngest().inc(response.getTookInMillis());
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
                     if (itemResponse.isFailed()) {
                         n++;
-                        state.getSucceeded().dec(1);
-                        state.getFailed().inc(1);
+                        metric.getSucceeded().dec(1);
+                        metric.getFailed().inc(1);
                     }
                 }
-                if (logger.isInfoEnabled()) {
-                    logger.info("after bulk [{}] [succeeded={}] [failed={}] [{}ms] [concurrent requests={}]",
-                            executionId,
-                            state.getSucceeded().count(),
-                            state.getFailed().count(),
-                            response.getTook().millis(),
-                            l);
-                }
+                logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms] [concurrent requests={}]",
+                        executionId,
+                        metric.getSucceeded().count(),
+                        metric.getFailed().count(),
+                        response.getTook().millis(),
+                        l);
                 if (n > 0) {
                     logger.error("bulk [{}] failed with {} failed items, failure message = {}",
                             executionId, n, response.buildFailureMessage());
                 } else {
-                    state.getCurrentIngestNumDocs().dec(response.getItems().length);
+                    metric.getCurrentIngestNumDocs().dec(response.getItems().length);
                 }
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest requst, Throwable failure) {
-                concurrentRequestCounter.decrementAndGet();
+                metric.getCurrentIngest().dec();
                 throwable = failure;
                 closed = true;
                 logger.error("bulk [" + executionId + "] error", failure);
@@ -212,25 +187,25 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient startBulk(String index) throws IOException {
-        if (state == null) {
+    public BulkTransportClient startBulk(String index, long startRefreshInterval, long stopRefreshIterval) throws IOException {
+        if (metric == null) {
             return this;
         }
-        if (!state.isBulk(index)) {
-            state.startBulk(index);
-            ClientHelper.disableRefresh(client, index);
+        if (!metric.isBulk(index)) {
+            metric.setupBulk(index, startRefreshInterval, stopRefreshIterval);
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshInterval);
         }
         return this;
     }
 
     @Override
     public BulkTransportClient stopBulk(String index) throws IOException {
-        if (state == null) {
+        if (metric == null) {
             return this;
         }
-        if (state.isBulk(index)) {
-            state.stopBulk(index);
-            ClientHelper.enableRefresh(client, index);
+        if (metric.isBulk(index)) {
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index));
+            metric.removeBulk(index);
         }
         return this;
     }
@@ -253,14 +228,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc();
             bulkProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -271,14 +246,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc();
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -289,14 +264,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc();
             bulkProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -307,14 +282,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            state.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc();
             bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete request failed: " + e.getMessage(), e);
         } finally {
-            state.getCurrentIngest().dec();
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -329,7 +304,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             logger.warn("no client");
             return this;
         }
-        logger.info("flushing bulk processor");
+        logger.debug("flushing bulk processor");
         // hacked BulkProcessor to execute the submission of remaining docs. Wait always 30 seconds at most.
         BulkProcessorHelper.flush(bulkProcessor);
         return this;
@@ -376,25 +351,25 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         }
         try {
             if (bulkProcessor != null) {
-                logger.info("closing bulk processor...");
+                logger.debug("closing bulk processor...");
                 bulkProcessor.close();
             }
-            if (state.indices() != null && !state.indices().isEmpty()) {
-                logger.info("stopping bulk mode for indices {}...", state.indices());
-                for (String index : ImmutableSet.copyOf(state.indices())) {
+            if (metric.indices() != null && !metric.indices().isEmpty()) {
+                logger.debug("stopping bulk mode for indices {}...", metric.indices());
+                for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
                 }
             }
-            logger.info("shutting down...");
+            logger.debug("shutting down...");
             super.shutdown();
-            logger.info("shutting down completed");
+            logger.debug("shutting down completed");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
     }
 
-    public State getState() {
-        return state;
+    public Metric getMetric() {
+        return metric;
     }
 
     @Override

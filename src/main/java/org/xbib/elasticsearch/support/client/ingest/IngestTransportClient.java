@@ -20,11 +20,10 @@ import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.State;
+import org.xbib.elasticsearch.support.client.Metric;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Ingest client
@@ -33,32 +32,19 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getSimpleName());
 
-    /**
-     * The default size of a request
-     */
     private int maxActionsPerRequest = 100;
 
-    /**
-     * The default number of maximum concurrent requests
-     */
     private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
 
     private ByteSizeValue maxVolumePerBulkRequest = new ByteSizeValue(10, ByteSizeUnit.MB);
 
     private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
 
-    /**
-     * The maximum wait time for responses when shutting down
-     */
-    private TimeValue maxWaitForResponses = new TimeValue(60, TimeUnit.SECONDS);
-
     private IngestProcessor ingestProcessor;
 
-    private State state = new State();
+    private Metric metric = new Metric();
 
     private Throwable throwable;
-
-    private int currentConcurrency;
 
     private volatile boolean closed = false;
 
@@ -87,80 +73,63 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient maxRequestWait(TimeValue timeout) {
-        this.maxWaitForResponses = timeout;
-        return this;
-    }
-
-    public void setCurrentConcurrency(int concurrency) {
-        this.currentConcurrency = concurrency;
-    }
-
-    @Override
-    public IngestTransportClient newClient(Client client) {
+    public IngestTransportClient newClient(Client client) throws IOException {
         return this.newClient(findSettings());
     }
 
     @Override
-    public IngestTransportClient newClient(Map<String,String> settings) {
+    public IngestTransportClient newClient(Map<String,String> settings) throws IOException {
         return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public IngestTransportClient newClient(Settings settings) {
+    public IngestTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
-        this.state = new State();
+        this.metric = new Metric();
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
             public void onRequest(int concurrency, IngestRequest request) {
-                setCurrentConcurrency(concurrency);
+                metric.getCurrentIngest().inc();
                 int num = request.numberOfActions();
-                if (state != null) {
-                    state.getSubmitted().inc(num);
-                    state.getCurrentIngestNumDocs().inc(num);
-                    state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
-                }
-                if (logger.isInfoEnabled()) {
-                    logger.info("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                metric.getSubmitted().inc(num);
+                metric.getCurrentIngestNumDocs().inc(num);
+                metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                logger.debug("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
                             request.ingestId(),
                             num,
                             request.estimatedSizeInBytes(),
                             concurrency);
-                }
             }
 
             @Override
             public void onResponse(int concurrency, IngestResponse response) {
-                setCurrentConcurrency(concurrency);
-                if (state != null) {
-                    state.getSucceeded().inc(response.successSize());
-                    state.getFailed().inc(response.getFailures().size());
-                    state.getTotalIngest().inc(response.tookInMillis());
-                }
-                if (logger.isInfoEnabled()) {
-                    logger.info("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
+                metric.getCurrentIngest().dec();
+                metric.getSucceeded().inc(response.successSize());
+                metric.getFailed().inc(response.getFailures().size());
+                metric.getTotalIngest().inc(response.tookInMillis());
+                logger.debug("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
                             response.ingestId(),
-                            state.getSucceeded().count(),
-                            state.getFailed().count(),
+                            metric.getSucceeded().count(),
+                            metric.getFailed().count(),
                             response.tookInMillis(),
                             response.leaderShardResponse(),
                             response.replicaShardResponses(),
                             concurrency
                     );
-                }
                 if (!response.getFailures().isEmpty()) {
                     for (IngestActionFailure f : response.getFailures()) {
                         logger.error("ingest [{}] has failures, reason: {}", response.ingestId(), f.message());
                     }
                     closed = true;
                 } else {
-                    state.getCurrentIngestNumDocs().dec(response.successSize());
+                    metric.getCurrentIngestNumDocs().dec(response.successSize());
                 }
             }
 
             @Override
             public void onFailure(int concurrency, long executionId, Throwable failure) {
+                metric.getCurrentIngest().dec();
                 logger.error("ingest [" + executionId + "] failure", failure);
                 throwable = failure;
                 closed = true;
@@ -171,7 +140,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 .maxActions(maxActionsPerRequest)
                 .maxVolumePerRequest(maxVolumePerBulkRequest)
                 .flushInterval(flushInterval)
-                .maxWaitForResponses(maxWaitForResponses)
                 .listener(ingestListener);
         this.closed = false;
         return this;
@@ -182,8 +150,8 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return client;
     }
 
-    public State getState() {
-        return state;
+    public Metric getMetric() {
+        return metric;
     }
 
     public IngestTransportClient shards(int value) {
@@ -233,27 +201,25 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient startBulk(String index) throws IOException {
-        if (state == null) {
+    public IngestTransportClient startBulk(String index, long startRefreshInterval, long stopRefreshIterval) throws IOException {
+        if (metric == null) {
             return this;
         }
-        if (!state.isBulk(index)) {
-            state.startBulk(index);
-            ClientHelper.disableRefresh(client, index);
+        if (!metric.isBulk(index)) {
+            metric.setupBulk(index, startRefreshInterval, stopRefreshIterval);
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshInterval);
         }
         return this;
     }
 
     @Override
     public IngestTransportClient stopBulk(String index) throws IOException {
-        if (state == null) {
+        if (metric == null) {
             return this;
         }
-        if (state.isBulk(index)) {
-            state.stopBulk(index);
-            ClientHelper.enableRefresh(client, index);
-            flush(index);
-            refresh(index);
+        if (metric.isBulk(index)) {
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index));
+            metric.removeBulk(index);
         }
         return this;
     }
@@ -296,18 +262,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().inc();
-            }
+            metric.getCurrentIngest().inc();
             ingestProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().dec();
-            }
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -322,18 +284,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().inc();
-            }
+            metric.getCurrentIngest().inc();
             ingestProcessor.add(new IndexRequest(indexRequest));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().dec();
-            }
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -348,18 +306,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().inc();
-            }
+            metric.getCurrentIngest().inc();
             ingestProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().dec();
-            }
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -374,18 +328,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         }
         try {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().inc();
-            }
+            metric.getCurrentIngest().inc();
             ingestProcessor.add(new DeleteRequest(deleteRequest));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {
-            if (state.getCurrentIngest() != null) {
-                state.getCurrentIngest().dec();
-            }
+            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -460,18 +410,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             if (ingestProcessor != null) {
-                logger.info("closing ingest with {} current concurrent requests ", currentConcurrency);
+                logger.debug("closing ingest");
                 ingestProcessor.close();
             }
-            if (state != null && state.indices() != null && !state.indices().isEmpty()) {
-                logger.info("stopping ingest mode for indices {}...", state.indices());
-                for (String index : ImmutableSet.copyOf(state.indices())) {
+            if (metric != null && metric.indices() != null && !metric.indices().isEmpty()) {
+                logger.debug("stopping ingest mode for indices {}...", metric.indices());
+                for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
                 }
             }
-            logger.info("shutting down...");
+            logger.debug("shutting down...");
             super.shutdown();
-            logger.info("shutting down completed");
+            logger.debug("shutting down completed");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

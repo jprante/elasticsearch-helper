@@ -113,20 +113,21 @@ public class ClientHelper {
         return waitForRecovery(client, index);
     }
 
-    public static void disableRefresh(Client client, String index) throws IOException {
-        updateIndexSetting(client, index, "refresh_interval", -1);
-    }
-
-    public static void enableRefresh(Client client, String index) throws IOException {
-        updateIndexSetting(client, index, "refresh_interval", 1000);
-    }
 
     public static void flush(Client client, String index) {
         client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
     }
 
     public static void refresh(Client client, String index) {
-        client.admin().indices().prepareRefresh().setIndices(index).setForce(true).execute().actionGet();
+        client.admin().indices().prepareRefresh().setIndices(index).execute().actionGet();
+    }
+
+    public static void disableRefresh(Client client, String index) throws IOException {
+        updateIndexSetting(client, index, "refresh_interval", -1);
+    }
+
+    public static void enableRefresh(Client client, String index) throws IOException {
+        updateIndexSetting(client, index, "refresh_interval", 1000);
     }
 
 }

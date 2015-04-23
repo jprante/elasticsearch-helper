@@ -10,7 +10,7 @@ import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.engine.Engine;
-import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -77,13 +77,6 @@ public class TransportReplicaShardDeleteAction
         IndexShard indexShard = indicesService.indexServiceSafe(shardRequest.request().index()).shardSafe(shardRequest.shardId());
         Engine.Delete delete = indexShard.prepareDelete(request.type(), request.id(), request.version(), request.versionType(), Engine.Operation.Origin.REPLICA);
         indexShard.delete(delete);
-        if (request.refresh()) {
-            try {
-                indexShard.refresh(new Engine.Refresh("refresh_flag_delete").force(false));
-            } catch (Exception e) {
-                // ignore
-            }
-        }
         return new DeleteReplicaShardResponse(shardRequest.request().shardId(), shardRequest.replicaId(),
                 System.currentTimeMillis() - t0);
     }

@@ -22,14 +22,12 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.State;
-import org.xbib.elasticsearch.support.client.bulk.BulkProcessorHelper;
+import org.xbib.elasticsearch.support.client.Metric;
+import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Node client support
@@ -48,17 +46,15 @@ public class BulkNodeClient implements Ingest {
 
     private final ConfigHelper configHelper = new ConfigHelper();
 
-    private final AtomicLong concurrentRequestCounter = new AtomicLong(0L);
-
     private Client client;
 
     private BulkProcessor bulkProcessor;
 
-    private State state = new State();
-
-    private boolean closed = false;
+    private Metric metric = new Metric();
 
     private Throwable throwable;
+
+    private boolean closed = false;
 
     @Override
     public BulkNodeClient shards(int shards) {
@@ -91,12 +87,6 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient maxRequestWait(TimeValue timeValue) {
-        // ignore, not implemented
-        return this;
-    }
-
-    @Override
     public BulkNodeClient flushIngestInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
@@ -115,57 +105,56 @@ public class BulkNodeClient implements Ingest {
     @Override
     public BulkNodeClient newClient(Client client) {
         this.client = client;
-        this.state = new State();
+        this.metric = new Metric();
+        metric.start();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
-                long l = concurrentRequestCounter.getAndIncrement();
+                metric.getCurrentIngest().inc();
+                long l = metric.getCurrentIngest().count();
                 int n = request.numberOfActions();
-                state.getSubmitted().inc(n);
-                state.getCurrentIngestNumDocs().inc(n);
-                state.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
-                if (logger.isInfoEnabled()) {
-                    logger.info("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
-                            executionId,
-                            request.numberOfActions(),
-                            request.estimatedSizeInBytes(),
-                            l);
-                }
+                metric.getSubmitted().inc(n);
+                metric.getCurrentIngestNumDocs().inc(n);
+                metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                logger.debug("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                        executionId,
+                        request.numberOfActions(),
+                        request.estimatedSizeInBytes(),
+                        l);
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-                long l = concurrentRequestCounter.decrementAndGet();
-                state.getSucceeded().inc(response.getItems().length);
-                state.getFailed().inc(0);
-                state.getTotalIngest().inc(response.getTookInMillis());
+                metric.getCurrentIngest().dec();
+                long l = metric.getCurrentIngest().count();
+                metric.getSucceeded().inc(response.getItems().length);
+                metric.getFailed().inc(0);
+                metric.getTotalIngest().inc(response.getTookInMillis());
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
                     if (itemResponse.isFailed()) {
                         n++;
-                        state.getSucceeded().dec(1);
-                        state.getFailed().inc(1);
+                        metric.getSucceeded().dec(1);
+                        metric.getFailed().inc(1);
                     }
                 }
-                if (logger.isInfoEnabled()) {
-                    logger.info("after bulk [{}] [succeeded={}] [failed={}] [{}ms] {} concurrent requests",
+                logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms] {} concurrent requests",
                             executionId,
-                            state.getSucceeded().count(),
-                            state.getFailed().count(),
+                            metric.getSucceeded().count(),
+                            metric.getFailed().count(),
                             response.getTook().millis(),
                             l);
-                }
                 if (n > 0) {
                     logger.error("bulk [{}] failed with {} failed items, failure message = {}",
                             executionId, n, response.buildFailureMessage());
                 } else {
-                    state.getCurrentIngestNumDocs().dec(response.getItems().length);
+                    metric.getCurrentIngestNumDocs().dec(response.getItems().length);
                 }
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-                concurrentRequestCounter.decrementAndGet();
+                metric.getCurrentIngest().dec();
                 throwable = failure;
                 closed = true;
                 logger.error("after bulk [" + executionId + "] error", failure);
@@ -195,8 +184,8 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public State getState() {
-        return state;
+    public Metric getMetric() {
+        return metric;
     }
 
     @Override
@@ -225,8 +214,8 @@ public class BulkNodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            if (state != null) {
-                state.getCurrentIngest().inc();
+            if (metric != null) {
+                metric.getCurrentIngest().inc();
             }
             bulkProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
@@ -234,8 +223,8 @@ public class BulkNodeClient implements Ingest {
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            if (state != null) {
-                state.getCurrentIngest().dec();
+            if (metric != null) {
+                metric.getCurrentIngest().dec();
             }
         }
         return this;
@@ -247,8 +236,8 @@ public class BulkNodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            if (state != null) {
-                state.getCurrentIngest().inc();
+            if (metric != null) {
+                metric.getCurrentIngest().inc();
             }
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
@@ -256,8 +245,8 @@ public class BulkNodeClient implements Ingest {
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
         } finally {
-            if (state != null) {
-                state.getCurrentIngest().dec();
+            if (metric != null) {
+                metric.getCurrentIngest().dec();
             }
         }
         return this;
@@ -269,8 +258,8 @@ public class BulkNodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            if (state != null) {
-                state.getCurrentIngest().inc();
+            if (metric != null) {
+                metric.getCurrentIngest().inc();
             }
             bulkProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
@@ -278,8 +267,8 @@ public class BulkNodeClient implements Ingest {
             closed = true;
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
         } finally {
-            if (state != null) {
-                state.getCurrentIngest().dec();
+            if (metric != null) {
+                metric.getCurrentIngest().dec();
             }
         }
         return this;
@@ -291,8 +280,8 @@ public class BulkNodeClient implements Ingest {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
-            if (state != null) {
-                state.getCurrentIngest().inc();
+            if (metric != null) {
+                metric.getCurrentIngest().inc();
             }
             bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
@@ -300,8 +289,8 @@ public class BulkNodeClient implements Ingest {
             closed = true;
             logger.error("bulk add of delete failed: " + e.getMessage(), e);
         } finally {
-            if (state != null) {
-                state.getCurrentIngest().dec();
+            if (metric != null) {
+                metric.getCurrentIngest().dec();
             }
         }
         return this;
@@ -311,7 +300,7 @@ public class BulkNodeClient implements Ingest {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
-        logger.info("flushing bulk processor");
+        logger.debug("flushing bulk processor");
         BulkProcessorHelper.flush(bulkProcessor);
         return this;
     }
@@ -326,25 +315,25 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient startBulk(String index) throws IOException {
-        if (state == null) {
+    public BulkNodeClient startBulk(String index, long startRefreshInterval, long stopRefreshIterval) throws IOException {
+        if (metric == null) {
             return this;
         }
-        if (!state.isBulk(index)) {
-            state.startBulk(index);
-            ClientHelper.disableRefresh(client, index);
+        if (!metric.isBulk(index)) {
+            metric.setupBulk(index, startRefreshInterval, stopRefreshIterval);
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshInterval);
         }
         return this;
     }
 
     @Override
     public BulkNodeClient stopBulk(String index) throws IOException {
-        if (state == null) {
+        if (metric == null) {
             return this;
         }
-        if (state.isBulk(index)) {
-            state.stopBulk(index);
-            ClientHelper.enableRefresh(client, index);
+        if (metric.isBulk(index)) {
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index));
+            metric.removeBulk(index);
         }
         return this;
     }
@@ -382,18 +371,18 @@ public class BulkNodeClient implements Ingest {
     public synchronized void shutdown() {
         try {
             if (bulkProcessor != null) {
-                logger.info("closing bulk processor...");
+                logger.debug("closing bulk processor...");
                 bulkProcessor.close();
             }
-            if (state != null && state.indices() != null && !state.indices().isEmpty()) {
-                logger.info("stopping bulk mode for indices {}...", state.indices());
-                for (String index : ImmutableSet.copyOf(state.indices())) {
+            if (metric != null && metric.indices() != null && !metric.indices().isEmpty()) {
+                logger.debug("stopping bulk mode for indices {}...", metric.indices());
+                for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
                 }
             }
-            logger.info("shutting down...");
+            logger.debug("shutting down...");
             client.close();
-            logger.info("shutting down completed");
+            logger.debug("shutting down completed");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -448,7 +437,7 @@ public class BulkNodeClient implements Ingest {
             }
         }
         createIndexRequestBuilder.execute().actionGet();
-        logger.info("index {} created with settings {} and {} mappings", index,
+        logger.debug("index {} created with settings {} and {} mappings", index,
                 concreteSettings != null ? concreteSettings.getAsMap() : "",
                 mappings != null ? mappings.size() : 0);
         return this;

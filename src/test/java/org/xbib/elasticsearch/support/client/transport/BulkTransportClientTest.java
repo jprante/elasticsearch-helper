@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -9,6 +9,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +23,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
     @Test
-    public void testBulkClient() {
+    public void testBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(getSettings())
@@ -47,7 +48,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testSingleDocBulkClient() {
+    public void testSingleDocBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
@@ -64,8 +65,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("bulk requests = {}", client.getState().getTotalIngest().count());
-            assertEquals(1, client.getState().getTotalIngest().count());
+            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
+            assertEquals(1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -75,7 +76,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testRandomDocsBulkClient() {
+    public void testRandomDocsBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
@@ -92,8 +93,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("bulk requests = {}", client.getState().getTotalIngest().count());
-            assertEquals(13, client.getState().getTotalIngest().count(), 13);
+            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
+            assertEquals(13, client.getMetric().getTotalIngest().count(), 13);
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -115,7 +116,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
                 .shards(5)
                 .replica(1)
                 .newIndex("test")
-                .startBulk("test");
+                .startBulk("test", -1, 1000);
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
                     EsExecutors.daemonThreadFactory("bulkclient-test"));
@@ -142,8 +143,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("bulk requests = {}", client.getState().getTotalIngest().count() );
-            assertEquals(maxthreads * maxloop / maxactions + 1, client.getState().getTotalIngest().count());
+            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count() );
+            assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

@@ -131,11 +131,6 @@ public class IndexRequestBuilder extends LeaderShardOperationRequestBuilder<Inde
         return this;
     }
 
-    public IndexRequestBuilder setRefresh(boolean refresh) {
-        request.refresh(refresh);
-        return this;
-    }
-
     public IndexRequestBuilder setVersion(long version) {
         request.version(version);
         return this;

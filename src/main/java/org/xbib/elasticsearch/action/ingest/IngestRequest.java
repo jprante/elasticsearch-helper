@@ -334,6 +334,7 @@ public class IngestRequest extends ActionRequest {
     @Override
     public void readFrom(StreamInput in) throws IOException {
         timeout = TimeValue.readTimeValue(in);
+        ingestId = in.readLong();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             byte type = in.readByte();
@@ -352,6 +353,7 @@ public class IngestRequest extends ActionRequest {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         timeout.writeTo(out);
+        out.writeLong(ingestId);
         out.writeVInt(requests.size());
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {

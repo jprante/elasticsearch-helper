@@ -38,7 +38,7 @@ public class NodeDuplicateIDTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.shutdown();
-            assertEquals(client.getState().getTotalIngest().count(), 13);
+            assertEquals(client.getMetric().getTotalIngest().count(), 13);
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

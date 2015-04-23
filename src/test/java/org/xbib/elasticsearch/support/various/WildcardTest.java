@@ -8,7 +8,7 @@ import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;
 import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.queryString;
+import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public class WildcardTest {
@@ -27,15 +27,15 @@ public class WildcardTest {
         index("1", "010");
         index("2", "0*0");
         // exact
-        validateCount(queryString("010").defaultField(FIELD), 1);
-        validateCount(queryString("0\\*0").defaultField(FIELD), 1);
+        validateCount(queryStringQuery("010").defaultField(FIELD), 1);
+        validateCount(queryStringQuery("0\\*0").defaultField(FIELD), 1);
         // pattern
-        validateCount(queryString("0*0").defaultField(FIELD), 2);
-        validateCount(queryString("0?0").defaultField(FIELD), 2);
-        validateCount(queryString("0**0").defaultField(FIELD), 2);
-        validateCount(queryString("0??0").defaultField(FIELD), 0);
-        validateCount(queryString("*10").defaultField(FIELD), 1);
-        validateCount(queryString("*1*").defaultField(FIELD), 1);
+        validateCount(queryStringQuery("0*0").defaultField(FIELD), 2);
+        validateCount(queryStringQuery("0?0").defaultField(FIELD), 2);
+        validateCount(queryStringQuery("0**0").defaultField(FIELD), 2);
+        validateCount(queryStringQuery("0??0").defaultField(FIELD), 0);
+        validateCount(queryStringQuery("*10").defaultField(FIELD), 1);
+        validateCount(queryStringQuery("*1*").defaultField(FIELD), 1);
         // failing
         //validateCount(queryString("*\\*0").defaultField(FIELD), 1);
         //validateCount(queryString("*\\**").defaultField(FIELD), 1);

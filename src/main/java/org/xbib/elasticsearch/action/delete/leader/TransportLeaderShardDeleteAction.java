@@ -9,7 +9,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
@@ -17,7 +16,7 @@ import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.engine.Engine;
-import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -125,14 +124,6 @@ public class TransportLeaderShardDeleteAction extends TransportLeaderShardOperat
         request.version(delete.version());
 
         assert request.versionType().validateVersionForWrites(request.version());
-
-        if (request.refresh()) {
-            try {
-                indexShard.refresh(new Engine.Refresh("refresh_flag_delete").force(false));
-            } catch (Exception e) {
-                // ignore
-            }
-        }
 
         int quorumShards = findQuorum(clusterState, shards(clusterState, request), request);
 

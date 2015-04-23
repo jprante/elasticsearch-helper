@@ -28,8 +28,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.service.IndexService;
-import org.elasticsearch.index.shard.service.IndexShard;
+import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -266,15 +266,18 @@ public abstract class TransportReplicaShardOperationAction<Request extends Repli
                         if (request.operationThreaded()) {
                             try {
                                 threadPool.executor(executor).execute(new AbstractRunnable() {
+
                                     @Override
-                                    public void run() {
-                                        try {
-                                            response.add(shardOperationOnReplica(replicaRequest));
-                                            if (replicas.decrementAndGet() == 0) {
-                                                listener.onResponse(response);
-                                            }
-                                        } catch (Throwable e) {
-                                            failReplicaIfNeeded(shardRouting.index(), shardRouting.id(), e);
+                                    public void onFailure(Throwable t) {
+                                        logger.error(t.getMessage(), t);
+                                        failReplicaIfNeeded(shardRouting.index(), shardRouting.id(), t);
+                                    }
+
+                                    @Override
+                                    protected void doRun() throws Exception {
+                                        response.add(shardOperationOnReplica(replicaRequest));
+                                        if (replicas.decrementAndGet() == 0) {
+                                            listener.onResponse(response);
                                         }
                                     }
 

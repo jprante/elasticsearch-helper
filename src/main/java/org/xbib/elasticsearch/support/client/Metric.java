@@ -1,15 +1,23 @@
+
 package org.xbib.elasticsearch.support.client;
 
-import org.xbib.metrics.CounterMetric;
-import org.xbib.metrics.MeanMetric;
+import org.elasticsearch.common.metrics.CounterMetric;
+import org.elasticsearch.common.metrics.MeanMetric;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-public class State {
+public class Metric {
 
-    private final Set<String> indexNames = Collections.synchronizedSet(new HashSet<String>());
+    private long started;
+
+    private final Set<String> indexNames = new HashSet<String>();
+
+    private final Map<String, Long> startBulkRefreshIntervals = new HashMap<String, Long>();
+
+    private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<String, Long>();
 
     private final MeanMetric totalIngest = new MeanMetric();
 
@@ -53,8 +61,21 @@ public class State {
         return failed;
     }
 
-    public State startBulk(String indexName) {
-        indexNames.add(indexName);
+    public Metric start() {
+        this.started = System.nanoTime();
+        return this;
+    }
+
+    public long elapsed() {
+        return System.nanoTime() - started;
+    }
+
+    public Metric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
+        synchronized (indexNames) {
+            indexNames.add(indexName);
+            startBulkRefreshIntervals.put(indexName, startRefreshInterval);
+            stopBulkRefreshIntervals.put(indexName, stopRefreshInterval);
+        }
         return this;
     }
 
@@ -62,13 +83,23 @@ public class State {
         return indexNames.contains(indexName);
     }
 
-    public State stopBulk(String indexName) {
-        indexNames.remove(indexName);
+    public Metric removeBulk(String indexName) {
+        synchronized (indexNames) {
+            indexNames.remove(indexName);
+        }
         return this;
     }
 
     public Set<String> indices() {
         return indexNames;
+    }
+
+    public Map<String, Long> getStartBulkRefreshIntervals() {
+        return startBulkRefreshIntervals;
+    }
+
+    public Map<String, Long> getStopBulkRefreshIntervals() {
+        return stopBulkRefreshIntervals;
     }
 
 }

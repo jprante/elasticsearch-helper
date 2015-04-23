@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;

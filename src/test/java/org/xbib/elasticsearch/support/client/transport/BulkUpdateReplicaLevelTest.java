@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
