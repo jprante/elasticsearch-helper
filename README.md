@@ -10,6 +10,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 | Elasticsearch version    | Plugin      | Release date |
 | ------------------------ | ----------- | -------------|
+| 1.5.2                    | 1.5.2.1     | May  3, 2015 |
 | 1.5.1                    | 1.5.1.0     | Apr 23, 2015 |
 | 1.3.1                    | 1.3.0.3     | Aug  8, 2014 |
 | 1.3.1                    | 1.3.0.1     | Aug  4, 2014 |
@@ -26,7 +27,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 ## Installation
 
-    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.5.1.0/elasticsearch-support-1.5.1.0.zip
+    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.5.2.1/elasticsearch-support-1.5.2.1.zip
 
 Do not forget to restart the node after installing.
 
