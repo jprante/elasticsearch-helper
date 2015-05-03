@@ -43,7 +43,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
     private BulkProcessor bulkProcessor;
 
-    private Metric metric = new Metric();
+    private Metric metric;
 
     private Throwable throwable;
 
@@ -86,8 +86,10 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
-        this.metric = new Metric();
-        metric.start();
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
@@ -157,6 +159,18 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     public Client client() {
         return client;
     }
+
+    @Override
+    public BulkTransportClient setMetric(Metric metric) {
+        this.metric = metric;
+        return this;
+    }
+
+    @Override
+    public Metric getMetric() {
+        return metric;
+    }
+
 
     public BulkTransportClient shards(int value) {
         super.shards(value);
@@ -354,7 +368,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
                 logger.debug("closing bulk processor...");
                 bulkProcessor.close();
             }
-            if (metric.indices() != null && !metric.indices().isEmpty()) {
+            if (metric != null && metric.indices() != null && !metric.indices().isEmpty()) {
                 logger.debug("stopping bulk mode for indices {}...", metric.indices());
                 for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
@@ -366,10 +380,6 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-    }
-
-    public Metric getMetric() {
-        return metric;
     }
 
     @Override

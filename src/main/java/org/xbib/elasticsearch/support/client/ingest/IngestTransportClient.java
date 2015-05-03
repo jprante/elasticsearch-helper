@@ -42,7 +42,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     private IngestProcessor ingestProcessor;
 
-    private Metric metric = new Metric();
+    private Metric metric;
 
     private Throwable throwable;
 
@@ -85,7 +85,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     @Override
     public IngestTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
-        this.metric = new Metric();
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
@@ -150,6 +153,13 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return client;
     }
 
+    @Override
+    public IngestTransportClient setMetric(Metric metric) {
+        this.metric = metric;
+        return this;
+    }
+
+    @Override
     public Metric getMetric() {
         return metric;
     }

@@ -240,6 +240,8 @@ public interface Ingest {
      */
     int waitForRecovery(String index) throws IOException;
 
+    Ingest setMetric(Metric metric);
+
     Metric getMetric();
 
     boolean hasThrowable();

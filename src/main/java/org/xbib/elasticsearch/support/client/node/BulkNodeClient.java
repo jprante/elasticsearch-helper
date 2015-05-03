@@ -50,7 +50,7 @@ public class BulkNodeClient implements Ingest {
 
     private BulkProcessor bulkProcessor;
 
-    private Metric metric = new Metric();
+    private Metric metric;
 
     private Throwable throwable;
 
@@ -105,8 +105,10 @@ public class BulkNodeClient implements Ingest {
     @Override
     public BulkNodeClient newClient(Client client) {
         this.client = client;
-        this.metric = new Metric();
-        metric.start();
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
@@ -181,6 +183,12 @@ public class BulkNodeClient implements Ingest {
     @Override
     public Client client() {
         return client;
+    }
+
+    @Override
+    public BulkNodeClient setMetric(Metric metric) {
+        this.metric = metric;
+        return this;
     }
 
     @Override
