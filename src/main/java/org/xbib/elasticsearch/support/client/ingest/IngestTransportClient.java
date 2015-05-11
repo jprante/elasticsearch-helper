@@ -164,7 +164,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return metric;
     }
 
-    public IngestTransportClient shards(int value) {
+    /*public IngestTransportClient shards(int value) {
         super.shards(value);
         return this;
     }
@@ -172,7 +172,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient replica(int value) {
         super.replica(value);
         return this;
-    }
+    }*/
 
     @Override
     public IngestTransportClient newIndex(String index) {
@@ -180,6 +180,15 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.newIndex(index);
+        return this;
+    }
+
+    @Override
+    public IngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        super.newIndex(index, settings, mappings);
         return this;
     }
 
@@ -235,30 +244,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient flush(String index) {
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (index == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        ClientHelper.flush(client(), index);
+    public IngestTransportClient flushIndex(String index) {
+        ClientHelper.flushIndex(client(), index);
         return this;
     }
 
     @Override
-    public IngestTransportClient refresh(String index) {
-        if (client == null) {
-            logger.warn("no client");
-            return this;
-        }
-        if (index == null) {
-            logger.warn("no index name given");
-            return this;
-        }
-        ClientHelper.refresh(client(), index);
+    public IngestTransportClient refreshIndex(String index) {
+        ClientHelper.refreshIndex(client(), index);
         return this;
     }
 

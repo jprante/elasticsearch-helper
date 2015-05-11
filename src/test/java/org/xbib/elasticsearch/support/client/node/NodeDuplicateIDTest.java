@@ -28,7 +28,7 @@ public class NodeDuplicateIDTest extends AbstractNodeRandomTestHelper {
             }
             client.flushIngest();
             client.waitForResponses(TimeValue.timeValueSeconds(30));
-            client.refresh("test");
+            client.refreshIndex("test");
             long hits = client.client().prepareSearch("test").setTypes("test")
                     .setQuery(matchAllQuery())
                     .execute().actionGet().getHits().getTotalHits();

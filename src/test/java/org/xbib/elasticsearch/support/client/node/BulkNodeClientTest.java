@@ -163,7 +163,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
-            client.refresh("test");
+            client.refreshIndex("test");
             assertEquals(max * maxloop,
                     client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
             );

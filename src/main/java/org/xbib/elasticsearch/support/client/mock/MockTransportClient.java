@@ -97,7 +97,12 @@ public class MockTransportClient extends BulkTransportClient {
     }
 
     @Override
-    public MockTransportClient refresh(String index) {
+    public MockTransportClient refreshIndex(String index) {
+        return this;
+    }
+
+    @Override
+    public MockTransportClient flushIndex(String index) {
         return this;
     }
 

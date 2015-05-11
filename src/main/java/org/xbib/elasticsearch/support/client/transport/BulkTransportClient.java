@@ -172,7 +172,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
 
-    public BulkTransportClient shards(int value) {
+    /*public BulkTransportClient shards(int value) {
         super.shards(value);
         return this;
     }
@@ -180,7 +180,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     public BulkTransportClient replica(int value) {
         super.replica(value);
         return this;
-    }
+    }*/
 
     @Override
     public BulkTransportClient newIndex(String index) {
@@ -188,6 +188,15 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.newIndex(index);
+        return this;
+    }
+
+    @Override
+    public BulkTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+        if (closed) {
+            throw new ElasticsearchIllegalStateException("client is closed");
+        }
+        super.newIndex(index, settings, mappings);
         return this;
     }
 
@@ -225,14 +234,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient flush(String index) {
-        ClientHelper.flush(client, index);
+    public BulkTransportClient flushIndex(String index) {
+        ClientHelper.flushIndex(client, index);
         return this;
     }
 
     @Override
-    public BulkTransportClient refresh(String index) {
-        ClientHelper.refresh(client, index);
+    public BulkTransportClient refreshIndex(String index) {
+        ClientHelper.refreshIndex(client, index);
         return this;
     }
 

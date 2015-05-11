@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -22,7 +23,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         return this;
     }
 
-    @Override
+/*    @Override
     public BaseIngestTransportClient shards(int shards) {
         super.addSetting("index.number_of_shards", shards);
         return this;
@@ -33,6 +34,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         super.addSetting("index.number_of_replicas", replica);
         return this;
     }
+    */
 
     @Override
     public BaseIngestTransportClient newIndex(String index) {
@@ -59,30 +61,30 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
         }
         CreateIndexRequestBuilder createIndexRequestBuilder =
                 new CreateIndexRequestBuilder(client.admin().indices()).setIndex(index);
-        Settings concreteSettings;
-        if (settings == null && getSettings() != null) {
-            concreteSettings = getSettings();
-        } else if (settings != null) {
-            concreteSettings = settings;
-        } else {
-            concreteSettings = null;
+        if (settings != null) {
+            logger.info("settings = {}", settings.getAsStructuredMap());
+            createIndexRequestBuilder.setSettings(settings);
         }
-        if (concreteSettings != null) {
-            createIndexRequestBuilder.setSettings(getSettings());
-        }
-        if (mappings == null && getMappings() != null) {
-            for (String type : getMappings().keySet()) {
-                createIndexRequestBuilder.addMapping(type, getMappings().get(type));
-            }
-        } else if (mappings != null) {
+        if (mappings != null ) {
             for (String type : mappings.keySet()) {
+                logger.info("found mapping for {}", type);
                 createIndexRequestBuilder.addMapping(type, mappings.get(type));
             }
         }
         createIndexRequestBuilder.execute().actionGet();
-        logger.info("index {} created with settings {} and {} mappings", index,
-                concreteSettings != null ? concreteSettings.getAsMap() : "",
-                mappings != null ? mappings.size() : 0);
+        logger.info("index {} created", index);
+        return this;
+    }
+
+    @Override
+    public BaseIngestTransportClient newMapping(String index, String type, Map<String,Object> mapping) {
+        PutMappingRequestBuilder putMappingRequestBuilder =
+                new PutMappingRequestBuilder(client.admin().indices())
+                        .setIndices(index)
+                        .setType(type)
+                        .setSource(mapping);
+        putMappingRequestBuilder.execute().actionGet();
+        logger.info("mapping created for index {} and type {}", index, type);
         return this;
     }
 

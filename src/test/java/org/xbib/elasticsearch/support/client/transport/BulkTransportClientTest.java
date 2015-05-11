@@ -4,6 +4,8 @@ package org.xbib.elasticsearch.support.client.transport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -109,13 +111,16 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         int maxactions = 1000;
         final int maxloop = 12345;
 
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 5)
+                .put("index.number_of_replicas", 1)
+                .build();
+
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
                 .maxActionsPerBulkRequest(maxactions)
                 .newClient(getSettings())
-                .shards(5)
-                .replica(1)
-                .newIndex("test")
+                .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
@@ -149,7 +154,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
-            client.refresh("test");
+            client.refreshIndex("test");
             assertEquals(maxthreads * maxloop,
                     client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
             );

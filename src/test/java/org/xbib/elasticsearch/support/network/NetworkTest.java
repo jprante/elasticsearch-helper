@@ -1,5 +1,7 @@
 package org.xbib.elasticsearch.support.network;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -9,6 +11,8 @@ import java.util.Enumeration;
 
 public class NetworkTest {
 
+    private final static Logger logger = LogManager.getLogger(NetworkTest.class);
+
     @Test
     public void testNetwork() throws Exception {
         Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
@@ -16,7 +20,7 @@ public class NetworkTest {
             System.out.println("checking network interface = " + netint.getName());
             Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
             for (InetAddress addr : Collections.list(inetAddresses)) {
-                System.out.println("found address = " + addr.getHostAddress()
+                logger.info("found address = " + addr.getHostAddress()
                         + " name = " + addr.getHostName()
                         + " canicalhostname = " + addr.getCanonicalHostName()
                         + " loopback = " + addr.isLoopbackAddress()

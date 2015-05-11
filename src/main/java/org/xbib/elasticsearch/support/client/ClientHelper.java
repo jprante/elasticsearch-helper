@@ -113,13 +113,16 @@ public class ClientHelper {
         return waitForRecovery(client, index);
     }
 
-
-    public static void flush(Client client, String index) {
-        client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
+    public static void flushIndex(Client client, String index) {
+        if (client != null && index != null) {
+            client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
+        }
     }
 
-    public static void refresh(Client client, String index) {
-        client.admin().indices().prepareRefresh().setIndices(index).execute().actionGet();
+    public static void refreshIndex(Client client, String index) {
+        if (client != null && index != null) {
+            client.admin().indices().prepareRefresh().setIndices(index).execute().actionGet();
+        }
     }
 
     public static void disableRefresh(Client client, String index) throws IOException {

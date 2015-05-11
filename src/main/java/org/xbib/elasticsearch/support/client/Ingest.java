@@ -79,27 +79,11 @@ public interface Ingest {
      */
     Ingest flushIngestInterval(TimeValue flushInterval);
 
-    /**
-     * The number of shards for index creation
-     *
-     * @param shards the number of shards
-     * @return this
-     */
-    Ingest shards(int shards);
+    //void setSettings(Settings settings);
 
-    /**
-     * The number of replica for index creation
-     *
-     * @param replica the number of replica
-     * @return this
-     */
-    Ingest replica(int replica);
-
-    void setSettings(Settings settings);
+    //Settings getSettings();
 
     ImmutableSettings.Builder getSettingsBuilder();
-
-    Settings getSettings();
 
     /**
      * Create settings
@@ -152,6 +136,15 @@ public interface Ingest {
     Ingest newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException;
 
     Ingest newIndex(String index, Settings settings, Map<String,String> mappings);
+
+    /**
+     * Create new mapping
+     * @param index index
+     * @param type index type
+     * @param mapping mapping
+     * @return this ingest
+     */
+    Ingest newMapping(String index, String type, Map<String,Object> mapping);
 
     /**
      * Delete index
@@ -207,16 +200,13 @@ public interface Ingest {
     Ingest waitForResponses(TimeValue maxWait) throws InterruptedException;
 
     /**
-     * Flush the index
-     */
-    Ingest flush(String index);
-
-    /**
      * Refresh the index.
      *
      * @return this ingest
      */
-    Ingest refresh(String index);
+    Ingest refreshIndex(String index);
+
+    Ingest flushIndex(String index);
 
     /**
      * Add replica level.

@@ -44,11 +44,13 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
 
     @Test(expected = MasterNotDiscoveredException.class)
     public void testClusterBlockTransportClient() throws Exception {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 3)
+                .build();
             final IngestTransportClient ingest = new IngestTransportClient()
                     .newClient(getSettings())
-                    .shards(1)
-                    .replica(0)
-                    .newIndex("test");
+                    .newIndex("test", settings, null);
             IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
             XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
             String jsonString = builder.string();

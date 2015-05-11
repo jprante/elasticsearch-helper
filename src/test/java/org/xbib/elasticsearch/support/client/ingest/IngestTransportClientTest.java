@@ -5,6 +5,7 @@ import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -30,11 +31,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testNewIndexIngest() throws IOException {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 0)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .newIndex("test", settings, null);
         ingest.shutdown();
         if (ingest.hasThrowable()) {
             logger.error("error", ingest.getThrowable());
@@ -44,11 +47,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testDeleteIndexIngestClient() throws IOException {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 0)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .newIndex("test", settings, null);
         try {
             ingest.deleteIndex("test")
               .newIndex("test")
@@ -66,12 +71,14 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testSingleDocIngestClient() throws IOException {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 0)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .newIndex("test", settings, null);
         try {
             ingest.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
             ingest.flushIngest();
@@ -93,13 +100,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testRandomDocsIngestClient() throws Exception {
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 0)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(1000)
                 .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test")
+                .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
             for (int i = 0; i < 12345; i++) {
@@ -128,13 +137,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         int maxthreads = Runtime.getRuntime().availableProcessors();
         int maxactions = 1000;
         final int maxloop = 12345;
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 0)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(maxactions)
                 .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test")
+                .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
@@ -168,7 +179,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 logger.error("error", ingest.getThrowable());
             }
             assertFalse(ingest.hasThrowable());
-            ingest.refresh("test");
+            ingest.refreshIndex("test");
             assertEquals(maxthreads * maxloop,
                     ingest.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
             );

@@ -4,6 +4,7 @@ import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -56,7 +57,7 @@ public class BulkNodeClient implements Ingest {
 
     private boolean closed = false;
 
-    @Override
+   /* @Override
     public BulkNodeClient shards(int shards) {
         configHelper.setting("index.number_of_shards", shards);
         return this;
@@ -66,7 +67,7 @@ public class BulkNodeClient implements Ingest {
     public BulkNodeClient replica(int replica) {
         configHelper.setting("index.number_of_replica", replica);
         return this;
-    }
+    }*/
 
     @Override
     public BulkNodeClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
@@ -347,14 +348,14 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient flush(String index) {
-        ClientHelper.flush(client, index);
+    public BulkNodeClient flushIndex(String index) {
+        ClientHelper.flushIndex(client, index);
         return this;
     }
 
     @Override
-    public BulkNodeClient refresh(String index) {
-        ClientHelper.refresh(client, index);
+    public BulkNodeClient refreshIndex(String index) {
+        ClientHelper.refreshIndex(client, index);
         return this;
     }
 
@@ -424,32 +425,33 @@ public class BulkNodeClient implements Ingest {
         }
         CreateIndexRequestBuilder createIndexRequestBuilder =
                 new CreateIndexRequestBuilder(client.admin().indices()).setIndex(index);
-        Settings concreteSettings;
-        if (settings == null && getSettings() != null) {
-            concreteSettings = getSettings();
-        } else if (settings != null) {
-            concreteSettings = settings;
-        } else {
-            concreteSettings = null;
+        if (settings != null) {
+            logger.info("settings = {}", settings.getAsStructuredMap());
+            createIndexRequestBuilder.setSettings(settings);
         }
-        if (concreteSettings != null) {
-            createIndexRequestBuilder.setSettings(getSettings());
-        }
-        if (mappings == null && getMappings() != null) {
-            for (String type : getMappings().keySet()) {
-                createIndexRequestBuilder.addMapping(type, getMappings().get(type));
-            }
-        } else if (mappings != null) {
+        if (mappings != null ) {
             for (String type : mappings.keySet()) {
+                logger.info("found mapping for {}", type);
                 createIndexRequestBuilder.addMapping(type, mappings.get(type));
             }
         }
         createIndexRequestBuilder.execute().actionGet();
-        logger.debug("index {} created with settings {} and {} mappings", index,
-                concreteSettings != null ? concreteSettings.getAsMap() : "",
-                mappings != null ? mappings.size() : 0);
+        logger.info("index {} created", index);
         return this;
     }
+
+    @Override
+    public BulkNodeClient newMapping(String index, String type, Map<String,Object> mapping) {
+        PutMappingRequestBuilder putMappingRequestBuilder =
+                new PutMappingRequestBuilder(client.admin().indices())
+                        .setIndices(index)
+                        .setType(type)
+                        .setSource(mapping);
+        putMappingRequestBuilder.execute().actionGet();
+        logger.info("mapping created for index {} and type {}", index, type);
+        return this;
+    }
+
 
     @Override
     public BulkNodeClient deleteIndex(String index) {
