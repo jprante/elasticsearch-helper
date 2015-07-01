@@ -125,12 +125,4 @@ public class ClientHelper {
         }
     }
 
-    public static void disableRefresh(Client client, String index) throws IOException {
-        updateIndexSetting(client, index, "refresh_interval", -1);
-    }
-
-    public static void enableRefresh(Client client, String index) throws IOException {
-        updateIndexSetting(client, index, "refresh_interval", 1000);
-    }
-
 }

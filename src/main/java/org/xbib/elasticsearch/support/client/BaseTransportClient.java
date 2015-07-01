@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -169,14 +168,6 @@ public abstract class BaseTransportClient {
         configHelper.setting(key, value);
     }
 
-/*    public void setSettings(Settings settings) {
-        configHelper.settings(settings);
-    }
-
-    public Settings getSettings() {
-        return configHelper.settings();
-    }
-*/
     public void mapping(String type, String mapping) throws IOException {
         configHelper.mapping(type, mapping);
     }

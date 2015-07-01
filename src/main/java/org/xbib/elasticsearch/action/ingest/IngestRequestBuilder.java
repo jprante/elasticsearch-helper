@@ -59,13 +59,13 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
         return this;
     }
 
-    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
-        this.request.add(data, from, length, contentUnsafe, null, null);
+    public IngestRequestBuilder add(byte[] data, int from, int length) throws Exception {
+        this.request.add(data, from, length, null, null);
         return this;
     }
 
-    public IngestRequestBuilder add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
-        this.request.add(data, from, length, contentUnsafe, defaultIndex, defaultType);
+    public IngestRequestBuilder add(byte[] data, int from, int length, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+        this.request.add(data, from, length, defaultIndex, defaultType);
         return this;
     }
 

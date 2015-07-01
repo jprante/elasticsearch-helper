@@ -147,21 +147,21 @@ public class IngestRequest extends ActionRequest {
     /**
      * Adds a framed data in binary format
      */
-    public IngestRequest add(byte[] data, int from, int length, boolean contentUnsafe) throws Exception {
-        return add(data, from, length, contentUnsafe, null, null);
+    public IngestRequest add(byte[] data, int from, int length) throws Exception {
+        return add(data, from, length, null, null);
     }
 
     /**
      * Adds a framed data in binary format
      */
-    public IngestRequest add(byte[] data, int from, int length, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
-        return add(new BytesArray(data, from, length), contentUnsafe, defaultIndex, defaultType);
+    public IngestRequest add(byte[] data, int from, int length, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+        return add(new BytesArray(data, from, length), defaultIndex, defaultType);
     }
 
     /**
      * Adds a framed data in binary format
      */
-    public IngestRequest add(BytesReference data, boolean contentUnsafe, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
+    public IngestRequest add(BytesReference data, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         XContent xContent = XContentFactory.xContent(data);
         int from = 0;
         int length = data.length();
@@ -246,16 +246,16 @@ public class IngestRequest extends ActionRequest {
                     if ("index".equals(action)) {
                         if (opType == null) {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                    .source(data.slice(from, nextMarker - from)));
                         } else {
                             internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                     .create("create".equals(opType))
-                                    .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                    .source(data.slice(from, nextMarker - from)));
                         }
                     } else if ("create".equals(action)) {
                         internalAdd(new IndexRequest(index, type, id).routing(routing).parent(parent).timestamp(timestamp).ttl(ttl).version(version).versionType(versionType)
                                 .create(true)
-                                .source(data.slice(from, nextMarker - from), contentUnsafe));
+                                .source(data.slice(from, nextMarker - from)));
                     }
                     from = nextMarker + 1;
                 }

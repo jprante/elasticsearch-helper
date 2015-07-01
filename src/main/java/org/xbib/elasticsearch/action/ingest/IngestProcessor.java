@@ -110,17 +110,16 @@ public class IngestProcessor {
      * For REST API
      *
      * @param data           the REST body data
-     * @param contentUnsafe  if content is unsafe
      * @param defaultIndex   default index
      * @param defaultType    default type
      * @param ingestListener the listener
      * @return this processor
      * @throws Exception
      */
-    public IngestProcessor add(BytesReference data, boolean contentUnsafe,
+    public IngestProcessor add(BytesReference data,
                                @Nullable String defaultIndex, @Nullable String defaultType,
                                IngestListener ingestListener) throws Exception {
-        ingestRequest.add(data, contentUnsafe, defaultIndex, defaultType);
+        ingestRequest.add(data, defaultIndex, defaultType);
         flushIfNeeded(ingestListener);
         return this;
     }

@@ -111,11 +111,7 @@ public class RestIngestAction extends BaseRestHandler {
         };
         try {
             long t0 = System.currentTimeMillis();
-            ingestProcessor.add(request.content(),
-                    request.contentUnsafe(),
-                    request.param("index"),
-                    request.param("type"),
-                    ingestListener);
+            ingestProcessor.add(request.content(), request.param("index"), request.param("type"), ingestListener);
             // estimation, should be enough time to wait for an ID
             boolean b = latch.await(100, TimeUnit.MILLISECONDS);
             long t1 = System.currentTimeMillis();

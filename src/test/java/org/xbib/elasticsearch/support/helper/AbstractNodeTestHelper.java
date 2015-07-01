@@ -57,10 +57,11 @@ public abstract class AbstractNodeTestHelper {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", cluster)
                 .put("cluster.routing.schedule", "50ms")
-                .put("gateway.type", "none")
-                .put("index.store.type", "memory")
-                .put("http.enabled", false)
+                .put("cluster.routing.allocation.disk.threshold_enabled", false)
                 .put("discovery.zen.multicast.enabled", false)
+                .put("gateway.type", "none")
+                .put("http.enabled", false)
+                .put("index.store.type", "memory")
                 .put("threadpool.bulk.queue_size", 10 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .build();
     }
