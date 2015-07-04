@@ -33,11 +33,13 @@ public interface Search {
 
     /**
      * Create new search request
+     * @return this search request
      */
     BasicSearchRequest newSearchRequest();
 
     /**
      * Create new get request
+     * @return this search request
      */
     BasicGetRequest newGetRequest();
 

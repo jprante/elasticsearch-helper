@@ -44,16 +44,38 @@ public interface Ingest {
      * @param index the index
      * @param type  the type
      * @param id    the id
-     * @return this
+     * @return this ingest
      */
     Ingest delete(String index, String type, String id);
 
+    /**
+     * Create new ingest client.
+     * @param client the Elasticsearch client
+     * @return this ingest
+     * @throws IOException if client could not get created
+     */
     Ingest newClient(Client client) throws IOException;
 
+    /**
+     * Create new ingest client.
+     * @param settings settings
+     * @return this ingest
+     * @throws IOException if client could not get created
+     */
     Ingest newClient(Settings settings) throws IOException;
 
+    /**
+     * Create new ingest client.
+     * @param settings settings
+     * @return this ingest
+     * @throws IOException if client could not get created
+     */
     Ingest newClient(Map<String,String> settings) throws IOException;
 
+    /**
+     * Return Elasticsearch client to execute actions
+     * @return Elasticsearch client
+     */
     AbstractClient client();
 
     /**
@@ -88,12 +110,17 @@ public interface Ingest {
      */
     Ingest flushIngestInterval(TimeValue flushInterval);
 
+    /**
+     * Get settings builder
+     * @return settings builder
+     */
     Settings.Builder getSettingsBuilder();
 
     /**
      * Create settings
      *
      * @param in the input stream with settings
+     * @throws IOException if setting definition could not be retrieved
      */
     void setting(InputStream in) throws IOException;
 
@@ -121,23 +148,54 @@ public interface Ingest {
      */
     void addSetting(String key, Integer value);
 
+    /**
+     * Set mapping
+     * @param type mapping type
+     * @param in mapping definition as input stream
+     * @throws IOException if mapping could not be added
+     */
     void mapping(String type, InputStream in) throws IOException;
 
+    /**
+     * Set mapping
+     * @param type mapping type
+     * @param mapping mapping definition as input stream
+     * @throws IOException if mapping could not be added
+     */
     void mapping(String type, String mapping) throws IOException;
 
-    Map<String, String> getMappings();
-
+    /**
+     * Put mapping
+     * @param index index
+     * @return this ingest
+     */
     Ingest putMapping(String index);
 
     /**
      * Create a new index
-     *
+     * @param index index
      * @return this ingest
      */
     Ingest newIndex(String index);
 
+    /**
+     * Create a new index
+     * @param index index
+     * @param type type
+     * @param settings settings
+     * @param mappings mappings
+     * @return this ingest
+     * @throws IOException if new index creation fails
+     */
     Ingest newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException;
 
+    /**
+     * Create a new index
+     * @param index index
+     * @param settings settings
+     * @param mappings mappings
+     * @return this ingest
+     */
     Ingest newIndex(String index, Settings settings, Map<String,String> mappings);
 
     /**
@@ -151,21 +209,25 @@ public interface Ingest {
 
     /**
      * Delete index
-     *
+     * @param index index
      * @return this ingest
      */
     Ingest deleteIndex(String index);
 
     /**
      * Start bulk mode
-     *
+     * @param index index
+     * @param startRefreshInterval refresh interval before bulk
+     * @param stopRefreshInterval refresh interval after bulk
+     * @throws IOException if bulk could not be started
      * @return this ingest
      */
     Ingest startBulk(String index, long startRefreshInterval, long stopRefreshInterval) throws IOException;
 
     /**
-     * Stops bulk mode. Enables refresh.
-     *
+     * Stops bulk mode
+     * @param index index
+     * @throws IOException if bulk could not be stopped
      * @return this Ingest
      */
     Ingest stopBulk(String index) throws IOException;
@@ -198,45 +260,68 @@ public interface Ingest {
      *
      * @param maxWait maximum wait time
      * @return this ingest
-     * @throws InterruptedException
+     * @throws InterruptedException if wait is interrupted
      */
     Ingest waitForResponses(TimeValue maxWait) throws InterruptedException;
 
     /**
      * Refresh the index.
-     *
+     * @param index index
      * @return this ingest
      */
     Ingest refreshIndex(String index);
 
+    /**
+     * Flush the index.
+     * @param index index
+     * @return this ingest
+     */
     Ingest flushIndex(String index);
 
     /**
      * Add replica level.
-     *
+     * @param index index
      * @param level the replica level
+     * @throws IOException if replica could not be updated
      * @return number of shards after updating replica level
      */
     int updateReplicaLevel(String index, int level) throws IOException;
 
     /**
      * Wait for cluster being healthy.
-     *
-     * @throws IOException
+     * @param status cluster health status to wait for
+     * @param timeValue time value
+     * @return this ingest
+     * @throws IOException if wait failed
      */
     Ingest waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
 
     /**
      * Wait for index recovery (after replica change)
      *
+     * @param index index
      * @return number of shards found
+     * @throws IOException if wait failed
      */
     int waitForRecovery(String index) throws IOException;
 
+    /**
+     * Set metric
+     * @param metric the metric
+     * @return this ingest
+     */
     Ingest setMetric(Metric metric);
 
+    /**
+     * Get metric
+     * @return metric
+     */
     Metric getMetric();
 
+    /**
+     * Returns true is a throwable exists
+     * @return true if a Throwable exists
+     */
     boolean hasThrowable();
 
     /**

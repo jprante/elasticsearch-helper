@@ -16,14 +16,18 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportDuplicateIDTest.class.getSimpleName());
 
+    private final static Integer MAX_ACTIONS = 1000;
+
+    private final static Integer NUM_ACTIONS = 12345;
+
     @Test
     public void testDuplicateDocIDs() throws Exception {
         final IngestTransportClient client = new IngestTransportClient()
-                .maxActionsPerRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .newClient(getSettings())
                 .newIndex("test");
         try {
-            for (int i = 0; i < 12345; i++) {
+            for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             client.flushIngest();
@@ -33,12 +37,12 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
                     .setQuery(matchAllQuery())
                     .execute().actionGet().getHits().getTotalHits();
             logger.info("hits = {}", hits);
-            assertTrue(hits < 12345);
+            assertTrue(hits < NUM_ACTIONS);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
             client.shutdown();
-            assertEquals(client.getMetric().getTotalIngest().count(), 13);
+            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

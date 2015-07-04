@@ -9,6 +9,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.junit.Before;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -28,9 +29,17 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 10000;
+    private final static Integer MAX_ACTIONS = 1000;
 
     private final static Integer NUM_ACTIONS = 12345;
+
+    @Before
+    public void startNodes() throws Exception {
+        super.startNodes();
+        startNode("2");
+        startNode("3");
+        logger.info("started 3 nodes");
+    }
 
     @Test
     public void testNewIndexIngest() throws IOException {

@@ -129,6 +129,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * The number of actions in the ingest request.
+     * @return the number of actions
      */
     public int numberOfActions() {
         // for ConcurrentLinkedList, this call is not O(n), and may not be the size of the current list
@@ -137,6 +138,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * The estimated size in bytes of the ingest request.
+     * @return the estimated byte size
      */
     public long estimatedSizeInBytes() {
         return sizeInBytes.longValue();
@@ -144,6 +146,11 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
+     * @param data data
+     * @param from from
+     * @param length length
+     * @return this request
+     * @throws Exception if data could not be added
      */
     public IngestRequest add(byte[] data, int from, int length) throws Exception {
         return add(data, from, length, null, null);
@@ -151,6 +158,13 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
+     * @param data data
+     * @param from from
+     * @param length length
+     * @param defaultIndex the default index
+     * @param defaultType the default type
+     * @return this request
+     * @throws Exception if data could not be added
      */
     public IngestRequest add(byte[] data, int from, int length, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         return add(new BytesArray(data, from, length), defaultIndex, defaultType);
@@ -158,6 +172,11 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
+     * @param data data
+     * @param defaultIndex the default index
+     * @param defaultType the default type
+     * @return this request
+     * @throws Exception if data could not be added
      */
     public IngestRequest add(BytesReference data, @Nullable String defaultIndex, @Nullable String defaultType) throws Exception {
         XContent xContent = XContentFactory.xContent(data);
@@ -287,7 +306,6 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Take a number of requests from the bulk request queue.
-     * <p/>
      * This method is thread safe.
      *
      * @param numRequests number of requests

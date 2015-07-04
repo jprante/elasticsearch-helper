@@ -10,6 +10,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.xbib.elasticsearch.support.client.Ingest;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -22,11 +23,11 @@ public class IngestProcessor {
 
     private final Client client;
 
-    private int maxConcurrency = Runtime.getRuntime().availableProcessors() * 2;
+    private int actions = Ingest.DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
-    private int actions = 1000;
+    private int maxConcurrency = Ingest.DEFAULT_MAX_CONCURRENT_REQUESTS;
 
-    private ByteSizeValue maxVolume = new ByteSizeValue(10, ByteSizeUnit.MB);
+    private ByteSizeValue maxVolume = Ingest.DEFAULT_MAX_VOLUME_PER_REQUEST;
 
     private Semaphore semaphore = new Semaphore(maxConcurrency);
 
@@ -113,7 +114,7 @@ public class IngestProcessor {
      * @param defaultType    default type
      * @param ingestListener the listener
      * @return this processor
-     * @throws Exception
+     * @throws Exception if data can not be added
      */
     public IngestProcessor add(BytesReference data,
                                @Nullable String defaultIndex, @Nullable String defaultType,
@@ -126,6 +127,7 @@ public class IngestProcessor {
     /**
      * Closes the processor. If flushing by time is enabled, then it is shut down.
      * Any remaining ingest actions are flushed.
+     * @throws InterruptedException if method was interrupted
      */
     public void close() throws InterruptedException {
         if (closed) {
@@ -153,8 +155,9 @@ public class IngestProcessor {
     /**
      * Wait for responses of outstanding requests.
      *
+     * @param maxWait maximum time to wait
      * @return true if all requests answered within the waiting time, false if not
-     * @throws InterruptedException
+     * @throws InterruptedException if wait is interrupted
      */
     public boolean waitForResponses(TimeValue maxWait) throws InterruptedException {
         if (maxConcurrency - semaphore.availablePermits() > 0) {
@@ -168,6 +171,7 @@ public class IngestProcessor {
     /**
      * Critical phase, check if flushing condition is met and
      * push the part of the requests that is required to push
+     * @param ingestListener listener
      */
     private synchronized void flushIfNeeded(IngestListener ingestListener) {
         if (closed) {
@@ -190,6 +194,7 @@ public class IngestProcessor {
      * Process an ingest request and send responses via the listener.
      *
      * @param request the ingest request
+     * @param ingestListener the listener
      */
     private void process(final IngestRequest request, final IngestListener ingestListener) {
         if (ingestListener == null) {
@@ -245,16 +250,23 @@ public class IngestProcessor {
 
         /**
          * Called before the ingest request is executed.
+         * @param concurrency  concurrency
+         * @param request request
          */
         void onRequest(int concurrency, IngestRequest request);
 
         /**
          * Called after a successful execution of an ingest request.
+         * @param concurrency  concurrency
+         * @param response response
          */
         void onResponse(int concurrency, IngestResponse response);
 
         /**
          * Callback after a failed execution of an ingest request.
+         * @param concurrency  concurrency
+         * @param ingestId ingest identifier
+         * @param failure failure
          */
         void onFailure(int concurrency, long ingestId, Throwable failure);
     }

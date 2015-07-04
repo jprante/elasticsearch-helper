@@ -56,14 +56,10 @@ public class MockDirectoryWrapper extends FilterDirectory {
     protected volatile boolean isOpen = true;
     long maxSize;
     long maxUsedSize;
-    double randomIOExceptionRate;
-    double randomIOExceptionRateOnOpen;
     boolean noDeleteOpenFile = true;
     boolean assertNoDeleteOpenFile = false;
     boolean preventDoubleWrite = true;
     boolean trackDiskUsage = false;
-    boolean useSlowOpenClosers = false;
-    boolean allowRandomFileNotFoundException = true;
     boolean allowReadingFilesStillOpenForWrite = false;
     ConcurrentMap<String, RuntimeException> openLocks = new ConcurrentHashMap<>();
     volatile boolean crashed;
@@ -101,52 +97,6 @@ public class MockDirectoryWrapper extends FilterDirectory {
 
     public int getInputCloneCount() {
         return inputCloneCount.get();
-    }
-
-    /**
-     * If set to true, we print a fake exception
-     * with filename and stacktrace on every indexinput clone()
-     */
-    public void setVerboseClone(boolean v) {
-        verboseClone = v;
-    }
-
-    public void setTrackDiskUsage(boolean v) {
-        trackDiskUsage = v;
-    }
-
-    /**
-     * If set to true, we throw an IOException if the same
-     * file is opened by createOutput, ever.
-     */
-    public void setPreventDoubleWrite(boolean value) {
-        preventDoubleWrite = value;
-    }
-
-    /**
-     * If set to true (the default), when we throw random
-     * IOException on openInput or createOutput, we may
-     * sometimes throw FileNotFoundException or
-     * NoSuchFileException.
-     */
-    public void setAllowRandomFileNotFoundException(boolean value) {
-        allowRandomFileNotFoundException = value;
-    }
-
-    /**
-     * If set to true, you can open an inputstream on a file
-     * that is still open for writes.
-     */
-    public void setAllowReadingFilesStillOpenForWrite(boolean value) {
-        allowReadingFilesStillOpenForWrite = value;
-    }
-
-    /**
-     * Add a rare small sleep to catch race conditions in open/close
-     * You can enable this if you need it.
-     */
-    public void setUseSlowOpenClosers(boolean v) {
-        useSlowOpenClosers = v;
     }
 
     @Override
@@ -247,37 +197,8 @@ public class MockDirectoryWrapper extends FilterDirectory {
         this.assertNoDeleteOpenFile = value;
     }
 
-    public double getRandomIOExceptionRate() {
-        return randomIOExceptionRate;
-    }
-
     /**
-     * If 0.0, no exceptions will be thrown.  Else this should
-     * be a double 0.0 - 1.0.  We will randomly throw an
-     * IOException on the first write to an OutputStream based
-     * on this probability.
-     */
-    public void setRandomIOExceptionRate(double rate) {
-        randomIOExceptionRate = rate;
-    }
-
-    public double getRandomIOExceptionRateOnOpen() {
-        return randomIOExceptionRateOnOpen;
-    }
-
-    /**
-     * If 0.0, no exceptions will be thrown during openInput
-     * and createOutput.  Else this should
-     * be a double 0.0 - 1.0 and we will randomly throw an
-     * IOException in openInput and createOutput with
-     * this probability.
-     */
-    public void setRandomIOExceptionRateOnOpen(double rate) {
-        randomIOExceptionRateOnOpen = rate;
-    }
-
-    /**
-     * returns current open file handle count
+     * Returns current open file handle count
      */
     public synchronized long getFileHandleCount() {
         return openFileHandles.size();
@@ -288,8 +209,6 @@ public class MockDirectoryWrapper extends FilterDirectory {
         deleteFile(name, false);
     }
 
-    // sets the cause of the incoming ioe to be the stack
-    // trace when the offending file name was opened
     private synchronized Throwable fillOpenTrace(Throwable t, String name, boolean input) {
         for (Map.Entry<Closeable, Exception> ent : openFileHandles.entrySet()) {
             if (input && ent.getKey() instanceof MockIndexInputWrapper && ((MockIndexInputWrapper) ent.getKey()).name.equals(name)) {
@@ -304,13 +223,10 @@ public class MockDirectoryWrapper extends FilterDirectory {
     }
 
     private synchronized void deleteFile(String name, boolean forced) throws IOException {
-
         maybeThrowDeterministicException();
-
         if (crashed && !forced) {
             throw new IOException("cannot delete after crash");
         }
-
         if (unSyncedFiles.contains(name)) {
             unSyncedFiles.remove(name);
         }

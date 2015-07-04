@@ -26,7 +26,6 @@ import java.io.IOException;
  * disk space actually used, and maybe throw random
  * IOExceptions.
  */
-
 public class MockIndexOutputWrapper extends IndexOutput {
     final String name;
     private final IndexOutput delegate;
@@ -37,6 +36,9 @@ public class MockIndexOutputWrapper extends IndexOutput {
 
     /**
      * Construct an empty output buffer.
+     * @param dir dir
+     * @param delegate delefate
+     * @param name name
      */
     public MockIndexOutputWrapper(MockDirectoryWrapper dir, IndexOutput delegate, String name) {
         super("MockIndexOutputWrapper(" + delegate + ")");
