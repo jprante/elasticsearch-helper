@@ -24,7 +24,7 @@ public class SimpleTest {
         String FIELD = "field";
         Client client = nodeBuilder().settings(settingsBuilder()
                 .put("cluster.name", "test")
-                .put("path.home", "/")
+                .put("path.home", System.getProperty("path.home"))
                 .put("index.analysis.analyzer.default.filter.0", "lowercase")
                 .put("index.analysis.analyzer.default.filter.1", "trim")
                 .put("index.analysis.analyzer.default.tokenizer", "keyword"))

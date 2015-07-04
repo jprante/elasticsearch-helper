@@ -27,7 +27,7 @@ public class AliasTest {
             Settings settings = Settings.settingsBuilder()
                     .put("cluster.name", "test")
                     .put("gateway.type", "none")
-                    .put("path.home", "/")
+                    .put("path.home", System.getProperty("path.home"))
                     .build();
             node = nodeBuilder().settings(settings).local(true).node();
             Client client = node.client();
