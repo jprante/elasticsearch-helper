@@ -1,21 +1,20 @@
 package org.xbib.elasticsearch.support.helper;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkUtils;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.node.Node;
 
-import static org.elasticsearch.common.collect.Maps.newHashMap;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.Settings.settingsBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import org.junit.After;
@@ -25,9 +24,9 @@ public abstract class AbstractNodeTestHelper {
 
     protected final static ESLogger logger = ESLoggerFactory.getLogger("test");
 
-    private Map<String, Node> nodes = newHashMap();
+    private Map<String, Node> nodes = new HashMap<>();
 
-    private Map<String, Client> clients = newHashMap();
+    private Map<String, AbstractClient> clients = new HashMap<>();
 
     private AtomicInteger counter = new AtomicInteger();
 
@@ -45,24 +44,33 @@ public abstract class AbstractNodeTestHelper {
         return cluster;
     }
 
+    protected String getHome() {
+        return System.getProperty("path.home");
+    }
+
     protected Settings getSettings() {
-        return ImmutableSettings.settingsBuilder()
+        return settingsBuilder()
                 .put("host", host)
                 .put("port", port)
                 .put("cluster.name", cluster)
+                .put("path.home", getHome())
                 .build();
     }
 
     protected Settings getNodeSettings() {
-        return ImmutableSettings.settingsBuilder()
+        return settingsBuilder()
                 .put("cluster.name", cluster)
                 .put("cluster.routing.schedule", "50ms")
                 .put("cluster.routing.allocation.disk.threshold_enabled", false)
                 .put("discovery.zen.multicast.enabled", false)
+                .put("discovery.zen.multicast.enabled", true)
+                .put("discovery.zen.multicast.ping_timeout", "5s")
                 .put("gateway.type", "none")
                 .put("http.enabled", false)
-                .put("index.store.type", "memory")
-                .put("threadpool.bulk.queue_size", 10 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
+                .put("index.store.type", "org.xbib.elasticsearch.support.store.mockfs")
+                .put("threadpool.bulk.size", 2 * Runtime.getRuntime().availableProcessors())
+                .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
+                .put("path.home", getHome())
                 .build();
     }
 
@@ -84,11 +92,21 @@ public abstract class AbstractNodeTestHelper {
 
     @After
     public void stopNodes() throws Exception {
+        try {
+            // delete all indices
+            client("1").admin().indices().prepareDelete("_all").execute().actionGet();
+        } catch (Exception e) {
+            logger.error("can not delete indexes", e);
+        }
         closeAllNodes();
     }
 
     protected Node startNode(String id) {
         return buildNode(id).start();
+    }
+
+    public AbstractClient client(String id) {
+        return clients.get(id);
     }
 
     private Node buildNode(String id) {
@@ -97,18 +115,19 @@ public abstract class AbstractNodeTestHelper {
                 .loadFromClasspath(settingsSource)
                 .put(getNodeSettings())
                 .put("name", id)
+                .put("path.home", getHome())
                 .build();
         logger.info("settings={}", finalSettings.getAsMap());
         Node node = nodeBuilder()
                 .settings(finalSettings).build();
-        Client client = node.client();
+        AbstractClient client = (AbstractClient)node.client();
         nodes.put(id, node);
         clients.put(id, client);
         return node;
     }
 
     protected void stopNode(String id) {
-        Client client = clients.remove(id);
+        AbstractClient client = clients.remove(id);
         if (client != null) {
             client.close();
         }
@@ -118,14 +137,10 @@ public abstract class AbstractNodeTestHelper {
         }
     }
 
-    public Client client(String id) {
-        return clients.get(id);
-    }
 
     public void closeAllNodes() {
-        for (Client client : clients.values()) {
+        for (AbstractClient client : clients.values()) {
             client.close();
-            client = null;
         }
         clients.clear();
         for (Node node : nodes.values()) {
@@ -134,6 +149,7 @@ public abstract class AbstractNodeTestHelper {
             }
         }
         nodes.clear();
+        logger.info("all nodes closed");
     }
 
 }

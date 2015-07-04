@@ -1,18 +1,17 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import com.google.common.collect.ImmutableSet;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.ImmutableSet;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
@@ -26,43 +25,41 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Ingest client
+ * Ingest transport client
  */
 public class IngestTransportClient extends BaseIngestTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getSimpleName());
 
-    private int maxActionsPerRequest = 100;
+    private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
+    private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
 
-    private ByteSizeValue maxVolumePerBulkRequest = new ByteSizeValue(10, ByteSizeUnit.MB);
+    private ByteSizeValue maxVolumePerRequest = DEFAULT_MAX_VOLUME_PER_REQUEST;
 
-    private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
+    private TimeValue flushInterval = DEFAULT_FLUSH_INTERVAL;
 
     private IngestProcessor ingestProcessor;
-
-    private Metric metric;
 
     private Throwable throwable;
 
     private volatile boolean closed = false;
 
     @Override
-    public IngestTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
-        this.maxActionsPerRequest = maxBulkActions;
+    public IngestTransportClient maxActionsPerRequest(int maxActionsPerRequest) {
+        this.maxActionsPerRequest = maxActionsPerRequest;
         return this;
     }
 
     @Override
-    public IngestTransportClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
-        this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
+    public IngestTransportClient maxConcurrentRequests(int maxConcurrentRequests) {
+        this.maxConcurrentRequests = maxConcurrentRequests;
         return this;
     }
 
     @Override
-    public IngestTransportClient maxVolumePerBulkRequest(ByteSizeValue maxVolume) {
-        this.maxVolumePerBulkRequest = maxVolume;
+    public IngestTransportClient maxVolumePerRequest(ByteSizeValue maxVolumePerRequest) {
+        this.maxVolumePerRequest = maxVolumePerRequest;
         return this;
     }
 
@@ -79,16 +76,12 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     @Override
     public IngestTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+        return this.newClient(Settings.settingsBuilder().put(settings).build());
     }
 
     @Override
     public IngestTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
-        if (metric == null) {
-            this.metric = new Metric();
-            metric.start();
-        }
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
@@ -139,9 +132,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             }
         };
         this.ingestProcessor = new IngestProcessor(client)
-                .maxConcurrentRequests(maxConcurrentBulkRequests)
+                .maxConcurrentRequests(maxConcurrentRequests)
                 .maxActions(maxActionsPerRequest)
-                .maxVolumePerRequest(maxVolumePerBulkRequest)
+                .maxVolumePerRequest(maxVolumePerRequest)
                 .flushInterval(flushInterval)
                 .listener(ingestListener);
         this.closed = false;
@@ -149,7 +142,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public Client client() {
+    public AbstractClient client() {
         return client;
     }
 
@@ -164,20 +157,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return metric;
     }
 
-    /*public IngestTransportClient shards(int value) {
-        super.shards(value);
-        return this;
-    }
-
-    public IngestTransportClient replica(int value) {
-        super.replica(value);
-        return this;
-    }*/
-
     @Override
     public IngestTransportClient newIndex(String index) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.newIndex(index);
         return this;
@@ -186,7 +169,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     @Override
     public IngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.newIndex(index, settings, mappings);
         return this;
@@ -194,7 +177,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
 
     public IngestTransportClient deleteIndex(String index) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.deleteIndex(index);
         return this;
@@ -204,42 +187,21 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     @Override
     public IngestTransportClient putMapping(String index) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.putMapping(index);
         return this;
     }
 
     @Override
-    public IngestTransportClient deleteMapping(String index, String type) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        super.deleteMapping(index, type);
-        return this;
-    }
-
-    @Override
-    public IngestTransportClient startBulk(String index, long startRefreshInterval, long stopRefreshIterval) throws IOException {
-        if (metric == null) {
-            return this;
-        }
-        if (!metric.isBulk(index)) {
-            metric.setupBulk(index, startRefreshInterval, stopRefreshIterval);
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshInterval);
-        }
+    public IngestTransportClient startBulk(String index, long startRefreshIntervalMillis, long stopRefreshItervalMillis) throws IOException {
+        super.startBulk(index, startRefreshIntervalMillis, stopRefreshItervalMillis);
         return this;
     }
 
     @Override
     public IngestTransportClient stopBulk(String index) throws IOException {
-        if (metric == null) {
-            return this;
-        }
-        if (metric.isBulk(index)) {
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index));
-            metric.removeBulk(index);
-        }
+        super.stopBulk(index);
         return this;
     }
 
@@ -259,9 +221,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient index(String index, String type, String id, String source) {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         try {
@@ -281,9 +243,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient bulkIndex(org.elasticsearch.action.index.IndexRequest indexRequest) {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         try {
@@ -303,9 +265,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient delete(String index, String type, String id) {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         try {
@@ -325,9 +287,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient bulkDelete(org.elasticsearch.action.delete.DeleteRequest deleteRequest) {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         try {
@@ -347,9 +309,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient flushIngest() {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         if (client == null) {
@@ -366,9 +328,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
         if (closed) {
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client is closed, possible reason: ", throwable);
             } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
+                throw new ElasticsearchException("client is closed");
             }
         }
         if (client == null) {
@@ -402,9 +364,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         if (closed) {
             super.shutdown();
             if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client was closed, possible reason: ", throwable);
+                throw new ElasticsearchException("client was closed, possible reason: ", throwable);
             }
-            throw new ElasticsearchIllegalStateException("client was closed");
+            throw new ElasticsearchException("client was closed");
         }
         closed = true;
         if (client == null) {

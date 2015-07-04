@@ -1,21 +1,19 @@
 package org.xbib.elasticsearch.action.ingest.leader;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.shard.ShardId;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class IngestLeaderShardResponse extends ActionResponse {
 
@@ -29,7 +27,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
 
     private long tookInMillis;
 
-    private List<ActionRequest> actionRequests = newLinkedList();
+    private List<ActionRequest> actionRequests = new LinkedList<ActionRequest>();
 
     private List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList());
 
@@ -110,7 +108,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
         }
         successCount = in.readVInt();
         quorumShards = in.readVInt();
-        actionRequests = newLinkedList();
+        actionRequests = new LinkedList<>();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             boolean exists = in.readBoolean();
@@ -129,7 +127,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
                 actionRequests.add(null);
             }
         }
-        failures = newLinkedList();
+        failures = new LinkedList<>();
         size = in.readVInt();
         for (int i = 0; i < size; i++) {
             failures.add(IngestActionFailure.from(in));
@@ -160,7 +158,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
                 } else if (actionRequest instanceof DeleteRequest) {
                     out.writeBoolean(false);
                 } else {
-                    throw new ElasticsearchIllegalStateException("action request not supported: " + actionRequest.getClass().getName());
+                    throw new ElasticsearchException("action request not supported: " + actionRequest.getClass().getName());
                 }
                 actionRequest.writeTo(out);
             }

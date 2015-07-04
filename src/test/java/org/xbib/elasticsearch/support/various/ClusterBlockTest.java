@@ -3,7 +3,6 @@ package org.xbib.elasticsearch.support.various;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Test;
@@ -14,8 +13,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 public class ClusterBlockTest extends AbstractNodeTestHelper {
 
     protected Settings getNodeSettings() {
-        return ImmutableSettings
-                .settingsBuilder()
+        return Settings.settingsBuilder()
                 .put("cluster.name", getClusterName())
                 .put("cluster.routing.schedule", "50ms")
                 .put("gateway.type", "none")

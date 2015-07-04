@@ -1,26 +1,39 @@
 package org.xbib.elasticsearch.action.ingest.leader;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.action.IndicesRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
-import org.xbib.elasticsearch.action.support.replication.leader.LeaderShardOperationRequest;
+import org.xbib.elasticsearch.action.ingest.Consistency;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
+import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public class IngestLeaderShardRequest extends LeaderShardOperationRequest<IngestLeaderShardRequest> {
+public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardRequest> implements IndicesRequest {
+
+    private TimeValue timeout = Consistency.DEFAULT_TIMEOUT;
+
+    private Consistency requiredConsistency = Consistency.DEFAULT_CONSISTENCY;
+
+    private String index;
+
+    private boolean threadedOperation = true;
 
     private long ingestId;
 
     private ShardId shardId;
 
-    private List<ActionRequest> actionRequests = newLinkedList();
+    private List<ActionRequest> actionRequests = new LinkedList<ActionRequest>();
 
     public IngestLeaderShardRequest() {
     }
@@ -53,13 +66,72 @@ public class IngestLeaderShardRequest extends LeaderShardOperationRequest<Ingest
         return actionRequests;
     }
 
+
+    public final boolean operationThreaded() {
+        return threadedOperation;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestLeaderShardRequest operationThreaded(boolean threadedOperation) {
+        this.threadedOperation = threadedOperation;
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestLeaderShardRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return timeout;
+    }
+
+    public String index() {
+        return this.index;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestLeaderShardRequest index(String index) {
+        this.index = index;
+        return this;
+    }
+
     @Override
-    public void beforeLocalFork() {
+    public String[] indices() {
+        return new String[]{index};
+    }
+
+    @Override
+    public IndicesOptions indicesOptions() {
+        return IndicesOptions.strictSingleIndexNoExpandForbidClosed();
+    }
+
+    public Consistency requiredConsistency() {
+        return this.requiredConsistency;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestLeaderShardRequest requiredConsistency(Consistency requiredConsistency) {
+        this.requiredConsistency = requiredConsistency;
+        return this;
+    }
+
+    @Override
+    public ActionRequestValidationException validate() {
+        ActionRequestValidationException validationException = null;
+        if (index == null) {
+            validationException = addValidationError("index is missing", null);
+        }
+        return validationException;
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
+        out.writeString(index);
+        timeout.writeTo(out);
+        out.writeByte(requiredConsistency.id());
         out.writeLong(ingestId);
         shardId.writeTo(out);
         out.writeVInt(actionRequests.size());
@@ -73,7 +145,7 @@ public class IngestLeaderShardRequest extends LeaderShardOperationRequest<Ingest
                 } else if (actionRequest instanceof DeleteRequest) {
                     out.writeBoolean(false);
                 } else {
-                    throw new ElasticsearchIllegalStateException("action request not supported: " + actionRequest.getClass().getName());
+                    throw new ElasticsearchException("action request not supported: " + actionRequest.getClass().getName());
                 }
                 actionRequest.writeTo(out);
             }
@@ -83,10 +155,13 @@ public class IngestLeaderShardRequest extends LeaderShardOperationRequest<Ingest
     @Override
     public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
+        index = in.readString();
+        timeout = TimeValue.readTimeValue(in);
+        requiredConsistency = Consistency.fromId(in.readByte());
         ingestId = in.readLong();
         shardId = ShardId.readShardId(in);
         int size = in.readVInt();
-        actionRequests = newLinkedList();
+        actionRequests = new LinkedList<ActionRequest>();
         for (int i = 0; i < size; i++) {
             boolean exists = in.readBoolean();
             if (exists) {

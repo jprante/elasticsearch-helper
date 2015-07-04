@@ -4,8 +4,9 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
@@ -17,6 +18,14 @@ import java.util.Map;
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
  */
 public interface Ingest {
+
+    int DEFAULT_MAX_ACTIONS_PER_REQUEST = 1000;
+
+    int DEFAULT_MAX_CONCURRENT_REQUESTS = Runtime.getRuntime().availableProcessors() * 4;
+
+    ByteSizeValue DEFAULT_MAX_VOLUME_PER_REQUEST = new ByteSizeValue(10, ByteSizeUnit.MB);
+
+    TimeValue DEFAULT_FLUSH_INTERVAL = TimeValue.timeValueSeconds(30);
 
     /**
      * Index document
@@ -45,31 +54,31 @@ public interface Ingest {
 
     Ingest newClient(Map<String,String> settings) throws IOException;
 
-    Client client();
+    AbstractClient client();
 
     /**
-     * Set the maximum number of actions per bulk request
+     * Set the maximum number of actions per request
      *
-     * @param maxActions maximum number of bulk actions
+     * @param maxActionsPerRequest maximum number of actions per request
      * @return this ingest
      */
-    Ingest maxActionsPerBulkRequest(int maxActions);
+    Ingest maxActionsPerRequest(int maxActionsPerRequest);
 
     /**
-     * Set the maximum concurent bulk requests
+     * Set the maximum concurent requests
      *
-     * @param maxConcurentBulkRequests maximum number of concurrent ingest requests
+     * @param maxConcurentRequests maximum number of concurrent ingest requests
      * @return this Ingest
      */
-    Ingest maxConcurrentBulkRequests(int maxConcurentBulkRequests);
+    Ingest maxConcurrentRequests(int maxConcurentRequests);
 
     /**
-     * Set the maximum volume for bulk request before flush
+     * Set the maximum volume for request before flush
      *
      * @param maxVolume maximum volume
      * @return this ingest
      */
-    Ingest maxVolumePerBulkRequest(ByteSizeValue maxVolume);
+    Ingest maxVolumePerRequest(ByteSizeValue maxVolume);
 
     /**
      * Set the flush interval for automatic flushing outstanding ingest requests
@@ -79,11 +88,7 @@ public interface Ingest {
      */
     Ingest flushIngestInterval(TimeValue flushInterval);
 
-    //void setSettings(Settings settings);
-
-    //Settings getSettings();
-
-    ImmutableSettings.Builder getSettingsBuilder();
+    Settings.Builder getSettingsBuilder();
 
     /**
      * Create settings
@@ -123,8 +128,6 @@ public interface Ingest {
     Map<String, String> getMappings();
 
     Ingest putMapping(String index);
-
-    Ingest deleteMapping(String index, String type);
 
     /**
      * Create a new index
@@ -184,7 +187,7 @@ public interface Ingest {
     Ingest bulkDelete(DeleteRequest deleteRequest);
 
     /**
-     * Flush ingest, move all pending documents to the bulk indexer
+     * Flush ingest, move all pending documents to the cluster.
      *
      * @return this
      */

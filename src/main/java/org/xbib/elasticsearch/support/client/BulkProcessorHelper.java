@@ -16,6 +16,7 @@ public class BulkProcessorHelper {
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkProcessorHelper.class.getSimpleName());
 
     public static void flush(BulkProcessor bulkProcessor) {
+        //bulkProcessor.close();
         try {
             Field field = bulkProcessor.getClass().getDeclaredField("bulkRequest");
             if (field != null) {
@@ -34,8 +35,16 @@ public class BulkProcessorHelper {
         }
     }
 
-    public static boolean waitFor(BulkProcessor bulkProcessor, TimeValue maxWait) {
-        Semaphore semaphore = null;
+    public static void waitFor(BulkProcessor bulkProcessor, TimeValue maxWait) {
+        try {
+            bulkProcessor.awaitClose(maxWait.getMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn("interrupted");
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
+        }
+        /*Semaphore semaphore = null;
         boolean acquired = false;
         try {
             Field field = bulkProcessor.getClass().getDeclaredField("semaphore");
@@ -62,5 +71,6 @@ public class BulkProcessorHelper {
             }
         }
         return false;
+        */
     }
 }

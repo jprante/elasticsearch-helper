@@ -25,6 +25,10 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClientTest.class.getSimpleName());
 
+    private final static Integer MAX_ACTIONS = 10000;
+
+    private final static Integer NUM_ACTIONS = 12345;
+
     @Test
     public void testNewIndexNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
@@ -68,7 +72,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testSingleDocNodeClient() {
         final BulkNodeClient client = new BulkNodeClient()
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(client("1"))
                 .newIndex("test");
@@ -96,13 +100,12 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testRandomDocsNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(10))
                 .newClient(client("1"))
                 .newIndex("test");
-
         try {
-            for (int i = 0; i < 12345; i++) {
+            for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             client.flushIngest();
@@ -110,7 +113,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            assertEquals(13, client.getMetric().getTotalIngest().count());
+            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -121,21 +124,21 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testThreadedRandomDocsNodeClient() throws Exception {
-        int max = Runtime.getRuntime().availableProcessors();
-        int maxactions = 1000;
-        final int maxloop = 12345;
-        logger.info("NodeClient max={} maxactions={} maxloop={}", max, maxactions, maxloop);
+        int maxthreads = Runtime.getRuntime().availableProcessors();
+        int maxactions = MAX_ACTIONS;
+        final int maxloop = NUM_ACTIONS;
+        logger.info("NodeClient max={} maxactions={} maxloop={}", maxthreads, maxactions, maxloop);
         final BulkNodeClient client = new BulkNodeClient()
-                .maxActionsPerBulkRequest(maxactions)
+                .maxActionsPerRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
                 .newClient(client("1"))
                 .newIndex("test")
                 .startBulk("test", -1, 1000);
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(max, 30,
-                    EsExecutors.daemonThreadFactory("nodeclient-test"));
-            final CountDownLatch latch = new CountDownLatch(max);
-            for (int i = 0; i < max; i++) {
+            ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
+                    EsExecutors.daemonThreadFactory("bulk-nodeclient-test"));
+            final CountDownLatch latch = new CountDownLatch(maxthreads);
+            for (int i = 0; i < maxthreads; i++) {
                 pool.execute(new Runnable() {
                     public void run() {
                         for (int i = 0; i < maxloop; i++) {
@@ -150,7 +153,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
             logger.info("flush...");
             client.flushIngest();
             client.waitForResponses(TimeValue.timeValueSeconds(60));
-            logger.info("thread pool shutdown...");
+            logger.info("got all responses, thread pool shutdown...");
             pool.shutdown();
             logger.info("pool is shut down");
         } catch (NoNodeAvailableException e) {
@@ -158,13 +161,13 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         } finally {
             client.stopBulk("test");
             logger.info("total bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(max * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
             client.refreshIndex("test");
-            assertEquals(max * maxloop,
+            assertEquals(maxthreads * maxloop,
                     client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
             );
             client.shutdown();

@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.support.client.ingest;
 import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -29,11 +28,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
+    private final static Integer MAX_ACTIONS = 10000;
+
+    private final static Integer NUM_ACTIONS = 12345;
+
     @Test
     public void testNewIndexIngest() throws IOException {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
@@ -47,9 +50,9 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testDeleteIndexIngestClient() throws IOException {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .newClient(getSettings())
@@ -71,9 +74,9 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testSingleDocIngestClient() throws IOException {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
@@ -100,18 +103,18 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testRandomDocsIngestClient() throws Exception {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .newClient(getSettings())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
-            for (int i = 0; i < 12345; i++) {
+            for (int i = 0; i < NUM_ACTIONS; i++) {
                 ingest.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             ingest.flushIngest();
@@ -123,7 +126,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         } finally {
             ingest.stopBulk("test");
             logger.info("total requests = {}", ingest.getMetric().getTotalIngest().count());
-            assertEquals(13, ingest.getMetric().getTotalIngest().count());
+            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, ingest.getMetric().getTotalIngest().count());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
@@ -135,15 +138,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testThreadedRandomDocsIngestClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = 1000;
-        final int maxloop = 12345;
-        Settings settings = ImmutableSettings.settingsBuilder()
+        int maxactions = MAX_ACTIONS;
+        final int maxloop = NUM_ACTIONS;
+        Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 0)
+                .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .maxActionsPerBulkRequest(maxactions)
+                .maxActionsPerRequest(maxactions)
                 .newClient(getSettings())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
@@ -190,9 +193,10 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testClusterConnect() throws IOException {
         startNode("2");
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.builder();
-        settingsBuilder.put("cluster.name", getClusterName());
-        settingsBuilder.put("autodiscover", true);
+        Settings.Builder settingsBuilder = Settings.builder()
+                .put("cluster.name", getClusterName())
+                .put("path.home", System.getProperty("path.home"))
+                .put("autodiscover", true);
         int i = 0;
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
         NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();

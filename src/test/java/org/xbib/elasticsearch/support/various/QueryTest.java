@@ -6,7 +6,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
@@ -20,9 +19,8 @@ public class QueryTest {
     private static final ESLogger logger = ESLoggerFactory.getLogger(QueryTest.class.getName());
 
     public void testQuery() {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("cluster.name", "test").build();
-
         String index = "test";
         String type = "test";
         Node node = null;
@@ -36,18 +34,17 @@ public class QueryTest {
             logger.warn(e.getMessage());
         } finally {
             if (node !=null){
-                node.stop();
                 node.close();
             }
         }
     }
 
     public void testSniff() {
-        Settings settings = ImmutableSettings.settingsBuilder()
+        Settings settings = Settings.settingsBuilder()
                 .put("cluster.name", "test")
                 .put("client.transport.sniff", false).build();
         try {
-            TransportClient client = new TransportClient(settings);
+            TransportClient client = TransportClient.builder().settings(settings).build();
             InetSocketTransportAddress address = new InetSocketTransportAddress("localhost", 9300);
             client.addTransportAddress(address);
             client.close();

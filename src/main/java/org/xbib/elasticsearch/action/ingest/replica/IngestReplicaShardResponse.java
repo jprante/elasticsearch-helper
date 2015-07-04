@@ -7,9 +7,8 @@ import org.elasticsearch.index.shard.ShardId;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
-
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class IngestReplicaShardResponse extends ActionResponse {
 
@@ -23,7 +22,7 @@ public class IngestReplicaShardResponse extends ActionResponse {
 
     protected long tookInMillis;
 
-    protected List<IngestActionFailure> failures = newLinkedList();
+    protected List<IngestActionFailure> failures = new LinkedList<>();
 
     public IngestReplicaShardResponse() {
     }
@@ -49,15 +48,15 @@ public class IngestReplicaShardResponse extends ActionResponse {
         return replicaLevel;
     }
 
-    public int successSize() {
+    public int getSuccessSize() {
         return successSize;
     }
 
-    public long tookInMillis() {
+    public long getTookInMillis() {
         return tookInMillis;
     }
 
-    public List<IngestActionFailure> failures() {
+    public List<IngestActionFailure> getFailures() {
         return failures;
     }
 
@@ -69,7 +68,7 @@ public class IngestReplicaShardResponse extends ActionResponse {
         replicaLevel = in.readVInt();
         successSize = in.readVInt();
         tookInMillis = in.readLong();
-        failures = newLinkedList();
+        failures = new LinkedList<>();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             failures.add(IngestActionFailure.from(in));

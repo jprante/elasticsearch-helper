@@ -1,9 +1,12 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalArgumentException;
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import com.google.common.collect.Lists;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.action.CompositeIndicesRequest;
+import org.elasticsearch.action.IndicesRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -14,19 +17,16 @@ import org.elasticsearch.common.xcontent.XContent;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.VersionType;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
-import org.xbib.elasticsearch.action.support.replication.Consistency;
-import org.xbib.elasticsearch.action.support.replication.leader.LeaderShardOperationRequest;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.collect.Queues.newConcurrentLinkedQueue;
 
-public class IngestRequest extends ActionRequest {
+public class IngestRequest extends ActionRequest<IngestRequest> implements CompositeIndicesRequest {
 
     private static final int REQUEST_OVERHEAD = 50;
 
@@ -34,13 +34,11 @@ public class IngestRequest extends ActionRequest {
 
     private final AtomicLong sizeInBytes = new AtomicLong();
 
-    private TimeValue timeout = LeaderShardOperationRequest.DEFAULT_TIMEOUT;
+    private TimeValue timeout = Consistency.DEFAULT_TIMEOUT;
 
-    private Consistency requiredConsistency = LeaderShardOperationRequest.DEFAULT_CONSISTENCY;
+    private Consistency requiredConsistency = Consistency.DEFAULT_CONSISTENCY;
 
     private long ingestId;
-
-    private boolean threadedOperation = false;
 
     public IngestRequest timeout(TimeValue timeout) {
         this.timeout = timeout;
@@ -60,15 +58,6 @@ public class IngestRequest extends ActionRequest {
         return requiredConsistency;
     }
 
-    public IngestRequest operationThreaded(boolean threadedOperation) {
-        this.threadedOperation = threadedOperation;
-        return this;
-    }
-
-    public boolean operationThreaded() {
-        return threadedOperation;
-    }
-
     public IngestRequest ingestId(long ingestId) {
         this.ingestId = ingestId;
         return this;
@@ -79,7 +68,7 @@ public class IngestRequest extends ActionRequest {
     }
 
     public Queue<ActionRequest> newQueue() {
-        return newConcurrentLinkedQueue();
+        return new ConcurrentLinkedQueue<ActionRequest>();
     }
 
     protected Queue<ActionRequest> requests() {
@@ -99,7 +88,7 @@ public class IngestRequest extends ActionRequest {
         } else if (request instanceof DeleteRequest) {
             add((DeleteRequest) request);
         } else {
-            throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");
+            throw new IllegalArgumentException("no support for request [" + request + "]");
         }
         return this;
     }
@@ -111,17 +100,15 @@ public class IngestRequest extends ActionRequest {
             } else if (request instanceof DeleteRequest) {
                 add((DeleteRequest) request);
             } else {
-                throw new ElasticsearchIllegalArgumentException("no support for request [" + request + "]");
+                throw new IllegalArgumentException("no support for request [" + request + "]");
             }
         }
         return this;
     }
 
     public IngestRequest add(IndexRequest request) {
-        request.beforeLocalFork();
         return internalAdd(request);
     }
-
 
     public IngestRequest add(DeleteRequest request) {
         requests.offer(request);
@@ -129,8 +116,19 @@ public class IngestRequest extends ActionRequest {
         return this;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<? extends IndicesRequest> subRequests() {
+        List<IndicesRequest> indicesRequests = Lists.newArrayList();
+        for (ActionRequest request : requests) {
+            assert request instanceof IndicesRequest;
+            indicesRequests.add((IndicesRequest) request);
+        }
+        return indicesRequests;
+    }
+
     /**
-     * The number of actions in the bulk request.
+     * The number of actions in the ingest request.
      */
     public int numberOfActions() {
         // for ConcurrentLinkedList, this call is not O(n), and may not be the size of the current list
@@ -138,7 +136,7 @@ public class IngestRequest extends ActionRequest {
     }
 
     /**
-     * The estimated size in bytes of the bulk request.
+     * The estimated size in bytes of the ingest request.
      */
     public long estimatedSizeInBytes() {
         return sizeInBytes.longValue();
@@ -222,7 +220,7 @@ public class IngestRequest extends ActionRequest {
                             timestamp = parser.text();
                         } else if ("_ttl".equals(currentFieldName) || "ttl".equals(currentFieldName)) {
                             if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
-                                ttl = TimeValue.parseTimeValue(parser.text(), null).millis();
+                                ttl = TimeValue.parseTimeValue(parser.text(), null, currentFieldName).millis();
                             } else {
                                 ttl = parser.longValue();
                             }
@@ -307,7 +305,7 @@ public class IngestRequest extends ActionRequest {
             } else if (actionRequest instanceof DeleteRequest) {
                 sizeInBytes.addAndGet(REQUEST_OVERHEAD);
             } else {
-                throw new ElasticsearchIllegalStateException("action request not supported: " + actionRequest.getClass().getName());
+                throw new IllegalStateException("action request not supported: " + actionRequest.getClass().getName());
             }
         }
         return request;
@@ -371,7 +369,6 @@ public class IngestRequest extends ActionRequest {
         sizeInBytes.addAndGet(length);
         return this;
     }
-
 
     private int findNextMarker(byte marker, int from, BytesReference data, int length) {
         for (int i = from; i < length; i++) {

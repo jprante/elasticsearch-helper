@@ -6,7 +6,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 
 import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.Settings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;

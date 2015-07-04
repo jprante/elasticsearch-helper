@@ -10,7 +10,6 @@ import org.elasticsearch.cluster.metadata.AliasAction;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.junit.Test;
@@ -25,9 +24,10 @@ public class AliasTest {
     public void testAlias() {
         Node node = null;
         try {
-            Settings settings = ImmutableSettings.settingsBuilder()
+            Settings settings = Settings.settingsBuilder()
                     .put("cluster.name", "test")
                     .put("gateway.type", "none")
+                    .put("path.home", "/")
                     .build();
             node = nodeBuilder().settings(settings).local(true).node();
             Client client = node.client();
@@ -56,7 +56,6 @@ public class AliasTest {
             logger.warn(e.getMessage());
         } finally {
             if (node !=null){
-                node.stop();
                 node.close();
             }
         }

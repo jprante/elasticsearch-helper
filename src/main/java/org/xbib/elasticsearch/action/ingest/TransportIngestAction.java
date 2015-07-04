@@ -1,11 +1,12 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalArgumentException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.ActionFilters;
-import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
@@ -18,26 +19,20 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.BaseTransportRequestHandler;
-import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportService;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardRequest;
 import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardResponse;
 import org.xbib.elasticsearch.action.ingest.leader.TransportLeaderShardIngestAction;
 import org.xbib.elasticsearch.action.ingest.replica.IngestReplicaShardRequest;
 import org.xbib.elasticsearch.action.ingest.replica.TransportReplicaShardIngestAction;
-import org.xbib.elasticsearch.action.support.replication.replica.TransportReplicaShardOperationAction;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
-import static org.elasticsearch.common.collect.Maps.newHashMap;
-
-public class TransportIngestAction extends TransportAction<IngestRequest, IngestResponse> {
+public class TransportIngestAction extends HandledTransportAction<IngestRequest, IngestResponse> {
 
     private final boolean allowIdGeneration;
 
@@ -52,14 +47,12 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardIngestAction leaderShardIngestAction,
                                  TransportReplicaShardIngestAction replicaShardIngestAction,
-                                 ActionFilters actionFilter) {
-        super(settings, IngestAction.NAME, threadPool, actionFilter);
+                                 ActionFilters actionFilters) {
+        super(settings, IngestAction.NAME, threadPool, transportService, actionFilters, IngestRequest.class);
         this.clusterService = clusterService;
         this.leaderShardIngestAction = leaderShardIngestAction;
         this.replicaShardIngestAction = replicaShardIngestAction;
-        this.allowIdGeneration = componentSettings.getAsBoolean("action.allow_id_generation", true);
-
-        transportService.registerHandler(IngestAction.NAME, new IngestTransportHandler());
+        this.allowIdGeneration = this.settings.getAsBoolean("action.allow_id_generation", true);
     }
 
     @Override
@@ -75,7 +68,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
             return;
         }
         MetaData metaData = clusterState.metaData();
-        final List<ActionRequest> requests = newLinkedList();
+        final List<ActionRequest> requests = new LinkedList<ActionRequest>();
         // first, iterate over all requests and parse them for mapping, filter out erraneous requests
         for (ActionRequest request : ingestRequest.requests()) {
             if (request instanceof IndexRequest) {
@@ -86,7 +79,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     if (metaData.hasIndex(indexRequest.index())) {
                         mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());
                     }
-                    indexRequest.process(metaData, indexRequest.index(), mappingMd, allowIdGeneration);
+                    indexRequest.process(metaData, mappingMd, allowIdGeneration, indexRequest.index());
                     requests.add(indexRequest);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
@@ -98,18 +91,18 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                 deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index(), deleteRequest.indicesOptions()));
                 requests.add(deleteRequest);
             } else {
-                throw new ElasticsearchIllegalArgumentException("action request not known: " + request.getClass().getName());
+                throw new ElasticsearchException("action request not known: " + request.getClass().getName());
             }
         }
         // second, go over all the requests and create a shard request map
-        Map<ShardId, List<ActionRequest>> requestsByShard = newHashMap();
+        Map<ShardId, List<ActionRequest>> requestsByShard = new HashMap<ShardId, List<ActionRequest>>();
         for (ActionRequest request : requests) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
                 List<ActionRequest> list = requestsByShard.get(shardId);
                 if (list == null) {
-                    list = newLinkedList();
+                    list = new LinkedList<ActionRequest>();
                     requestsByShard.put(shardId, list);
                 }
                 list.add(request);
@@ -121,7 +114,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     for (ShardIterator shardIt : groupShards) {
                         List<ActionRequest> list = requestsByShard.get(shardIt.shardId());
                         if (list == null) {
-                            list = newLinkedList();
+                            list = new LinkedList<ActionRequest>();
                             requestsByShard.put(shardIt.shardId(), list);
                         }
                         list.add(deleteRequest);
@@ -130,7 +123,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
                     List<ActionRequest> list = requestsByShard.get(shardId);
                     if (list == null) {
-                        list = newLinkedList();
+                        list = new LinkedList<ActionRequest>();
                         requestsByShard.put(shardId, list);
                     }
                     list.add(request);
@@ -174,10 +167,10 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                                         ingestLeaderShardRequest.getShardId(),
                                         ingestLeaderShardRequest.getActionRequests());
                         ingestReplicaShardRequest.timeout(ingestRequest.timeout());
-                        replicaShardIngestAction.execute(ingestReplicaShardRequest, new ActionListener<TransportReplicaShardOperationAction.ReplicaOperationResponse>() {
+                        replicaShardIngestAction.execute(ingestReplicaShardRequest, new ActionListener<TransportReplicaShardIngestAction.ReplicaOperationResponse>() {
                             @Override
-                            public void onResponse(TransportReplicaShardOperationAction.ReplicaOperationResponse response) {
-                                long millis = System.currentTimeMillis() - startTime;
+                            public void onResponse(TransportReplicaShardIngestAction.ReplicaOperationResponse response) {
+                                long millis = Math.max(1, System.currentTimeMillis() - startTime);
                                 ingestResponse.addReplicaResponses(response.responses());
                                 if (responseCounter.decrementAndGet() == 0) {
                                     ingestResponse.setSuccessSize(successCount.get())
@@ -188,7 +181,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
 
                             @Override
                             public void onFailure(Throwable e) {
-                                long millis = System.currentTimeMillis() - startTime;
+                                long millis = Math.max(1, System.currentTimeMillis() - startTime);
                                 logger.error(e.getMessage(), e);
                                 ingestResponse.addFailure(new IngestActionFailure(ingestRequest.ingestId(), shardId, ExceptionsHelper.detailedMessage(e)));
                                 if (responseCounter.decrementAndGet() == 0) {
@@ -222,42 +215,4 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
         }
     }
 
-    class IngestTransportHandler extends BaseTransportRequestHandler<IngestRequest> {
-
-        @Override
-        public IngestRequest newInstance() {
-            return new IngestRequest();
-        }
-
-        @Override
-        public String executor() {
-            return ThreadPool.Names.SAME;
-        }
-
-        @Override
-        public void messageReceived(final IngestRequest request, final TransportChannel channel) throws Exception {
-            request.listenerThreaded(false);
-            request.operationThreaded(true);
-            execute(request, new ActionListener<IngestResponse>() {
-                @Override
-                public void onResponse(IngestResponse result) {
-                    try {
-                        channel.sendResponse(result);
-                    } catch (Throwable e) {
-                        onFailure(e);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable e) {
-                    try {
-                        channel.sendResponse(e);
-                        logger.error(e.getMessage(), e);
-                    } catch (Exception e1) {
-                        logger.warn("failed to send error response for action [" + IngestAction.NAME + "] and request [" + request + "]", e1);
-                    }
-                }
-            });
-        }
-    }
 }

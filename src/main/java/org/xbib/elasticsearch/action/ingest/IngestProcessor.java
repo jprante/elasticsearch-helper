@@ -1,7 +1,8 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -9,8 +10,6 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
@@ -130,7 +129,7 @@ public class IngestProcessor {
      */
     public void close() throws InterruptedException {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("already closed");
+            throw new IllegalStateException("processor already closed");
         }
         closed = true;
         if (scheduledFuture != null) {
@@ -172,7 +171,7 @@ public class IngestProcessor {
      */
     private synchronized void flushIfNeeded(IngestListener ingestListener) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("processor already closed");
+            throw new IllegalStateException("processor already closed");
         }
         if (actions > 0) {
             while (ingestRequest.numberOfActions() >= actions) {
@@ -242,7 +241,7 @@ public class IngestProcessor {
     /**
      * A listener for ingest executions
      */
-    public static interface IngestListener {
+    public interface IngestListener {
 
         /**
          * Called before the ingest request is executed.

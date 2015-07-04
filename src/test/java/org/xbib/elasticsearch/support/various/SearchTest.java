@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.support.various;
 
+import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -20,7 +21,7 @@ public class SearchTest extends AbstractNodeTestHelper {
     public void test() throws Exception {
         Client client = client("1");
         long t0 = System.currentTimeMillis();
-        BulkRequestBuilder builder = new BulkRequestBuilder(client);
+        BulkRequestBuilder builder = new BulkRequestBuilder(client, BulkAction.INSTANCE);
         for (int i = 0; i < 1000; i++) {
             builder.add(indexRequest()
                     .index("pages").type("row")

@@ -2,14 +2,14 @@ package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ElasticsearchClient;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xbib.elasticsearch.support.network.NetworkUtils;
@@ -44,8 +44,7 @@ public abstract class BaseTransportClient {
         if (settings != null) {
             logger.info("creating transport client, java version {}, effective settings {}",
                     System.getProperty("java.version"), settings.getAsMap());
-            // false = do not load config settings from environment
-            this.client = new TransportClient(settings, false);
+            this.client = TransportClient.builder().settings(settings).build();
             Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
             if (!connect(addrs, settings.getAsBoolean("autodiscover", false))) {
                 throw new NoNodeAvailableException("no cluster nodes available, check settings "
@@ -54,7 +53,7 @@ public abstract class BaseTransportClient {
         }
     }
 
-    public Client client() {
+    public AbstractClient client() {
         return client;
     }
 
@@ -74,7 +73,7 @@ public abstract class BaseTransportClient {
     }
 
     protected Settings findSettings() {
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        Settings.Builder settingsBuilder = Settings.settingsBuilder();
         settingsBuilder.put("host", "localhost");
         try {
             String hostname = InetAddress.getLocalHost().getHostName();
@@ -120,7 +119,7 @@ public abstract class BaseTransportClient {
             client.addTransportAddress(address);
         }
         if (client.connectedNodes() != null) {
-            List<DiscoveryNode> nodes = client.connectedNodes().asList();
+            List<DiscoveryNode> nodes = client.connectedNodes();
             if (!nodes.isEmpty()) {
                 logger.info("connected to {}", nodes);
                 if (autodiscover) {
@@ -135,7 +134,7 @@ public abstract class BaseTransportClient {
                             logger.warn("can't connect to node " + node, e);
                         }
                     }
-                    logger.info("after auto-discovery connected to {}", client.connectedNodes().asList());
+                    logger.info("after auto-discovery connected to {}", client.connectedNodes());
                 }
                 return true;
             }
@@ -144,7 +143,7 @@ public abstract class BaseTransportClient {
         return false;
     }
 
-    public ImmutableSettings.Builder getSettingsBuilder() {
+    public Settings.Builder getSettingsBuilder() {
         return configHelper.settingsBuilder();
     }
 

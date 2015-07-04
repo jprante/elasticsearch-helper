@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.support.client.transport;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import com.google.common.collect.ImmutableSet;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -9,12 +10,10 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.ImmutableSet;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
@@ -33,37 +32,35 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getSimpleName());
 
-    private int maxActionsPerBulkRequest = 100;
+    private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
-    private int maxConcurrentBulkRequests = Runtime.getRuntime().availableProcessors() * 2;
+    private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
 
-    private ByteSizeValue maxVolumePerBulkRequest = new ByteSizeValue(10, ByteSizeUnit.MB);
+    private ByteSizeValue maxVolumePerRequest = DEFAULT_MAX_VOLUME_PER_REQUEST;
 
-    private TimeValue flushInterval = TimeValue.timeValueSeconds(30);
+    private TimeValue flushInterval = DEFAULT_FLUSH_INTERVAL;
 
     private BulkProcessor bulkProcessor;
-
-    private Metric metric;
 
     private Throwable throwable;
 
     private boolean closed = false;
 
     @Override
-    public BulkTransportClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
-        this.maxActionsPerBulkRequest = maxActionsPerBulkRequest;
+    public BulkTransportClient maxActionsPerRequest(int maxActionsPerRequest) {
+        this.maxActionsPerRequest = maxActionsPerRequest;
         return this;
     }
 
     @Override
-    public BulkTransportClient maxConcurrentBulkRequests(int maxConcurrentBulkRequests) {
-        this.maxConcurrentBulkRequests = maxConcurrentBulkRequests;
+    public BulkTransportClient maxConcurrentRequests(int maxConcurrentRequests) {
+        this.maxConcurrentRequests = maxConcurrentRequests;
         return this;
     }
 
     @Override
-    public BulkTransportClient maxVolumePerBulkRequest(ByteSizeValue maxVolumePerBulkRequest) {
-        this.maxVolumePerBulkRequest = maxVolumePerBulkRequest;
+    public BulkTransportClient maxVolumePerRequest(ByteSizeValue maxVolumePerRequest) {
+        this.maxVolumePerRequest = maxVolumePerRequest;
         return this;
     }
 
@@ -80,16 +77,12 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
     @Override
     public BulkTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+        return this.newClient(Settings.settingsBuilder().put(settings).build());
     }
 
     @Override
     public BulkTransportClient newClient(Settings settings) throws IOException {
         super.newClient(settings);
-        if (metric == null) {
-            this.metric = new Metric();
-            metric.start();
-        }
         resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
@@ -144,11 +137,11 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             }
         };
         BulkProcessor.Builder builder = BulkProcessor.builder(client, listener)
-                .setBulkActions(maxActionsPerBulkRequest)
-                .setConcurrentRequests(maxConcurrentBulkRequests)
+                .setBulkActions(maxActionsPerRequest)
+                .setConcurrentRequests(maxConcurrentRequests)
                 .setFlushInterval(flushInterval);
-        if (maxVolumePerBulkRequest != null) {
-            builder.setBulkSize(maxVolumePerBulkRequest);
+        if (maxVolumePerRequest != null) {
+            builder.setBulkSize(maxVolumePerRequest);
         }
         this.bulkProcessor = builder.build();
         this.closed = false;
@@ -156,7 +149,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public Client client() {
+    public AbstractClient client() {
         return client;
     }
 
@@ -171,21 +164,10 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         return metric;
     }
 
-
-    /*public BulkTransportClient shards(int value) {
-        super.shards(value);
-        return this;
-    }
-
-    public BulkTransportClient replica(int value) {
-        super.replica(value);
-        return this;
-    }*/
-
     @Override
     public BulkTransportClient newIndex(String index) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.newIndex(index);
         return this;
@@ -194,7 +176,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.newIndex(index, settings, mappings);
         return this;
@@ -203,7 +185,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient deleteIndex(String index) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         super.deleteIndex(index);
         return this;
@@ -211,25 +193,13 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
 
     @Override
     public BulkTransportClient startBulk(String index, long startRefreshInterval, long stopRefreshIterval) throws IOException {
-        if (metric == null) {
-            return this;
-        }
-        if (!metric.isBulk(index)) {
-            metric.setupBulk(index, startRefreshInterval, stopRefreshIterval);
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshInterval);
-        }
+        super.startBulk(index, startRefreshInterval, stopRefreshIterval);
         return this;
     }
 
     @Override
     public BulkTransportClient stopBulk(String index) throws IOException {
-        if (metric == null) {
-            return this;
-        }
-        if (metric.isBulk(index)) {
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index));
-            metric.removeBulk(index);
-        }
+        super.stopBulk(index);
         return this;
     }
 
@@ -248,7 +218,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient index(String index, String type, String id, String source) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         try {
             metric.getCurrentIngest().inc();
@@ -266,7 +236,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient bulkIndex(IndexRequest indexRequest) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         try {
             metric.getCurrentIngest().inc();
@@ -284,7 +254,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient delete(String index, String type, String id) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         try {
             metric.getCurrentIngest().inc();
@@ -302,7 +272,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public BulkTransportClient bulkDelete(DeleteRequest deleteRequest) {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         try {
             metric.getCurrentIngest().inc();
@@ -321,14 +291,13 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public synchronized BulkTransportClient flushIngest() {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");
             return this;
         }
         logger.debug("flushing bulk processor");
-        // hacked BulkProcessor to execute the submission of remaining docs. Wait always 30 seconds at most.
         BulkProcessorHelper.flush(bulkProcessor);
         return this;
     }
@@ -336,7 +305,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     @Override
     public synchronized BulkTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
         if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");
@@ -366,7 +335,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     public synchronized void shutdown() {
         if (closed) {
             super.shutdown();
-            throw new ElasticsearchIllegalStateException("client is closed");
+            throw new ElasticsearchException("client is closed");
         }
         if (client == null) {
             logger.warn("no client");

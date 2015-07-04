@@ -1,42 +1,16 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
-import org.elasticsearch.action.ListenableActionFuture;
-import org.elasticsearch.action.support.PlainListenableActionFuture;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.delete.DeleteRequestBuilder;
-import org.xbib.elasticsearch.action.index.IndexRequest;
-import org.xbib.elasticsearch.action.index.IndexRequestBuilder;
 
-public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder, Client> {
+public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
-    public IngestRequestBuilder(Client client) {
-        this(client, new IngestRequest());
-    }
-
-    public IngestRequestBuilder(Client client, IngestRequest request) {
-        super(client, request);
-    }
-
-    @Override
-    public IngestRequest request() {
-        return this.request;
-    }
-
-    @Override
-    public ListenableActionFuture<IngestResponse> execute() {
-        PlainListenableActionFuture<IngestResponse> future = new PlainListenableActionFuture<IngestResponse>(request.listenerThreaded(), client.threadPool());
-        execute(future);
-        return future;
-    }
-
-    @Override
-    public void execute(ActionListener<IngestResponse> listener) {
-        doExecute(listener);
+    public IngestRequestBuilder(ElasticsearchClient client, IngestAction action) {
+        super(client, action, new IngestRequest());
     }
 
     public IngestRequestBuilder add(IndexRequest request) {
@@ -44,18 +18,8 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
         return this;
     }
 
-    public IngestRequestBuilder add(IndexRequestBuilder request) {
-        this.request.add(request.request());
-        return this;
-    }
-
     public IngestRequestBuilder add(DeleteRequest request) {
         this.request.add(request);
-        return this;
-    }
-
-    public IngestRequestBuilder add(DeleteRequestBuilder request) {
-        this.request.add(request.request());
         return this;
     }
 
@@ -74,14 +38,7 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
         return this;
     }
 
-    /**
-     * The number of actions currently in the bulk.
-     */
     public int numberOfActions() {
         return request.numberOfActions();
-    }
-
-    protected void doExecute(ActionListener<IngestResponse> listener) {
-        client.execute(IngestAction.INSTANCE, request, listener);
     }
 }

@@ -1,7 +1,7 @@
 package org.xbib.elasticsearch.action.ingest;
 
-import org.elasticsearch.action.ClientAction;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.action.Action;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.transport.TransportRequestOptions;
@@ -9,11 +9,11 @@ import org.elasticsearch.transport.TransportRequestOptions;
 /**
  * The ingest action replaces the bulk action, for using the IngestProcessor
  */
-public class IngestAction extends ClientAction<IngestRequest, IngestResponse, IngestRequestBuilder> {
+public class IngestAction extends Action<IngestRequest, IngestResponse, IngestRequestBuilder> {
 
     public static final IngestAction INSTANCE = new IngestAction();
 
-    public static final String NAME = "org.xbib.elasticsearch.action.ingest";
+    public static final String NAME = "indices:data/write/xbib/ingest";
 
     public IngestAction() {
         super(NAME);
@@ -25,8 +25,8 @@ public class IngestAction extends ClientAction<IngestRequest, IngestResponse, In
     }
 
     @Override
-    public IngestRequestBuilder newRequestBuilder(Client client) {
-        return new IngestRequestBuilder(client);
+    public IngestRequestBuilder newRequestBuilder(ElasticsearchClient client) {
+        return new IngestRequestBuilder(client, INSTANCE);
     }
 
     @Override

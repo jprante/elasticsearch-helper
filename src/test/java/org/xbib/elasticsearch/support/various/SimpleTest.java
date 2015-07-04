@@ -7,10 +7,11 @@ import org.junit.Test;
 
 import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;
-import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;
+import static org.elasticsearch.common.settings.Settings.settingsBuilder;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static org.junit.Assert.assertEquals;
 
 public class SimpleTest {
 
@@ -21,12 +22,12 @@ public class SimpleTest {
         String INDEX = "test";
         String TYPE = "test";
         String FIELD = "field";
-        Client client = nodeBuilder()
-                .settings(settingsBuilder()
-                        .put("cluster.name", "test")
-                        .put("index.analysis.analyzer.default.filter.0", "lowercase")
-                        .put("index.analysis.analyzer.default.filter.1", "trim")
-                        .put("index.analysis.analyzer.default.tokenizer", "keyword"))
+        Client client = nodeBuilder().settings(settingsBuilder()
+                .put("cluster.name", "test")
+                .put("path.home", "/")
+                .put("index.analysis.analyzer.default.filter.0", "lowercase")
+                .put("index.analysis.analyzer.default.filter.1", "trim")
+                .put("index.analysis.analyzer.default.tokenizer", "keyword"))
                 .local(true).node().client();
         try {
             client.admin().indices().delete(deleteIndexRequest(INDEX)).actionGet();
@@ -42,5 +43,6 @@ public class SimpleTest {
                 .execute().actionGet().getHits().getAt(0).getSourceAsString();
 
         logger.info("{}", doc);
+        assertEquals(doc, "{\"field\":\"1%2fPJJP3JV2C24iDfEu9XpHBaYxXh%2fdHTbmchB35SDznXO2g8Vz4D7GTIvY54iMiX_149c95f02a8\"}");
     }
 }

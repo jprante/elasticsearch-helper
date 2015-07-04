@@ -6,7 +6,6 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
@@ -63,8 +62,10 @@ public class RestIngestAction extends BaseRestHandler {
         controller.registerHandler(PUT, "/{index}/{type}/_ingest", this);
 
         int actions = settings.getAsInt("action.ingest.maxactions", 1000);
-        int concurrency = settings.getAsInt("action.ingest.maxconcurrency", Runtime.getRuntime().availableProcessors() * 4);
-        ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume", ByteSizeValue.parseBytesSizeValue("10m"));
+        int concurrency = settings.getAsInt("action.ingest.maxconcurrency",
+                Runtime.getRuntime().availableProcessors() * 4);
+        ByteSizeValue volume = settings.getAsBytesSize("action.ingest.maxvolume",
+                ByteSizeValue.parseBytesSizeValue("10m", "action.ingest.maxvolume"));
 
         this.ingestProcessor = new IngestProcessor(client)
                 .maxActions(actions)

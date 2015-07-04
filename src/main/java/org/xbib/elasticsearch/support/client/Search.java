@@ -1,6 +1,6 @@
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
 
@@ -14,7 +14,7 @@ public interface Search {
      *
      * @return the client
      */
-    Client client();
+    ElasticsearchClient client();
 
     /**
      * Set index

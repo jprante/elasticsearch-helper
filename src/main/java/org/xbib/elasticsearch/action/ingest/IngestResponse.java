@@ -8,12 +8,11 @@ import org.xbib.elasticsearch.action.ingest.replica.IngestReplicaShardResponse;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
-
-public class IngestResponse extends ActionResponse {
+public class IngestResponse extends ActionResponse implements Iterable<IngestReplicaShardResponse> {
 
     protected long ingestId;
 
@@ -91,7 +90,7 @@ public class IngestResponse extends ActionResponse {
         super.readFrom(in);
         ingestId = in.readLong();
         successSize = in.readVInt();
-        failures = newLinkedList();
+        failures = new LinkedList<>();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
             failures.add(IngestActionFailure.from(in));
@@ -99,7 +98,7 @@ public class IngestResponse extends ActionResponse {
         tookInMillis = in.readVLong();
         leaderResponse = new IngestLeaderShardResponse();
         leaderResponse.readFrom(in);
-        replicaResponses = newLinkedList();
+        replicaResponses = new LinkedList<>();
         size = in.readVInt();
         for (int i = 0; i < size; i++) {
             IngestReplicaShardResponse r = new IngestReplicaShardResponse();
@@ -123,5 +122,10 @@ public class IngestResponse extends ActionResponse {
         for (IngestReplicaShardResponse r : replicaResponses) {
             r.writeTo(out);
         }
+    }
+
+    @Override
+    public Iterator<IngestReplicaShardResponse> iterator() {
+        return replicaResponses.iterator();
     }
 }

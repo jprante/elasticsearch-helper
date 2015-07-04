@@ -1,26 +1,38 @@
 package org.xbib.elasticsearch.action.ingest.replica;
 
-import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
-import org.xbib.elasticsearch.action.support.replication.replica.ReplicaShardOperationRequest;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
+import static org.elasticsearch.action.ValidateActions.addValidationError;
 
-public class IngestReplicaShardRequest extends ReplicaShardOperationRequest<IngestReplicaShardRequest> {
+public class IngestReplicaShardRequest extends ActionRequest<IngestReplicaShardRequest> {
+
+    public static final TimeValue DEFAULT_TIMEOUT = new TimeValue(1, TimeUnit.MINUTES);
+
+    private TimeValue timeout = DEFAULT_TIMEOUT;
+
+    private String index;
+
+    private boolean threadedOperation = true;
 
     private long ingestId;
 
     private ShardId shardId;
 
-    private List<ActionRequest> actionRequests = newLinkedList();
+    private List<ActionRequest> actionRequests = new LinkedList<>();
 
     public IngestReplicaShardRequest() {
     }
@@ -44,10 +56,58 @@ public class IngestReplicaShardRequest extends ReplicaShardOperationRequest<Inge
         return actionRequests;
     }
 
+    public final boolean operationThreaded() {
+        return threadedOperation;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestReplicaShardRequest operationThreaded(boolean threadedOperation) {
+        this.threadedOperation = threadedOperation;
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestReplicaShardRequest timeout(TimeValue timeout) {
+        this.timeout = timeout;
+        return this;
+    }
+
+    public TimeValue timeout() {
+        return timeout;
+    }
+
+    public String index() {
+        return index;
+    }
+
+    @SuppressWarnings("unchecked")
+    public final IngestReplicaShardRequest index(String index) {
+        this.index = index;
+        return this;
+    }
+
+    public String[] indices() {
+        return new String[]{index};
+    }
+
+    public IndicesOptions indicesOptions() {
+        return IndicesOptions.strictSingleIndexNoExpandForbidClosed();
+    }
+
+    @Override
+    public ActionRequestValidationException validate() {
+        ActionRequestValidationException validationException = null;
+        if (index == null) {
+            validationException = addValidationError("index is missing", null);
+        }
+        return validationException;
+    }
+
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(index);
+        timeout.writeTo(out);
         out.writeLong(ingestId);
         shardId.writeTo(out);
         out.writeVInt(actionRequests.size());
@@ -62,7 +122,7 @@ public class IngestReplicaShardRequest extends ReplicaShardOperationRequest<Inge
             } else if (actionRequest instanceof DeleteRequest) {
                 out.writeBoolean(false);
             } else {
-                throw new ElasticsearchIllegalStateException("action request not supported: " + actionRequest.getClass().getName());
+                throw new ElasticsearchException("action request not supported: " + actionRequest.getClass().getName());
             }
             actionRequest.writeTo(out);
         }
@@ -72,10 +132,11 @@ public class IngestReplicaShardRequest extends ReplicaShardOperationRequest<Inge
     public void readFrom(StreamInput in) throws IOException {
         super.readFrom(in);
         index = in.readString();
+        timeout = TimeValue.readTimeValue(in);
         ingestId = in.readLong();
         shardId = ShardId.readShardId(in);
         int size = in.readVInt();
-        actionRequests = newLinkedList();
+        actionRequests = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             boolean exists = in.readBoolean();
             if (exists) {

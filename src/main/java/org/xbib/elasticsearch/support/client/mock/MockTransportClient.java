@@ -3,7 +3,7 @@ package org.xbib.elasticsearch.support.client.mock;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportClient;
@@ -27,17 +27,17 @@ public class MockTransportClient extends BulkTransportClient {
         return this;
     }
 
-    public Client client() {
+    public AbstractClient client() {
         return null;
     }
 
     @Override
-    public MockTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
+    public MockTransportClient maxActionsPerRequest(int maxActions) {
         return this;
     }
 
     @Override
-    public MockTransportClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockTransportClient maxConcurrentRequests(int maxConcurrentRequests) {
         return this;
     }
 

@@ -4,7 +4,6 @@ package org.xbib.elasticsearch.support.client.transport;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -23,6 +22,10 @@ import static org.junit.Assert.assertFalse;
 public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
+
+    private final static Integer MAX_ACTIONS = 10000;
+
+    private final static Integer NUM_ACTIONS = 12345;
 
     @Test
     public void testBulkClient() throws IOException {
@@ -52,7 +55,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testSingleDocBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(getSettings())
                 .newIndex("test");
@@ -80,12 +83,12 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testRandomDocsBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
                 .newClient(getSettings())
                 .newIndex("test");
         try {
-            for (int i = 0; i < 12345; i++) {
+            for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             client.flushIngest();
@@ -96,7 +99,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(13, client.getMetric().getTotalIngest().count(), 13);
+            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count(), 13);
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -108,17 +111,17 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = 1000;
-        final int maxloop = 12345;
+        int maxactions = MAX_ACTIONS;
+        final int maxloop = NUM_ACTIONS;
 
-        Settings settings = ImmutableSettings.settingsBuilder()
-                .put("index.number_of_shards", 5)
+        Settings settings = Settings.settingsBuilder()
+                .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
                 .build();
 
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
-                .maxActionsPerBulkRequest(maxactions)
+                .maxActionsPerRequest(maxactions)
                 .newClient(getSettings())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);

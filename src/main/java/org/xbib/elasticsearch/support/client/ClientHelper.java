@@ -3,26 +3,27 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
-
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class ClientHelper {
 
     public static List<String> getConnectedNodes(TransportClient client) {
-        List<String> nodes = newLinkedList();
+        List<String> nodes = new LinkedList<>();
         if (client.connectedNodes() != null) {
             for (DiscoveryNode discoveryNode : client.connectedNodes()) {
                 nodes.add(discoveryNode.toString());
@@ -44,7 +45,7 @@ public class ClientHelper {
         if (value == null) {
             throw new IOException("no value given");
         }
-        ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
+        Settings.Builder settingsBuilder = Settings.settingsBuilder();
         settingsBuilder.put(key, value.toString());
         UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest(index)
                 .settings(settingsBuilder);
@@ -75,10 +76,10 @@ public class ClientHelper {
         }
     }
 
-    public static String clusterName(Client client) {
+    public static String clusterName(ElasticsearchClient client) {
         try {
             ClusterStateRequestBuilder clusterStateRequestBuilder =
-                    new ClusterStateRequestBuilder(client.admin().cluster()).all();
+                    new ClusterStateRequestBuilder(client, ClusterStateAction.INSTANCE).all();
             ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
             String name = clusterStateResponse.getClusterName().value();
             int nodeCount = clusterStateResponse.getState().getNodes().size();
