@@ -14,9 +14,9 @@
 <span class="sourceLineNo">006</span><a name="line.6"></a>
 <span class="sourceLineNo">007</span>import static org.elasticsearch.client.Requests.deleteIndexRequest;<a name="line.7"></a>
 <span class="sourceLineNo">008</span>import static org.elasticsearch.client.Requests.indexRequest;<a name="line.8"></a>
-<span class="sourceLineNo">009</span>import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilder;<a name="line.9"></a>
+<span class="sourceLineNo">009</span>import static org.elasticsearch.common.settings.Settings.settingsBuilder;<a name="line.9"></a>
 <span class="sourceLineNo">010</span>import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;<a name="line.10"></a>
-<span class="sourceLineNo">011</span>import static org.elasticsearch.index.query.QueryBuilders.queryString;<a name="line.11"></a>
+<span class="sourceLineNo">011</span>import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;<a name="line.11"></a>
 <span class="sourceLineNo">012</span>import static org.elasticsearch.node.NodeBuilder.nodeBuilder;<a name="line.12"></a>
 <span class="sourceLineNo">013</span><a name="line.13"></a>
 <span class="sourceLineNo">014</span>public class WildcardTest {<a name="line.14"></a>
@@ -35,15 +35,15 @@
 <span class="sourceLineNo">027</span>        index("1", "010");<a name="line.27"></a>
 <span class="sourceLineNo">028</span>        index("2", "0*0");<a name="line.28"></a>
 <span class="sourceLineNo">029</span>        // exact<a name="line.29"></a>
-<span class="sourceLineNo">030</span>        validateCount(queryString("010").defaultField(FIELD), 1);<a name="line.30"></a>
-<span class="sourceLineNo">031</span>        validateCount(queryString("0\\*0").defaultField(FIELD), 1);<a name="line.31"></a>
+<span class="sourceLineNo">030</span>        validateCount(queryStringQuery("010").defaultField(FIELD), 1);<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        validateCount(queryStringQuery("0\\*0").defaultField(FIELD), 1);<a name="line.31"></a>
 <span class="sourceLineNo">032</span>        // pattern<a name="line.32"></a>
-<span class="sourceLineNo">033</span>        validateCount(queryString("0*0").defaultField(FIELD), 2);<a name="line.33"></a>
-<span class="sourceLineNo">034</span>        validateCount(queryString("0?0").defaultField(FIELD), 2);<a name="line.34"></a>
-<span class="sourceLineNo">035</span>        validateCount(queryString("0**0").defaultField(FIELD), 2);<a name="line.35"></a>
-<span class="sourceLineNo">036</span>        validateCount(queryString("0??0").defaultField(FIELD), 0);<a name="line.36"></a>
-<span class="sourceLineNo">037</span>        validateCount(queryString("*10").defaultField(FIELD), 1);<a name="line.37"></a>
-<span class="sourceLineNo">038</span>        validateCount(queryString("*1*").defaultField(FIELD), 1);<a name="line.38"></a>
+<span class="sourceLineNo">033</span>        validateCount(queryStringQuery("0*0").defaultField(FIELD), 2);<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        validateCount(queryStringQuery("0?0").defaultField(FIELD), 2);<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        validateCount(queryStringQuery("0**0").defaultField(FIELD), 2);<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        validateCount(queryStringQuery("0??0").defaultField(FIELD), 0);<a name="line.36"></a>
+<span class="sourceLineNo">037</span>        validateCount(queryStringQuery("*10").defaultField(FIELD), 1);<a name="line.37"></a>
+<span class="sourceLineNo">038</span>        validateCount(queryStringQuery("*1*").defaultField(FIELD), 1);<a name="line.38"></a>
 <span class="sourceLineNo">039</span>        // failing<a name="line.39"></a>
 <span class="sourceLineNo">040</span>        //validateCount(queryString("*\\*0").defaultField(FIELD), 1);<a name="line.40"></a>
 <span class="sourceLineNo">041</span>        //validateCount(queryString("*\\**").defaultField(FIELD), 1);<a name="line.41"></a>
