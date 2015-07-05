@@ -35,7 +35,7 @@ public class IngestTransportUpdateReplicaLevelTest extends AbstractNodeRandomTes
                 .build();
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));

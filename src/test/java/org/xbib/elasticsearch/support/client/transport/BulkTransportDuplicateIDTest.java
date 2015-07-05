@@ -24,7 +24,7 @@ public class BulkTransportDuplicateIDTest extends AbstractNodeRandomTestHelper {
     public void testDuplicateDocIDs() throws Exception {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {

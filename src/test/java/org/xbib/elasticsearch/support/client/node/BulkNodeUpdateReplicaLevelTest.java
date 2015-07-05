@@ -34,9 +34,7 @@ public class BulkNodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper
                 .build();
 
         final BulkNodeClient ingest = new BulkNodeClient()
-                .newClient(client("1"))
-//                .shards(numberOfShards)
-//                .replica(0)
+                .init(client("1"))
                 .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));

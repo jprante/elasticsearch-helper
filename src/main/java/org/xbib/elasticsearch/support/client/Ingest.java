@@ -49,28 +49,28 @@ public interface Ingest {
     Ingest delete(String index, String type, String id);
 
     /**
-     * Create new ingest client.
+     * Initialize, create new ingest client.
      * @param client the Elasticsearch client
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest newClient(Client client) throws IOException;
+    Ingest init(Client client) throws IOException;
 
     /**
-     * Create new ingest client.
+     * Initialize, create new ingest client.
      * @param settings settings
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest newClient(Settings settings) throws IOException;
+    Ingest init(Settings settings) throws IOException;
 
     /**
-     * Create new ingest client.
+     * Initialize, create new ingest client.
      * @param settings settings
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest newClient(Map<String,String> settings) throws IOException;
+    Ingest init(Map<String,String> settings) throws IOException;
 
     /**
      * Return Elasticsearch client to execute actions

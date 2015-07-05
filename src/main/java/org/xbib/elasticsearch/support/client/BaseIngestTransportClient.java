@@ -23,7 +23,8 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
 
     protected Metric metric;
 
-    public Ingest newClient(Settings settings) throws IOException {
+    @Override
+    public Ingest init(Settings settings) throws IOException {
         super.createClient(settings);
         if (metric == null) {
             this.metric = new Metric();

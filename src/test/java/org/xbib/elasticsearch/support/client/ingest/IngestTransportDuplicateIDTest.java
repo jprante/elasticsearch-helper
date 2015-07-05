@@ -24,7 +24,7 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
     public void testDuplicateDocIDs() throws Exception {
         final IngestTransportClient client = new IngestTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {

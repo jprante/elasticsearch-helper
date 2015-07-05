@@ -31,7 +31,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     public void testBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -57,7 +57,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         try {
             client.deleteIndex("test");
@@ -85,7 +85,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {
@@ -114,7 +114,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         int maxactions = MAX_ACTIONS;
         final int maxloop = NUM_ACTIONS;
 
-        Settings settings = Settings.settingsBuilder()
+        Settings settingsForIndex = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
                 .build();
@@ -122,8 +122,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
                 .maxActionsPerRequest(maxactions)
-                .newClient(getSettings())
-                .newIndex("test", settings, null)
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null)
                 .startBulk("test", -1, 1000);
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,

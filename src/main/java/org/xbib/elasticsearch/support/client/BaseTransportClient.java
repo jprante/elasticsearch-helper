@@ -2,7 +2,6 @@ package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
@@ -32,6 +31,10 @@ public abstract class BaseTransportClient {
     protected ConfigHelper configHelper = new ConfigHelper();
 
     private boolean isShutdown;
+
+    protected void createClient(Map<String,String> settings) throws IOException {
+        createClient(Settings.builder().put(settings).build());
+    }
 
     protected void createClient(Settings settings) throws IOException {
         if (client != null) {

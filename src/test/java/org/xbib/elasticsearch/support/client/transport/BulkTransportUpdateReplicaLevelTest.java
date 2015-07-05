@@ -35,9 +35,7 @@ public class BulkTransportUpdateReplicaLevelTest extends AbstractNodeRandomTestH
                 .build();
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .newClient(getSettings())
-//                .shards(numberOfShards)
-//                .replica(0)
+                .init(getSettings())
                 .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));

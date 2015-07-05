@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package suites;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -18,7 +18,7 @@ import org.xbib.elasticsearch.support.client.transport.BulkTransportDuplicateIDT
 import org.xbib.elasticsearch.support.client.transport.BulkTransportReplicaTest;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.various.AliasTest;
-import org.xbib.elasticsearch.support.various.NPETest;
+import org.xbib.elasticsearch.support.various.IngestRequestTest;
 import org.xbib.elasticsearch.support.various.SimpleTest;
 
 @RunWith(Suite.class)
@@ -26,7 +26,7 @@ import org.xbib.elasticsearch.support.various.SimpleTest;
         SimpleTest.class,
         ConfigHelperTest.class,
         AliasTest.class,
-        NPETest.class,
+        IngestRequestTest.class,
         BulkNodeClientTest.class,
         BulkNodeDuplicateIDTest.class,
         BulkNodeReplicaTest.class,
@@ -42,6 +42,6 @@ import org.xbib.elasticsearch.support.various.SimpleTest;
         IngestTransportReplicaTest.class,
         IngestTransportUpdateReplicaLevelTest.class
 })
-public class SupportTestSuite {
+public class PluginTestSuite {
 
 }

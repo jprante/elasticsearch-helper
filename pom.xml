@@ -179,7 +179,7 @@
                     <skip>false</skip>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <includes>
-                        <include>**/SupportTestSuite*</include>
+                        <include>**/PluginTestSuite*</include>
                     </includes>
                     <systemProperties>
                         <property>

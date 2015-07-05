@@ -42,7 +42,7 @@ public class IngestTransportReplicaTest extends AbstractNodeRandomTestHelper {
                 .build();
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test1", settingsTest1, null)
                 .newIndex("test2", settingsTest2, null);
         try {

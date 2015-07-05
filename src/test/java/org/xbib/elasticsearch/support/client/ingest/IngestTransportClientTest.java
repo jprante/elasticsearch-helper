@@ -43,13 +43,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testNewIndexIngest() throws IOException {
-        Settings settings = Settings.settingsBuilder()
+        Settings settingsForIndex = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
-                .newIndex("test", settings, null);
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null);
         ingest.shutdown();
         if (ingest.hasThrowable()) {
             logger.error("error", ingest.getThrowable());
@@ -64,7 +64,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test", settings, null);
         try {
             ingest.deleteIndex("test")
@@ -89,7 +89,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test", settings, null);
         try {
             ingest.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
@@ -119,7 +119,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
@@ -156,7 +156,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerRequest(maxactions)
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
@@ -200,7 +200,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     }
 
     @Test
-    public void testClusterConnect() throws IOException {
+    public void testAutodiscover() throws IOException {
         startNode("2");
         Settings.Builder settingsBuilder = Settings.builder()
                 .put("cluster.name", getClusterName())
@@ -217,7 +217,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             }
         }
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(settingsBuilder.build())
+                .init(settingsBuilder.build())
                 .newIndex("test");
         ingest.shutdown();
         if (ingest.hasThrowable()) {

@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Client using the BulkProcessor of Elasticsearch
+ * Transport client using the BulkProcessor of Elasticsearch
  */
 public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
 
@@ -71,18 +71,18 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient newClient(Client client) throws IOException {
-        return this.newClient(findSettings());
+    public BulkTransportClient init(Client client) throws IOException {
+        return this.init(findSettings());
     }
 
     @Override
-    public BulkTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(Settings.settingsBuilder().put(settings).build());
+    public BulkTransportClient init(Map<String,String> settings) throws IOException {
+        return this.init(Settings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public BulkTransportClient newClient(Settings settings) throws IOException {
-        super.newClient(settings);
+    public BulkTransportClient init(Settings settings) throws IOException {
+        super.init(settings);
         resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override

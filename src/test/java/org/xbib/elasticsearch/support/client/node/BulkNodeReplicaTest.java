@@ -41,7 +41,7 @@ public class BulkNodeReplicaTest extends AbstractNodeRandomTestHelper {
                 .build();
 
         final BulkNodeClient ingest = new BulkNodeClient()
-                .newClient(client("1"))
+                .init(client("1"))
                 .newIndex("test1", settingsTest1, null)
                 .newIndex("test2", settingsTest2, null);
         try {

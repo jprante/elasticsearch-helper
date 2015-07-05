@@ -16,14 +16,14 @@ public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testIngestCreation() throws Exception {
-        Settings settings = Settings.settingsBuilder()
+        Settings settingsForIndex = Settings.settingsBuilder()
                 .put("index.number_of_shards", 1)
                 .build();
         Map<String,String> mappings = new HashMap<>();
         mappings.put("typename","{\"properties\":{\"message\":{\"type\":\"string\"}}}");
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings());
-        ingest.newIndex("test", settings, mappings);
+                .init(getSettings());
+        ingest.newIndex("test", settingsForIndex, mappings);
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
         GetMappingsResponse getMappingsResponse = ingest.client().admin().indices()
                 .getMappings(getMappingsRequest).actionGet();

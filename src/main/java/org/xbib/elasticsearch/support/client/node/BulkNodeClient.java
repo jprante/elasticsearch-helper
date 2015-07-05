@@ -85,17 +85,7 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient newClient(Settings settings) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public BulkNodeClient newClient(Map<String,String> settings) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public BulkNodeClient newClient(Client client) {
+    public BulkNodeClient init(Client client) {
         if (!(client instanceof NodeClient)) {
             throw new ElasticsearchException("not a node client");
         }
@@ -173,6 +163,16 @@ public class BulkNodeClient implements Ingest {
             closed = true;
         }
         return this;
+    }
+
+    @Override
+    public BulkNodeClient init(Settings settings) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BulkNodeClient init(Map<String,String> settings) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

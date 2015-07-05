@@ -70,18 +70,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient newClient(Client client) throws IOException {
-        return this.newClient(findSettings());
+    public IngestTransportClient init(Client client) throws IOException {
+        return this.init(findSettings());
     }
 
     @Override
-    public IngestTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(Settings.settingsBuilder().put(settings).build());
+    public IngestTransportClient init(Map<String,String> settings) throws IOException {
+        return this.init(Settings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public IngestTransportClient newClient(Settings settings) throws IOException {
-        super.newClient(settings);
+    public IngestTransportClient init(Settings settings) throws IOException {
+        super.init(settings);
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override

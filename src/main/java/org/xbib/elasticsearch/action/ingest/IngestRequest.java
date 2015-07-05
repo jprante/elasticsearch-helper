@@ -190,7 +190,6 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
             }
             // now parse the move
             XContentParser parser = xContent.createParser(data.slice(from, nextMarker - from));
-
             try {
                 // move pointers
                 from = nextMarker + 1;
@@ -336,12 +335,16 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
             validationException = addValidationError("no requests added", null);
         }
         for (ActionRequest request : requests) {
-            ActionRequestValidationException ex = request.validate();
-            if (ex != null) {
-                if (validationException == null) {
-                    validationException = new ActionRequestValidationException();
+            if (request == null) {
+                validationException = addValidationError("null request added", null);
+            } else {
+                ActionRequestValidationException ex = request.validate();
+                if (ex != null) {
+                    if (validationException == null) {
+                        validationException = new ActionRequestValidationException();
+                    }
+                    validationException.addValidationErrors(ex.validationErrors());
                 }
-                validationException.addValidationErrors(ex.validationErrors());
             }
         }
         return validationException;
@@ -382,9 +385,17 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
     }
 
     IngestRequest internalAdd(IndexRequest request) {
+        if (request == null) {
+            ActionRequestValidationException e = new ActionRequestValidationException();
+            e.addValidationError("request must not be null");
+            throw e;
+        }
+        ActionRequestValidationException validationException = request.validate();
+        if (validationException != null) {
+            throw validationException;
+        }
         requests.offer(request);
-        long length = request.source() != null ? request.source().length() + REQUEST_OVERHEAD : REQUEST_OVERHEAD;
-        sizeInBytes.addAndGet(length);
+        sizeInBytes.addAndGet(request.source().length() + REQUEST_OVERHEAD);
         return this;
     }
 

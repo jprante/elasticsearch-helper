@@ -41,7 +41,7 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
                 .put("index.number_of_replicas", 3)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test", settings, null);
         IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
         XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
