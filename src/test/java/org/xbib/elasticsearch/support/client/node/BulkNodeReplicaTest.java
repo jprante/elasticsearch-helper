@@ -89,10 +89,6 @@ public class BulkNodeReplicaTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }

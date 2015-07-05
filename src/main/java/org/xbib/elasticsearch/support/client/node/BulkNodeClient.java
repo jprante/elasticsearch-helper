@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class BulkNodeClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClient.class.getName());
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 

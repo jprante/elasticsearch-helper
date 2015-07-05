@@ -24,7 +24,7 @@ import java.util.Map;
 
 public abstract class BaseTransportClient {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseTransportClient.class.getName());
 
     protected TransportClient client;
 
@@ -45,8 +45,13 @@ public abstract class BaseTransportClient {
             client = null;
         }
         if (settings != null) {
-            logger.info("creating transport client, java version {}, effective settings {}",
-                    System.getProperty("java.version"), settings.getAsMap());
+            String version = System.getProperty("os.name")
+                    + " " + System.getProperty("java.vm.name")
+                    + " " + System.getProperty("java.vm.vendor")
+                    + " " + System.getProperty("java.runtime.version")
+                    + " " + System.getProperty("java.vm.version");
+            logger.info("creating transport client on {} with effective settings {}",
+                    version, settings.getAsMap());
             this.client = TransportClient.builder().settings(settings).build();
             Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
             if (!connect(addrs, settings.getAsBoolean("autodiscover", false))) {

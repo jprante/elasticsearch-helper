@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class IngestTransportClient extends BaseIngestTransportClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getName());
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
@@ -126,7 +126,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             @Override
             public void onFailure(int concurrency, long executionId, Throwable failure) {
                 metric.getCurrentIngest().dec();
-                logger.error("ingest [" + executionId + "] failure", failure);
+                logger.error("failure of ingest [" + executionId + "]", failure);
                 throwable = failure;
                 closed = true;
             }

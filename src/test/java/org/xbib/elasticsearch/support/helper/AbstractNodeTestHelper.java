@@ -1,9 +1,17 @@
 package org.xbib.elasticsearch.support.helper;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.support.AbstractClient;
@@ -12,6 +20,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
 
 import static org.elasticsearch.common.settings.Settings.settingsBuilder;
@@ -19,6 +28,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import org.junit.After;
 import org.junit.Before;
+import org.xbib.elasticsearch.support.client.ClientHelper;
 
 public abstract class AbstractNodeTestHelper {
 
@@ -37,7 +47,10 @@ public abstract class AbstractNodeTestHelper {
     private int port;
 
     protected void setClusterName() {
-        this.cluster = "test-support-cluster-" + NetworkUtils.getLocalAddress().getHostName() + "-" + counter.incrementAndGet();
+        this.cluster = "test-support-cluster-"
+                + NetworkUtils.getLocalAddress().getHostName()
+                + "-" + System.getProperty("user.name")
+                + "-" + counter.incrementAndGet();
     }
 
     protected String getClusterName() {
@@ -78,27 +91,22 @@ public abstract class AbstractNodeTestHelper {
     public void startNodes() throws Exception {
         setClusterName();
         startNode("1");
-        // find node address
-        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
-        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
-        Object obj = response.iterator().next().getTransport().getAddress()
-                .publishAddress();
-        if (obj instanceof InetSocketTransportAddress) {
-            InetSocketTransportAddress address = (InetSocketTransportAddress) obj;
-            host = address.address().getHostName();
-            port = address.address().getPort();
-        }
+        findNodeAddress();
+        ClientHelper.waitForCluster(client("1"), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+        logger.info("ready");
     }
 
     @After
     public void stopNodes() throws Exception {
         try {
+            logger.info("deleting all indices");
             // delete all indices
             client("1").admin().indices().prepareDelete("_all").execute().actionGet();
         } catch (Exception e) {
             logger.error("can not delete indexes", e);
+        } finally {
+            closeAllNodes();
         }
-        closeAllNodes();
     }
 
     protected Node startNode(String id) {
@@ -126,23 +134,25 @@ public abstract class AbstractNodeTestHelper {
         return node;
     }
 
-    protected void stopNode(String id) {
-        AbstractClient client = clients.remove(id);
-        if (client != null) {
-            client.close();
-        }
-        Node node = nodes.remove(id);
-        if (node != null) {
-            node.close();
+    protected void findNodeAddress() {
+        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
+        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
+        Object obj = response.iterator().next().getTransport().getAddress()
+                .publishAddress();
+        if (obj instanceof InetSocketTransportAddress) {
+            InetSocketTransportAddress address = (InetSocketTransportAddress) obj;
+            host = address.address().getHostName();
+            port = address.address().getPort();
         }
     }
 
-
-    public void closeAllNodes() {
+    public void closeAllNodes() throws IOException {
+        logger.info("closing all clients");
         for (AbstractClient client : clients.values()) {
             client.close();
         }
         clients.clear();
+        logger.info("closing all nodes");
         for (Node node : nodes.values()) {
             if (node != null) {
                 node.close();
@@ -150,6 +160,26 @@ public abstract class AbstractNodeTestHelper {
         }
         nodes.clear();
         logger.info("all nodes closed");
+        deleteFiles();
+        logger.info("data files wiped");
     }
 
+    private void deleteFiles() throws IOException {
+        Path directory = Paths.get(getHome() + "/data");
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
+
+    }
 }

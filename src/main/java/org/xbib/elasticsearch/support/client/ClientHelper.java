@@ -11,26 +11,12 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 public class ClientHelper {
-
-    public static List<String> getConnectedNodes(TransportClient client) {
-        List<String> nodes = new LinkedList<>();
-        if (client.connectedNodes() != null) {
-            for (DiscoveryNode discoveryNode : client.connectedNodes()) {
-                nodes.add(discoveryNode.toString());
-            }
-        }
-        return nodes;
-    }
 
     public static void updateIndexSetting(Client client, String index, String key, Object value) throws IOException {
         if (client == null) {

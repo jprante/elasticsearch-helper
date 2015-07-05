@@ -19,7 +19,7 @@ import java.util.Map;
 public abstract class BaseIngestTransportClient extends BaseTransportClient
         implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getName());
 
     protected Metric metric;
 

@@ -7,13 +7,12 @@ import org.xbib.elasticsearch.support.client.node.BulkNodeDuplicateIDTest;
 import org.xbib.elasticsearch.support.client.node.BulkNodeReplicaTest;
 import org.xbib.elasticsearch.support.client.node.BulkNodeUpdateReplicaLevelTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
         BulkNodeClientTest.class,
         BulkNodeDuplicateIDTest.class,
         BulkNodeReplicaTest.class,
-        BulkNodeUpdateReplicaLevelTest.class,
-
+        BulkNodeUpdateReplicaLevelTest.class
 })
 public class BulkNodeTestSuite {
 

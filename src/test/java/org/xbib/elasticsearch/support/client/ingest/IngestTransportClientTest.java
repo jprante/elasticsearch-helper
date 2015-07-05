@@ -198,32 +198,4 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             ingest.shutdown();
         }
     }
-
-    @Test
-    public void testAutodiscover() throws IOException {
-        startNode("2");
-        Settings.Builder settingsBuilder = Settings.builder()
-                .put("cluster.name", getClusterName())
-                .put("path.home", System.getProperty("path.home"))
-                .put("autodiscover", true);
-        int i = 0;
-        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
-        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
-        for (NodeInfo nodeInfo : response) {
-            TransportAddress ta = nodeInfo.getTransport().getAddress().publishAddress();
-            if (ta instanceof InetSocketTransportAddress) {
-                InetSocketTransportAddress address = (InetSocketTransportAddress) ta;
-                settingsBuilder.put("host." + i++, address.address().getHostName() + ":" + address.address().getPort());
-            }
-        }
-        final IngestTransportClient ingest = new IngestTransportClient()
-                .init(settingsBuilder.build())
-                .newIndex("test");
-        ingest.shutdown();
-        if (ingest.hasThrowable()) {
-            logger.error("error", ingest.getThrowable());
-        }
-        assertFalse(ingest.hasThrowable());
-    }
-
 }

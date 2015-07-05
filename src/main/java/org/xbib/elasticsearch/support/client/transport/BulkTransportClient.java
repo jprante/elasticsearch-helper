@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getName());
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 

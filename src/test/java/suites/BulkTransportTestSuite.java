@@ -7,13 +7,12 @@ import org.xbib.elasticsearch.support.client.transport.BulkTransportDuplicateIDT
 import org.xbib.elasticsearch.support.client.transport.BulkTransportReplicaTest;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportUpdateReplicaLevelTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
         BulkTransportClientTest.class,
         BulkTransportDuplicateIDTest.class,
         BulkTransportReplicaTest.class,
-        BulkTransportUpdateReplicaLevelTest.class,
-
+        BulkTransportUpdateReplicaLevelTest.class
 })
 public class BulkTransportTestSuite {
 

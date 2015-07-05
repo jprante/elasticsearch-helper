@@ -7,7 +7,7 @@ import org.xbib.elasticsearch.support.client.ingest.IngestTransportDuplicateIDTe
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportReplicaTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportUpdateReplicaLevelTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
         IngestTransportClientTest.class,
         IngestTransportDuplicateIDTest.class,

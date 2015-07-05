@@ -58,9 +58,6 @@ public class IngestTransportUpdateReplicaLevelTest extends AbstractNodeRandomTes
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

@@ -31,8 +31,11 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }
             client.flushIngest();
+            logger.info("flushed, waiting for responses");
             client.waitForResponses(TimeValue.timeValueSeconds(30));
+            logger.info("refreshing");
             client.refreshIndex("test");
+            logger.info("searching");
             long hits = client.client().prepareSearch("test").setTypes("test")
                     .setQuery(matchAllQuery())
                     .execute().actionGet().getHits().getTotalHits();
@@ -40,13 +43,17 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
             assertTrue(hits < NUM_ACTIONS);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
+        } catch (Throwable t) {
+            logger.error("oops", t);
         } finally {
+            logger.info("shutting down client");
             client.shutdown();
             assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
+            logger.info("done");
         }
     }
 }

@@ -6,6 +6,9 @@
         </Console>
     </appenders>
     <Loggers>
+        <Logger name="org.xbib" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
         <Root level="info">
             <AppenderRef ref="Console" />
         </Root>

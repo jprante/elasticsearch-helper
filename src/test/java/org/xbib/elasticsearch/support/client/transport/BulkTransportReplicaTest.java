@@ -29,7 +29,6 @@ public class BulkTransportReplicaTest extends AbstractNodeRandomTestHelper {
         // we need nodes for replica levels
         startNode("2");
         startNode("3");
-        //startNode("4");
 
         Settings settingsTest1 = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
@@ -90,10 +89,6 @@ public class BulkTransportReplicaTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }

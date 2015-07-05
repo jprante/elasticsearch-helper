@@ -58,9 +58,6 @@ public class BulkTransportUpdateReplicaLevelTest extends AbstractNodeRandomTestH
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

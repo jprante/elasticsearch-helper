@@ -6,6 +6,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.xbib.elasticsearch.action.ingest.IngestAction;
@@ -15,6 +16,15 @@ import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class IngestClusterBlockTest extends AbstractNodeTestHelper {
+
+    @Before
+    public void startNodes() throws Exception {
+        setClusterName();
+        startNode("1");
+        findNodeAddress();
+        // do not wait for green health state
+        logger.info("ready");
+    }
 
     protected Settings getNodeSettings() {
         return Settings.settingsBuilder()
@@ -40,15 +50,19 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 3)
                 .build();
-        final IngestTransportClient ingest = new IngestTransportClient()
-                .init(getSettings())
-                .newIndex("test", settings, null);
-        IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
-        XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
-        String jsonString = builder.string();
-        IndexRequest indexRequest = ingest.client().prepareExecute(IndexAction.INSTANCE)
-                .setIndex("test").setType("test").setId("1").setSource(jsonString).request();
-        brb.add(indexRequest);
-        brb.execute().actionGet();
+        final IngestTransportClient ingest = new IngestTransportClient();
+        try {
+            ingest.init(getSettings())
+                    .newIndex("test", settings, null);
+            IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
+            XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
+            String jsonString = builder.string();
+            IndexRequest indexRequest = ingest.client().prepareExecute(IndexAction.INSTANCE)
+                    .setIndex("test").setType("test").setId("1").setSource(jsonString).request();
+            brb.add(indexRequest);
+            brb.execute().actionGet();
+        } finally {
+            ingest.shutdown();
+        }
     }
 }

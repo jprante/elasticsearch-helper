@@ -3,6 +3,7 @@ package suites;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
+import org.xbib.elasticsearch.support.client.ingest.IngestAutodiscoverTest;
 import org.xbib.elasticsearch.support.client.node.BulkNodeClientTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestClusterBlockTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportDuplicateIDTest;
@@ -21,12 +22,19 @@ import org.xbib.elasticsearch.support.various.AliasTest;
 import org.xbib.elasticsearch.support.various.IngestRequestTest;
 import org.xbib.elasticsearch.support.various.SimpleTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
         SimpleTest.class,
         ConfigHelperTest.class,
         AliasTest.class,
         IngestRequestTest.class,
+        IngestIndexCreationTest.class,
+        IngestClusterBlockTest.class,
+        IngestAutodiscoverTest.class,
+        IngestTransportClientTest.class,
+        IngestTransportDuplicateIDTest.class,
+        IngestTransportReplicaTest.class,
+        IngestTransportUpdateReplicaLevelTest.class,
         BulkNodeClientTest.class,
         BulkNodeDuplicateIDTest.class,
         BulkNodeReplicaTest.class,
@@ -34,14 +42,7 @@ import org.xbib.elasticsearch.support.various.SimpleTest;
         BulkTransportClientTest.class,
         BulkTransportDuplicateIDTest.class,
         BulkTransportReplicaTest.class,
-        BulkTransportUpdateReplicaLevelTest.class,
-        IngestIndexCreationTest.class,
-        IngestClusterBlockTest.class,
-        IngestTransportClientTest.class,
-        IngestTransportDuplicateIDTest.class,
-        IngestTransportReplicaTest.class,
-        IngestTransportUpdateReplicaLevelTest.class
+        BulkTransportUpdateReplicaLevelTest.class
 })
 public class PluginTestSuite {
-
 }

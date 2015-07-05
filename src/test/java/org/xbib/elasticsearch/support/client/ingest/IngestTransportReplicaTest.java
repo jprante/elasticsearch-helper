@@ -29,7 +29,6 @@ public class IngestTransportReplicaTest extends AbstractNodeRandomTestHelper {
         // we need nodes for quorum. 4 nodes => quorum = 2
         startNode("2");
         startNode("3");
-        //startNode("4");
 
         Settings settingsTest1 = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
@@ -91,9 +90,6 @@ public class IngestTransportReplicaTest extends AbstractNodeRandomTestHelper {
             ingest.shutdown();
         }
 
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }
