@@ -83,90 +83,43 @@ abstract class Striped64 extends Number {
      */
 
     /**
-     * Padded variant of AtomicLong supporting only raw accesses plus CAS.
-     * The value field is placed between pads, hoping that the JVM doesn't
-     * reorder them.
-     * <p/>
-     * JVM intrinsics note: It would be possible to use a release-only
-     * form of CAS here, if it were provided.
-     */
-    static final class Cell {
-        volatile long p0, p1, p2, p3, p4, p5, p6;
-        volatile long value;
-        volatile long q0, q1, q2, q3, q4, q5, q6;
-
-        Cell(long x) {
-            value = x;
-        }
-
-        final boolean cas(long cmp, long val) {
-            return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
-        }
-
-        // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE;
-        private static final long valueOffset;
-
-        static {
-            try {
-                UNSAFE = getUnsafe();
-                Class<?> ak = Cell.class;
-                valueOffset = UNSAFE.objectFieldOffset
-                        (ak.getDeclaredField("value"));
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-        }
-
-    }
-
-    /**
-     * Holder for the thread-local hash code. The code is initially
-     * random, but may be set to a different value upon collisions.
-     */
-    static final class HashCode {
-        static final Random rng = new Random();
-        int code;
-
-        HashCode() {
-            int h = rng.nextInt(); // Avoid zero to allow xorShift rehash
-            code = (h == 0) ? 1 : h;
-        }
-    }
-
-    /**
-     * The corresponding ThreadLocal class
-     */
-    static final class ThreadHashCode extends ThreadLocal<HashCode> {
-        public HashCode initialValue() {
-            return new HashCode();
-        }
-    }
-
-    /**
      * Static per-thread hash codes. Shared across all instances to
      * reduce ThreadLocal pollution and because adjustments due to
      * collisions in one table are likely to be appropriate for
      * others.
      */
     static final ThreadHashCode threadHashCode = new ThreadHashCode();
-
     /**
      * Number of CPUS, to place bound on table size
      */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
+    // Unsafe mechanics
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long baseOffset;
+    private static final long busyOffset;
+
+    static {
+        try {
+            UNSAFE = getUnsafe();
+            Class<?> sk = Striped64.class;
+            baseOffset = UNSAFE.objectFieldOffset
+                    (sk.getDeclaredField("base"));
+            busyOffset = UNSAFE.objectFieldOffset
+                    (sk.getDeclaredField("busy"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
 
     /**
      * Table of cells. When non-null, size is a power of 2.
      */
     transient volatile Cell[] cells;
-
     /**
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
      */
     transient volatile long base;
-
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
      */
@@ -176,6 +129,35 @@ abstract class Striped64 extends Number {
      * Package-private default constructor
      */
     Striped64() {
+    }
+
+    /**
+     * Returns a sun.misc.Unsafe.  Suitable for use in a 3rd party package.
+     * Replace with a simple call to Unsafe.getUnsafe when integrating
+     * into a jdk.
+     *
+     * @return a sun.misc.Unsafe
+     */
+    private static sun.misc.Unsafe getUnsafe() {
+        try {
+            return sun.misc.Unsafe.getUnsafe();
+        } catch (SecurityException se) {
+            try {
+                return java.security.AccessController.doPrivileged
+                        (new java.security
+                                .PrivilegedExceptionAction<sun.misc.Unsafe>() {
+                            public sun.misc.Unsafe run() throws Exception {
+                                java.lang.reflect.Field f = sun.misc
+                                        .Unsafe.class.getDeclaredField("theUnsafe");
+                                f.setAccessible(true);
+                                return (sun.misc.Unsafe) f.get(null);
+                            }
+                        });
+            } catch (java.security.PrivilegedActionException e) {
+                throw new RuntimeException("Could not initialize intrinsics",
+                        e.getCause());
+            }
+        }
     }
 
     /**
@@ -313,50 +295,63 @@ abstract class Striped64 extends Number {
         }
     }
 
-    // Unsafe mechanics
-    private static final sun.misc.Unsafe UNSAFE;
-    private static final long baseOffset;
-    private static final long busyOffset;
+    /**
+     * Padded variant of AtomicLong supporting only raw accesses plus CAS.
+     * The value field is placed between pads, hoping that the JVM doesn't
+     * reorder them.
+     * <p/>
+     * JVM intrinsics note: It would be possible to use a release-only
+     * form of CAS here, if it were provided.
+     */
+    static final class Cell {
+        // Unsafe mechanics
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long valueOffset;
 
-    static {
-        try {
-            UNSAFE = getUnsafe();
-            Class<?> sk = Striped64.class;
-            baseOffset = UNSAFE.objectFieldOffset
-                    (sk.getDeclaredField("base"));
-            busyOffset = UNSAFE.objectFieldOffset
-                    (sk.getDeclaredField("busy"));
-        } catch (Exception e) {
-            throw new Error(e);
+        static {
+            try {
+                UNSAFE = getUnsafe();
+                Class<?> ak = Cell.class;
+                valueOffset = UNSAFE.objectFieldOffset
+                        (ak.getDeclaredField("value"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+
+        volatile long p0, p1, p2, p3, p4, p5, p6;
+        volatile long value;
+        volatile long q0, q1, q2, q3, q4, q5, q6;
+        Cell(long x) {
+            value = x;
+        }
+
+        final boolean cas(long cmp, long val) {
+            return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
+        }
+
+    }
+
+    /**
+     * Holder for the thread-local hash code. The code is initially
+     * random, but may be set to a different value upon collisions.
+     */
+    static final class HashCode {
+        static final Random rng = new Random();
+        int code;
+
+        HashCode() {
+            int h = rng.nextInt(); // Avoid zero to allow xorShift rehash
+            code = (h == 0) ? 1 : h;
         }
     }
 
     /**
-     * Returns a sun.misc.Unsafe.  Suitable for use in a 3rd party package.
-     * Replace with a simple call to Unsafe.getUnsafe when integrating
-     * into a jdk.
-     *
-     * @return a sun.misc.Unsafe
+     * The corresponding ThreadLocal class
      */
-    private static sun.misc.Unsafe getUnsafe() {
-        try {
-            return sun.misc.Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                return java.security.AccessController.doPrivileged
-                        (new java.security
-                                .PrivilegedExceptionAction<sun.misc.Unsafe>() {
-                            public sun.misc.Unsafe run() throws Exception {
-                                java.lang.reflect.Field f = sun.misc
-                                        .Unsafe.class.getDeclaredField("theUnsafe");
-                                f.setAccessible(true);
-                                return (sun.misc.Unsafe) f.get(null);
-                            }
-                        });
-            } catch (java.security.PrivilegedActionException e) {
-                throw new RuntimeException("Could not initialize intrinsics",
-                        e.getCause());
-            }
+    static final class ThreadHashCode extends ThreadLocal<HashCode> {
+        public HashCode initialValue() {
+            return new HashCode();
         }
     }
 

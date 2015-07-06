@@ -31,10 +31,10 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.SourceToParse;
-import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.node.NodeClosedException;
@@ -47,9 +47,9 @@ import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
+import org.xbib.elasticsearch.action.ingest.Consistency;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
-import org.xbib.elasticsearch.action.ingest.Consistency;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -60,19 +60,12 @@ public class TransportLeaderShardIngestAction
         extends TransportAction<IngestLeaderShardRequest, IngestLeaderShardResponse> {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(TransportLeaderShardIngestAction.class.getSimpleName());
-
-    private final TransportService transportService;
-
-    private final ClusterService clusterService;
-
-    private final IndicesService indicesService;
-
-    private final TransportRequestOptions transportOptions;
-
     final String transportAction;
-
     final String executor;
-
+    private final TransportService transportService;
+    private final ClusterService clusterService;
+    private final IndicesService indicesService;
+    private final TransportRequestOptions transportOptions;
     private final MappingUpdatedAction mappingUpdatedAction;
 
     @Inject
@@ -187,55 +180,55 @@ public class TransportLeaderShardIngestAction
 
     private long indexOperationOnLeader(ClusterState clusterState, IndexRequest indexRequest,
                                         IngestLeaderShardRequest request) {
-            MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
-            if (mappingMd != null && mappingMd.routing().required() && indexRequest.routing() == null) {
-                throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
-            }
-            SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source())
-                    .type(indexRequest.type())
-                    .id(indexRequest.id())
-                    .routing(indexRequest.routing())
-                    .parent(indexRequest.parent())
-                    .timestamp(indexRequest.timestamp())
-                    .ttl(indexRequest.ttl());
-            IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(request.getShardId().id());
-            if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
-                Engine.Index index = indexShard.prepareIndex(sourceToParse,
-                        indexRequest.version(),
-                        indexRequest.versionType(),
-                        Engine.Operation.Origin.PRIMARY,
-                        false);
-                Mapping mapping = index.parsedDoc().dynamicMappingsUpdate();
-                if (mapping != null) {
-                    try {
-                        mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
-                    } catch (Throwable t) {
-                        logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
-                    }
+        MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
+        if (mappingMd != null && mappingMd.routing().required() && indexRequest.routing() == null) {
+            throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
+        }
+        SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source())
+                .type(indexRequest.type())
+                .id(indexRequest.id())
+                .routing(indexRequest.routing())
+                .parent(indexRequest.parent())
+                .timestamp(indexRequest.timestamp())
+                .ttl(indexRequest.ttl());
+        IndexShard indexShard = indicesService.indexServiceSafe(request.index()).shardSafe(request.getShardId().id());
+        if (indexRequest.opType() == IndexRequest.OpType.INDEX) {
+            Engine.Index index = indexShard.prepareIndex(sourceToParse,
+                    indexRequest.version(),
+                    indexRequest.versionType(),
+                    Engine.Operation.Origin.PRIMARY,
+                    false);
+            Mapping mapping = index.parsedDoc().dynamicMappingsUpdate();
+            if (mapping != null) {
+                try {
+                    mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
+                } catch (Throwable t) {
+                    logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
                 }
-                indexShard.index(index);
-                return index.version();
-            } else if (indexRequest.opType() == IndexRequest.OpType.CREATE) {
-                Engine.Create create = indexShard.prepareCreate(sourceToParse,
-                        indexRequest.version(),
-                        indexRequest.versionType(),
-                        Engine.Operation.Origin.PRIMARY,
-                        false,
-                        indexRequest.autoGeneratedId());
-                Mapping mapping = create.parsedDoc().dynamicMappingsUpdate();
-                if (mapping != null) {
-                    try {
-                        mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
-                    } catch (Throwable t) {
-                        logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
-                    }
-                }
-                indexShard.create(create);
-                return create.version();
-            } else {
-                logger.error("unknown op type " + indexRequest.opType());
-                return 0;
             }
+            indexShard.index(index);
+            return index.version();
+        } else if (indexRequest.opType() == IndexRequest.OpType.CREATE) {
+            Engine.Create create = indexShard.prepareCreate(sourceToParse,
+                    indexRequest.version(),
+                    indexRequest.versionType(),
+                    Engine.Operation.Origin.PRIMARY,
+                    false,
+                    indexRequest.autoGeneratedId());
+            Mapping mapping = create.parsedDoc().dynamicMappingsUpdate();
+            if (mapping != null) {
+                try {
+                    mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
+                } catch (Throwable t) {
+                    logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
+                }
+            }
+            indexShard.create(create);
+            return create.version();
+        } else {
+            logger.error("unknown op type " + indexRequest.opType());
+            return 0;
+        }
 
     }
 
@@ -253,16 +246,80 @@ public class TransportLeaderShardIngestAction
         return TransportActions.isShardNotAvailableException(e);
     }
 
+    public int findQuorum(ClusterState clusterState, ShardIterator shardIt, IngestLeaderShardRequest request) {
+        if (request.requiredConsistency() == Consistency.IGNORE) {
+            return 0;
+        }
+        int numberOfDataNodes = 0;
+        for (DiscoveryNode node : clusterState.getNodes()) {
+            if (node.isDataNode()) {
+                numberOfDataNodes++;
+            }
+        }
+        // single node, do not care about replica
+        if (numberOfDataNodes == 1) {
+            return 0;
+        }
+        int replicaLevelOfIndex = clusterState.metaData().index(request.index()).getNumberOfReplicas();
+        // no replica defined, so nothing to check
+        if (replicaLevelOfIndex == 0) {
+            return 0;
+        }
+        int replicaLevel = findReplicaLevel(shardIt) + 1;
+        switch (request.requiredConsistency()) {
+            case ONE:
+                if (replicaLevel >= 1 && replicaLevelOfIndex >= 1) {
+                    return 1;
+                }
+                break;
+            case QUORUM:
+                int quorum = (replicaLevelOfIndex / 2) + 1;
+                if (replicaLevel >= quorum) {
+                    return quorum;
+                }
+                break;
+            case ALL:
+                if (replicaLevel == replicaLevelOfIndex) {
+                    return replicaLevel;
+                }
+                break;
+        }
+        // quorum not matched - we have a problem
+        return -1;
+    }
+
+    private int findReplicaLevel(ShardIterator shardIt) {
+        int replicaLevel = 0;
+        shardIt.reset();
+        ShardRouting shard;
+        while ((shard = shardIt.nextOrNull()) != null) {
+            if (shard.unassigned()) {
+                continue;
+            }
+            boolean doOnlyOnRelocating = false;
+            if (shard.primary()) {
+                if (shard.relocating()) {
+                    doOnlyOnRelocating = true;
+                } else {
+                    continue;
+                }
+            }
+            String nodeId = !doOnlyOnRelocating ? shard.currentNodeId() : shard.relocating() ? shard.relocatingNodeId() : null;
+            if (nodeId == null) {
+                continue;
+            }
+            replicaLevel++;
+        }
+        return replicaLevel;
+    }
+
     protected class AsyncShardOperationAction {
 
         private final ActionListener<IngestLeaderShardResponse> listener;
 
         private final IngestLeaderShardRequest request;
-
-        private volatile ShardIterator shardIt;
-
         private final AtomicBoolean leaderOperationStarted = new AtomicBoolean();
-
+        private volatile ShardIterator shardIt;
         private volatile ClusterStateObserver observer;
 
         AsyncShardOperationAction(IngestLeaderShardRequest request, ActionListener<IngestLeaderShardResponse> listener) {
@@ -480,74 +537,6 @@ public class TransportLeaderShardIngestAction
             }
         }
     }
-
-    public int findQuorum(ClusterState clusterState, ShardIterator shardIt, IngestLeaderShardRequest request) {
-        if (request.requiredConsistency() == Consistency.IGNORE) {
-            return 0;
-        }
-        int numberOfDataNodes = 0;
-        for (DiscoveryNode node : clusterState.getNodes()) {
-            if (node.isDataNode()) {
-                numberOfDataNodes++;
-            }
-        }
-        // single node, do not care about replica
-        if (numberOfDataNodes == 1) {
-            return 0;
-        }
-        int replicaLevelOfIndex = clusterState.metaData().index(request.index()).getNumberOfReplicas();
-        // no replica defined, so nothing to check
-        if (replicaLevelOfIndex == 0) {
-            return 0;
-        }
-        int replicaLevel = findReplicaLevel(shardIt) + 1;
-        switch (request.requiredConsistency()) {
-            case ONE:
-                if (replicaLevel >= 1 && replicaLevelOfIndex >= 1) {
-                    return 1;
-                }
-                break;
-            case QUORUM:
-                int quorum = (replicaLevelOfIndex / 2) + 1;
-                if (replicaLevel >= quorum) {
-                    return quorum;
-                }
-                break;
-            case ALL:
-                if (replicaLevel == replicaLevelOfIndex) {
-                    return replicaLevel;
-                }
-                break;
-        }
-        // quorum not matched - we have a problem
-        return -1;
-    }
-
-    private int findReplicaLevel(ShardIterator shardIt) {
-        int replicaLevel = 0;
-        shardIt.reset();
-        ShardRouting shard;
-        while ((shard = shardIt.nextOrNull()) != null) {
-            if (shard.unassigned()) {
-                continue;
-            }
-            boolean doOnlyOnRelocating = false;
-            if (shard.primary()) {
-                if (shard.relocating()) {
-                    doOnlyOnRelocating = true;
-                } else {
-                    continue;
-                }
-            }
-            String nodeId = !doOnlyOnRelocating ? shard.currentNodeId() : shard.relocating() ? shard.relocatingNodeId() : null;
-            if (nodeId == null) {
-                continue;
-            }
-            replicaLevel++;
-        }
-        return replicaLevel;
-    }
-
 
     protected class LeaderOperationRequest implements Streamable {
 

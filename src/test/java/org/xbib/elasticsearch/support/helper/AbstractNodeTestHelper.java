@@ -75,13 +75,11 @@ public abstract class AbstractNodeTestHelper {
                 .put("cluster.name", cluster)
                 .put("cluster.routing.schedule", "50ms")
                 .put("cluster.routing.allocation.disk.threshold_enabled", false)
-                .put("discovery.zen.multicast.enabled", false)
                 .put("discovery.zen.multicast.enabled", true)
                 .put("discovery.zen.multicast.ping_timeout", "5s")
                 .put("gateway.type", "none")
                 .put("http.enabled", false)
-                .put("index.store.type", "org.xbib.elasticsearch.support.store.mockfs")
-                .put("threadpool.bulk.size", 2 * Runtime.getRuntime().availableProcessors())
+                .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
                 .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .put("path.home", getHome())
                 .build();

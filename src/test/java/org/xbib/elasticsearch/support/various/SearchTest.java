@@ -18,7 +18,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 public class SearchTest extends AbstractNodeTestHelper {
 
     @Test
-    public void test() throws Exception {
+    public void testSearch() throws Exception {
         Client client = client("1");
         long t0 = System.currentTimeMillis();
         BulkRequestBuilder builder = new BulkRequestBuilder(client, BulkAction.INSTANCE);

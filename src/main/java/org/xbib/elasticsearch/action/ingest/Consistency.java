@@ -14,14 +14,12 @@ public enum Consistency {
 
     ALL((byte) 3);
 
+    public static final TimeValue DEFAULT_TIMEOUT = new TimeValue(1, TimeUnit.MINUTES);
+    public static final Consistency DEFAULT_CONSISTENCY = Consistency.QUORUM;
     private final byte id;
 
     Consistency(byte id) {
         this.id = id;
-    }
-
-    public byte id() {
-        return id;
     }
 
     public static Consistency fromId(byte value) {
@@ -50,8 +48,8 @@ public enum Consistency {
         throw new IllegalArgumentException("No consistency match [" + value + "]");
     }
 
-    public static final TimeValue DEFAULT_TIMEOUT = new TimeValue(1, TimeUnit.MINUTES);
-
-    public static final Consistency DEFAULT_CONSISTENCY = Consistency.QUORUM;
+    public byte id() {
+        return id;
+    }
 
 }

@@ -12,6 +12,7 @@ public class Build {
     private static final Build INSTANCE;
 
     static {
+        String platform = "NA";
         String version = "NA";
         String hash = "NA";
         String hashShort = "NA";
@@ -35,6 +36,11 @@ public class Build {
                 props.load(new StringReader(new String(out.toByteArray())));
                 String plugin = props.getProperty("plugin");
                 if (pluginName.equals(plugin)) {
+                    platform = System.getProperty("os.name")
+                            + " " + System.getProperty("java.vm.name")
+                            + " " + System.getProperty("java.vm.vendor")
+                            + " " + System.getProperty("java.runtime.version")
+                            + " " + System.getProperty("java.vm.version");
                     version = props.getProperty("version");
                     hash = props.getProperty("hash");
                     if (!"NA".equals(hash)) {
@@ -47,8 +53,10 @@ public class Build {
         } catch (Throwable e) {
             // just ignore...
         }
-        INSTANCE = new Build(version, hash, hashShort, timestamp, date);
+        INSTANCE = new Build(platform, version, hash, hashShort, timestamp, date);
     }
+
+    private String platform;
 
     private String version;
 
@@ -60,7 +68,8 @@ public class Build {
 
     private String date;
 
-    Build(String version, String hash, String hashShort, String timestamp, String date) {
+    Build(String platform, String version, String hash, String hashShort, String timestamp, String date) {
+        this.platform = platform;
         this.version = version;
         this.hash = hash;
         this.hashShort = hashShort;
@@ -70,6 +79,10 @@ public class Build {
 
     public static Build getInstance() {
         return INSTANCE;
+    }
+
+    public String getPlatform() {
+        return platform;
     }
 
     public String getVersion() {

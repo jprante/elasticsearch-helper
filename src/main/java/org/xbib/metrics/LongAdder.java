@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * contention. Method {@link #sum} (or, equivalently, {@link
  * #longValue}) returns the current total combined across the
  * variables maintaining the sum.
- *
+ * <p/>
  * This class is usually preferable to {@link AtomicLong} when
  * multiple threads update a common sum that is used for purposes such
  * as collecting statistics, not for fine-grained synchronization
@@ -24,29 +24,28 @@ import java.util.concurrent.atomic.AtomicLong;
  * characteristics. But under high contention, expected throughput of
  * this class is significantly higher, at the expense of higher space
  * consumption.
- *
+ * <p/>
  * This class extends {@link Number}, but does not define
  * methods such as {@code hashCode} and {@code compareTo} because
  * instances are expected to be mutated, and so are not useful as
  * collection keys.
- *
+ * <p/>
  * jsr166e note: This class is targeted to be placed in
  * java.util.concurrent.atomic
- *
  */
 class LongAdder extends Striped64 {
+
+    /**
+     * Creates a new adder with initial sum of zero.
+     */
+    public LongAdder() {
+    }
 
     /**
      * Version of plus for use in retryUpdate
      */
     final long fn(long v, long x) {
         return v + x;
-    }
-
-    /**
-     * Creates a new adder with initial sum of zero.
-     */
-    public LongAdder() {
     }
 
     /**

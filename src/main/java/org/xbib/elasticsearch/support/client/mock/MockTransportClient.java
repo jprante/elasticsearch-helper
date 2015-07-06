@@ -24,7 +24,7 @@ public class MockTransportClient extends BulkTransportClient {
     }
 
     @Override
-    public MockTransportClient init(Map<String,String> settings) {
+    public MockTransportClient init(Map<String, String> settings) {
         return this;
     }
 

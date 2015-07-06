@@ -47,7 +47,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
     }
 
     @Override
-    public BaseIngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+    public BaseIngestTransportClient newIndex(String index, Settings settings, Map<String, String> mappings) {
         if (client == null) {
             logger.warn("no client for create index");
             return this;
@@ -62,7 +62,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             logger.info("settings = {}", settings.getAsStructuredMap());
             createIndexRequestBuilder.setSettings(settings);
         }
-        if (mappings != null ) {
+        if (mappings != null) {
             for (String type : mappings.keySet()) {
                 logger.info("found mapping for {}", type);
                 createIndexRequestBuilder.addMapping(type, mappings.get(type));
@@ -74,7 +74,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
     }
 
     @Override
-    public BaseIngestTransportClient newMapping(String index, String type, Map<String,Object> mapping) {
+    public BaseIngestTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
         PutMappingRequestBuilder putMappingRequestBuilder =
                 new PutMappingRequestBuilder(client(), PutMappingAction.INSTANCE)
                         .setIndices(index)

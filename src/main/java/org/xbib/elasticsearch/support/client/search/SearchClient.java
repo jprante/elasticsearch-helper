@@ -20,22 +20,22 @@ public class SearchClient extends BaseTransportClient implements Search {
 
     private String type;
 
+    public String getIndex() {
+        return index;
+    }
+
     public SearchClient setIndex(String index) {
         this.index = index;
         return this;
     }
 
+    public String getType() {
+        return type;
+    }
+
     public SearchClient setType(String type) {
         this.type = type;
         return this;
-    }
-
-    public String getIndex() {
-        return index;
-    }
-
-    public String getType() {
-        return type;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class SearchClient extends BaseTransportClient implements Search {
     }
 
     @Override
-    public SearchClient init(Map<String,String> settings) throws IOException {
+    public SearchClient init(Map<String, String> settings) throws IOException {
         super.createClient(settings);
         return this;
     }

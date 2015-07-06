@@ -14,22 +14,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class MeterMetric implements Metric {
 
-    private final ExpWeightedMovingAverage m1Rate = ExpWeightedMovingAverage.oneMinuteEWMA();
-
-    private final ExpWeightedMovingAverage m5Rate = ExpWeightedMovingAverage.fiveMinuteEWMA();
-
-    private final ExpWeightedMovingAverage m15Rate = ExpWeightedMovingAverage.fifteenMinuteEWMA();
-
-    private final LongAdder count;
-
-    private final long startDate;
-
-    private final long startTime;
-
-    private final TimeUnit rateUnit;
-
     private final static ScheduledExecutorService service = Executors.newScheduledThreadPool(3);
-
+    private final ExpWeightedMovingAverage m1Rate = ExpWeightedMovingAverage.oneMinuteEWMA();
+    private final ExpWeightedMovingAverage m5Rate = ExpWeightedMovingAverage.fiveMinuteEWMA();
+    private final ExpWeightedMovingAverage m15Rate = ExpWeightedMovingAverage.fifteenMinuteEWMA();
+    private final LongAdder count;
+    private final long startDate;
+    private final long startTime;
+    private final TimeUnit rateUnit;
     private final ScheduledFuture<?> future;
 
     private long stopDate;

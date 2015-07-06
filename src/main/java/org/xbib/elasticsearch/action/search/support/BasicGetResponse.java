@@ -15,13 +15,17 @@ public class BasicGetResponse {
 
     private GetResponse getResponse;
 
-    public BasicGetResponse setResponse(GetResponse response) {
-        this.getResponse = response;
-        return this;
+    private static byte[] jsonErrorMessage(String message) {
+        return ("{\"error\":500,\"message\":\"" + message + "\"}").getBytes();
     }
 
     public GetResponse getResponse() {
         return getResponse;
+    }
+
+    public BasicGetResponse setResponse(GetResponse response) {
+        this.getResponse = response;
+        return this;
     }
 
     public boolean exists() {
@@ -40,10 +44,6 @@ public class BasicGetResponse {
         getResponse.toXContent(jsonBuilder, ToXContent.EMPTY_PARAMS);
         jsonBuilder.close();
         return this;
-    }
-
-    private static byte[] jsonErrorMessage(String message) {
-        return ("{\"error\":500,\"message\":\"" + message + "\"}").getBytes();
     }
 
 

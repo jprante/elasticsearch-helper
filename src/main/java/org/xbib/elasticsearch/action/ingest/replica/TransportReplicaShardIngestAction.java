@@ -75,7 +75,7 @@ public class TransportReplicaShardIngestAction
     public TransportReplicaShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                              IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
                                              ActionFilters actionFilters) {
-        super(settings, IngestAction.NAME,  threadPool, actionFilters);
+        super(settings, IngestAction.NAME, threadPool, actionFilters);
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -204,6 +204,26 @@ public class TransportReplicaShardIngestAction
         }
         Throwable cause = ExceptionsHelper.unwrapCause(e);
         return cause instanceof VersionConflictEngineException;
+    }
+
+    private void failReplicaIfNeeded(String index, int shardId, Throwable t) {
+        if (!ignoreReplicaException(t)) {
+            IndexService indexService = indicesService.indexService(index);
+            if (indexService == null) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ignoring failed replica [{}][{}] because index was already removed", index, shardId);
+                }
+                return;
+            }
+            IndexShard indexShard = indexService.shard(shardId);
+            if (indexShard == null) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ignoring failed replica [{}][{}] because index was already removed", index, shardId);
+                }
+                return;
+            }
+            indexShard.failShard(transportAction + " failed on replica", t);
+        }
     }
 
     protected class AsyncShardOperationAction {
@@ -460,26 +480,6 @@ public class TransportReplicaShardIngestAction
                 }
             }
             listener.onFailure(failure);
-        }
-    }
-
-    private void failReplicaIfNeeded(String index, int shardId, Throwable t) {
-        if (!ignoreReplicaException(t)) {
-            IndexService indexService = indicesService.indexService(index);
-            if (indexService == null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("ignoring failed replica [{}][{}] because index was already removed", index, shardId);
-                }
-                return;
-            }
-            IndexShard indexShard = indexService.shard(shardId);
-            if (indexShard == null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("ignoring failed replica [{}][{}] because index was already removed", index, shardId);
-                }
-                return;
-            }
-            indexShard.failShard(transportAction + " failed on replica", t);
         }
     }
 

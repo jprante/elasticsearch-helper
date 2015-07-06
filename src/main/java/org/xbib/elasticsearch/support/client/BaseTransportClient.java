@@ -32,7 +32,7 @@ public abstract class BaseTransportClient {
 
     private boolean isShutdown;
 
-    protected void createClient(Map<String,String> settings) throws IOException {
+    protected void createClient(Map<String, String> settings) throws IOException {
         createClient(Settings.builder().put(settings).build());
     }
 

@@ -1,4 +1,3 @@
-
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -11,27 +10,17 @@ import java.util.Set;
 
 public class Metric {
 
-    private long started;
-
     private final Set<String> indexNames = new HashSet<String>();
-
     private final Map<String, Long> startBulkRefreshIntervals = new HashMap<String, Long>();
-
     private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<String, Long>();
-
     private final MeanMetric totalIngest = new MeanMetric();
-
     private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
-
     private final CounterMetric currentIngest = new CounterMetric();
-
     private final CounterMetric currentIngestNumDocs = new CounterMetric();
-
     private final CounterMetric submitted = new CounterMetric();
-
     private final CounterMetric succeeded = new CounterMetric();
-
     private final CounterMetric failed = new CounterMetric();
+    private long started;
 
     public MeanMetric getTotalIngest() {
         return totalIngest;

@@ -75,7 +75,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient init(Map<String,String> settings) throws IOException {
+    public IngestTransportClient init(Map<String, String> settings) throws IOException {
         return this.init(Settings.settingsBuilder().put(settings).build());
     }
 
@@ -92,10 +92,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 metric.getCurrentIngestNumDocs().inc(num);
                 metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 logger.debug("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
-                            request.ingestId(),
-                            num,
-                            request.estimatedSizeInBytes(),
-                            concurrency);
+                        request.ingestId(),
+                        num,
+                        request.estimatedSizeInBytes(),
+                        concurrency);
             }
 
             @Override
@@ -105,14 +105,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 metric.getFailed().inc(response.getFailures().size());
                 metric.getTotalIngest().inc(response.tookInMillis());
                 logger.debug("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
-                            response.ingestId(),
-                            metric.getSucceeded().count(),
-                            metric.getFailed().count(),
-                            response.tookInMillis(),
-                            response.leaderShardResponse(),
-                            response.replicaShardResponses(),
-                            concurrency
-                    );
+                        response.ingestId(),
+                        metric.getSucceeded().count(),
+                        metric.getFailed().count(),
+                        response.tookInMillis(),
+                        response.leaderShardResponse(),
+                        response.replicaShardResponses(),
+                        concurrency
+                );
                 if (!response.getFailures().isEmpty()) {
                     for (IngestActionFailure f : response.getFailures()) {
                         logger.error("ingest [{}] has failures, reason: {}", response.ingestId(), f.message());
@@ -147,14 +147,14 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient setMetric(Metric metric) {
-        this.metric = metric;
-        return this;
+    public Metric getMetric() {
+        return metric;
     }
 
     @Override
-    public Metric getMetric() {
-        return metric;
+    public IngestTransportClient setMetric(Metric metric) {
+        this.metric = metric;
+        return this;
     }
 
     @Override
@@ -167,7 +167,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+    public IngestTransportClient newIndex(String index, Settings settings, Map<String, String> mappings) {
         if (closed) {
             throw new ElasticsearchException("client is closed");
         }

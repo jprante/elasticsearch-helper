@@ -127,6 +127,7 @@ public class IngestProcessor {
     /**
      * Closes the processor. If flushing by time is enabled, then it is shut down.
      * Any remaining ingest actions are flushed.
+     *
      * @throws InterruptedException if method was interrupted
      */
     public void close() throws InterruptedException {
@@ -171,6 +172,7 @@ public class IngestProcessor {
     /**
      * Critical phase, check if flushing condition is met and
      * push the part of the requests that is required to push
+     *
      * @param ingestListener listener
      */
     private synchronized void flushIfNeeded(IngestListener ingestListener) {
@@ -193,7 +195,7 @@ public class IngestProcessor {
     /**
      * Process an ingest request and send responses via the listener.
      *
-     * @param request the ingest request
+     * @param request        the ingest request
      * @param ingestListener the listener
      */
     private void process(final IngestRequest request, final IngestListener ingestListener) {
@@ -235,14 +237,6 @@ public class IngestProcessor {
         }
     }
 
-    class FlushHelper implements Runnable {
-
-        @Override
-        public void run() {
-            flushIfNeeded(ingestListener);
-        }
-    }
-
     /**
      * A listener for ingest executions
      */
@@ -250,25 +244,36 @@ public class IngestProcessor {
 
         /**
          * Called before the ingest request is executed.
-         * @param concurrency  concurrency
-         * @param request request
+         *
+         * @param concurrency concurrency
+         * @param request     request
          */
         void onRequest(int concurrency, IngestRequest request);
 
         /**
          * Called after a successful execution of an ingest request.
-         * @param concurrency  concurrency
-         * @param response response
+         *
+         * @param concurrency concurrency
+         * @param response    response
          */
         void onResponse(int concurrency, IngestResponse response);
 
         /**
          * Callback after a failed execution of an ingest request.
-         * @param concurrency  concurrency
-         * @param ingestId ingest identifier
-         * @param failure failure
+         *
+         * @param concurrency concurrency
+         * @param ingestId    ingest identifier
+         * @param failure     failure
          */
         void onFailure(int concurrency, long ingestId, Throwable failure);
+    }
+
+    class FlushHelper implements Runnable {
+
+        @Override
+        public void run() {
+            flushIfNeeded(ingestListener);
+        }
     }
 
 }

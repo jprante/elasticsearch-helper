@@ -14,14 +14,9 @@ public class SupportPlugin extends AbstractPlugin {
 
     @Override
     public String name() {
-        return "support-"
-                + Build.getInstance().getVersion()
+        return "support-" + Build.getInstance().getVersion()
                 + "-" + Build.getInstance().getShortHash()
-                + " " + System.getProperty("os.name")
-                + " " + System.getProperty("java.vm.name")
-                + " " + System.getProperty("java.vm.vendor")
-                + " " + System.getProperty("java.runtime.version")
-                + " " + System.getProperty("java.vm.version");
+                + " " + Build.getInstance().getPlatform();
     }
 
     @Override

@@ -24,6 +24,12 @@ public class IngestActionFailure implements Streamable {
         this.message = message;
     }
 
+    public static IngestActionFailure from(StreamInput in) throws IOException {
+        IngestActionFailure itemFailure = new IngestActionFailure();
+        itemFailure.readFrom(in);
+        return itemFailure;
+    }
+
     public long ingestId() {
         return ingestId;
     }
@@ -34,12 +40,6 @@ public class IngestActionFailure implements Streamable {
 
     public String message() {
         return message;
-    }
-
-    public static IngestActionFailure from(StreamInput in) throws IOException {
-        IngestActionFailure itemFailure = new IngestActionFailure();
-        itemFailure.readFrom(in);
-        return itemFailure;
     }
 
     @Override

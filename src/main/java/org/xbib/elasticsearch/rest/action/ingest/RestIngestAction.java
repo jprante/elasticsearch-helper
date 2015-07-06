@@ -40,11 +40,11 @@ import static org.elasticsearch.rest.RestStatus.OK;
 
 public class RestIngestAction extends BaseRestHandler {
 
-    private final static ESLogger logger = Loggers.getLogger(RestIngestAction.class);
     /**
      * Count the volume
      */
     public final static AtomicLong volumeCounter = new AtomicLong();
+    private final static ESLogger logger = Loggers.getLogger(RestIngestAction.class);
     /**
      * The IngestProcessor
      */

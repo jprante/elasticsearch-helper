@@ -17,10 +17,10 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
+import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.Metric;
-import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -76,7 +76,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient init(Map<String,String> settings) throws IOException {
+    public BulkTransportClient init(Map<String, String> settings) throws IOException {
         return this.init(Settings.settingsBuilder().put(settings).build());
     }
 
@@ -94,10 +94,10 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
                 metric.getCurrentIngestNumDocs().inc(n);
                 metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
                 logger.debug("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
-                            executionId,
-                            request.numberOfActions(),
-                            request.estimatedSizeInBytes(),
-                            l);
+                        executionId,
+                        request.numberOfActions(),
+                        request.estimatedSizeInBytes(),
+                        l);
             }
 
             @Override
@@ -154,14 +154,14 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient setMetric(Metric metric) {
-        this.metric = metric;
-        return this;
+    public Metric getMetric() {
+        return metric;
     }
 
     @Override
-    public Metric getMetric() {
-        return metric;
+    public BulkTransportClient setMetric(Metric metric) {
+        this.metric = metric;
+        return this;
     }
 
     @Override
@@ -174,7 +174,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+    public BulkTransportClient newIndex(String index, Settings settings, Map<String, String> mappings) {
         if (closed) {
             throw new ElasticsearchException("client is closed");
         }

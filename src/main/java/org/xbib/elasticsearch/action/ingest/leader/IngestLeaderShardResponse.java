@@ -53,17 +53,12 @@ public class IngestLeaderShardResponse extends ActionResponse {
         return shardId;
     }
 
-    public IngestLeaderShardResponse setQuorumShards(int quorumShards) {
-        this.quorumShards = quorumShards;
-        return this;
-    }
-
     public int getQuorumShards() {
         return quorumShards;
     }
 
-    public IngestLeaderShardResponse setSuccessCount(int successCount) {
-        this.successCount = successCount;
+    public IngestLeaderShardResponse setQuorumShards(int quorumShards) {
+        this.quorumShards = quorumShards;
         return this;
     }
 
@@ -71,8 +66,8 @@ public class IngestLeaderShardResponse extends ActionResponse {
         return successCount;
     }
 
-    public IngestLeaderShardResponse setTookInMillis(long tookInMillis) {
-        this.tookInMillis = tookInMillis;
+    public IngestLeaderShardResponse setSuccessCount(int successCount) {
+        this.successCount = successCount;
         return this;
     }
 
@@ -80,8 +75,8 @@ public class IngestLeaderShardResponse extends ActionResponse {
         return tookInMillis;
     }
 
-    public IngestLeaderShardResponse setActionRequests(List<ActionRequest> actionRequests) {
-        this.actionRequests = actionRequests;
+    public IngestLeaderShardResponse setTookInMillis(long tookInMillis) {
+        this.tookInMillis = tookInMillis;
         return this;
     }
 
@@ -89,13 +84,18 @@ public class IngestLeaderShardResponse extends ActionResponse {
         return actionRequests;
     }
 
-    public IngestLeaderShardResponse setFailures(List<IngestActionFailure> failures) {
-        this.failures = failures;
+    public IngestLeaderShardResponse setActionRequests(List<ActionRequest> actionRequests) {
+        this.actionRequests = actionRequests;
         return this;
     }
 
     public List<IngestActionFailure> getFailures() {
         return failures;
+    }
+
+    public IngestLeaderShardResponse setFailures(List<IngestActionFailure> failures) {
+        this.failures = failures;
+        return this;
     }
 
     @Override

@@ -15,13 +15,8 @@ import java.util.Locale;
 
 public abstract class NetworkUtils {
 
-    public static enum ProtocolVersion {
-        IPv4, IPv6, IPv46, NONE
-    }
-
     public static final String IPv4_SETTING = "java.net.preferIPv4Stack";
     public static final String IPv6_SETTING = "java.net.preferIPv6Addresses";
-
     private final static InetAddress localAddress;
 
     static {
@@ -252,5 +247,9 @@ public abstract class NetworkUtils {
             }
         }
         return left.length - right.length;
+    }
+
+    public static enum ProtocolVersion {
+        IPv4, IPv6, IPv46, NONE
     }
 }

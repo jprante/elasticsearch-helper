@@ -129,6 +129,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * The number of actions in the ingest request.
+     *
      * @return the number of actions
      */
     public int numberOfActions() {
@@ -138,6 +139,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * The estimated size in bytes of the ingest request.
+     *
      * @return the estimated byte size
      */
     public long estimatedSizeInBytes() {
@@ -146,8 +148,9 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
-     * @param data data
-     * @param from from
+     *
+     * @param data   data
+     * @param from   from
      * @param length length
      * @return this request
      * @throws Exception if data could not be added
@@ -158,11 +161,12 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
-     * @param data data
-     * @param from from
-     * @param length length
+     *
+     * @param data         data
+     * @param from         from
+     * @param length       length
      * @param defaultIndex the default index
-     * @param defaultType the default type
+     * @param defaultType  the default type
      * @return this request
      * @throws Exception if data could not be added
      */
@@ -172,9 +176,10 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     /**
      * Adds a framed data in binary format
-     * @param data data
+     *
+     * @param data         data
      * @param defaultIndex the default index
-     * @param defaultType the default type
+     * @param defaultType  the default type
      * @return this request
      * @throws Exception if data could not be added
      */

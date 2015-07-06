@@ -12,12 +12,22 @@ public class ExpWeightedMovingAverage {
     private static final double M1_ALPHA = 1 - Math.exp(-5 / 60.0);
     private static final double M5_ALPHA = 1 - Math.exp(-5 / 60.0 / 5);
     private static final double M15_ALPHA = 1 - Math.exp(-5 / 60.0 / 15);
-
+    private final LongAdder uncounted = new LongAdder();
+    private final double alpha, interval;
     private volatile boolean initialized = false;
     private volatile double rate = 0.0;
 
-    private final LongAdder uncounted = new LongAdder();
-    private final double alpha, interval;
+    /**
+     * Create a new EWMA with a specific smoothing constant.
+     *
+     * @param alpha        the smoothing constant
+     * @param interval     the expected tick interval
+     * @param intervalUnit the time unit of the tick interval
+     */
+    public ExpWeightedMovingAverage(double alpha, long interval, TimeUnit intervalUnit) {
+        this.interval = intervalUnit.toNanos(interval);
+        this.alpha = alpha;
+    }
 
     /**
      * Creates a new EWMA which is equivalent to the UNIX one minute load average and which expects to be ticked every
@@ -47,18 +57,6 @@ public class ExpWeightedMovingAverage {
      */
     public static ExpWeightedMovingAverage fifteenMinuteEWMA() {
         return new ExpWeightedMovingAverage(M15_ALPHA, 5, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Create a new EWMA with a specific smoothing constant.
-     *
-     * @param alpha        the smoothing constant
-     * @param interval     the expected tick interval
-     * @param intervalUnit the time unit of the tick interval
-     */
-    public ExpWeightedMovingAverage(double alpha, long interval, TimeUnit intervalUnit) {
-        this.interval = intervalUnit.toNanos(interval);
-        this.alpha = alpha;
     }
 
     /**

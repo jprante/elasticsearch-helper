@@ -15,13 +15,17 @@ public class BasicSearchResponse {
 
     private SearchResponse searchResponse;
 
-    public BasicSearchResponse setResponse(SearchResponse response) {
-        this.searchResponse = response;
-        return this;
+    private static byte[] jsonErrorMessage(String message) {
+        return ("{\"error\":500,\"message\":\"" + message + "\"}").getBytes();
     }
 
     public SearchResponse getResponse() {
         return searchResponse;
+    }
+
+    public BasicSearchResponse setResponse(SearchResponse response) {
+        this.searchResponse = response;
+        return this;
     }
 
     public long tookInMillis() {
@@ -46,10 +50,6 @@ public class BasicSearchResponse {
         jsonBuilder.endObject();
         jsonBuilder.close();
         return this;
-    }
-
-    private static byte[] jsonErrorMessage(String message) {
-        return ("{\"error\":500,\"message\":\"" + message + "\"}").getBytes();
     }
 
 

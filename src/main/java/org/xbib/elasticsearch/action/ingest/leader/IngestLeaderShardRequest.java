@@ -38,13 +38,17 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
     public IngestLeaderShardRequest() {
     }
 
+    public long getIngestId() {
+        return ingestId;
+    }
+
     public IngestLeaderShardRequest setIngestId(long ingestId) {
         this.ingestId = ingestId;
         return this;
     }
 
-    public long getIngestId() {
-        return ingestId;
+    public ShardId getShardId() {
+        return shardId;
     }
 
     public IngestLeaderShardRequest setShardId(ShardId shardId) {
@@ -53,19 +57,14 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
         return this;
     }
 
-    public ShardId getShardId() {
-        return shardId;
-    }
-
-    public IngestLeaderShardRequest setActionRequests(List<ActionRequest> actionRequests) {
-        this.actionRequests =  actionRequests;
-        return this;
-    }
-
     public List<ActionRequest> getActionRequests() {
         return actionRequests;
     }
 
+    public IngestLeaderShardRequest setActionRequests(List<ActionRequest> actionRequests) {
+        this.actionRequests = actionRequests;
+        return this;
+    }
 
     public final boolean operationThreaded() {
         return threadedOperation;

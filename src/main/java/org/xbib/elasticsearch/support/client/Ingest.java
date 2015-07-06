@@ -50,6 +50,7 @@ public interface Ingest {
 
     /**
      * Initialize, create new ingest client.
+     *
      * @param client the Elasticsearch client
      * @return this ingest
      * @throws IOException if client could not get created
@@ -58,6 +59,7 @@ public interface Ingest {
 
     /**
      * Initialize, create new ingest client.
+     *
      * @param settings settings
      * @return this ingest
      * @throws IOException if client could not get created
@@ -66,14 +68,16 @@ public interface Ingest {
 
     /**
      * Initialize, create new ingest client.
+     *
      * @param settings settings
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(Map<String,String> settings) throws IOException;
+    Ingest init(Map<String, String> settings) throws IOException;
 
     /**
      * Return Elasticsearch client to execute actions
+     *
      * @return Elasticsearch client
      */
     AbstractClient client();
@@ -112,6 +116,7 @@ public interface Ingest {
 
     /**
      * Get settings builder
+     *
      * @return settings builder
      */
     Settings.Builder getSettingsBuilder();
@@ -150,15 +155,17 @@ public interface Ingest {
 
     /**
      * Set mapping
+     *
      * @param type mapping type
-     * @param in mapping definition as input stream
+     * @param in   mapping definition as input stream
      * @throws IOException if mapping could not be added
      */
     void mapping(String type, InputStream in) throws IOException;
 
     /**
      * Set mapping
-     * @param type mapping type
+     *
+     * @param type    mapping type
      * @param mapping mapping definition as input stream
      * @throws IOException if mapping could not be added
      */
@@ -166,6 +173,7 @@ public interface Ingest {
 
     /**
      * Put mapping
+     *
      * @param index index
      * @return this ingest
      */
@@ -173,6 +181,7 @@ public interface Ingest {
 
     /**
      * Create a new index
+     *
      * @param index index
      * @return this ingest
      */
@@ -180,8 +189,9 @@ public interface Ingest {
 
     /**
      * Create a new index
-     * @param index index
-     * @param type type
+     *
+     * @param index    index
+     * @param type     type
      * @param settings settings
      * @param mappings mappings
      * @return this ingest
@@ -191,24 +201,27 @@ public interface Ingest {
 
     /**
      * Create a new index
-     * @param index index
+     *
+     * @param index    index
      * @param settings settings
      * @param mappings mappings
      * @return this ingest
      */
-    Ingest newIndex(String index, Settings settings, Map<String,String> mappings);
+    Ingest newIndex(String index, Settings settings, Map<String, String> mappings);
 
     /**
      * Create new mapping
-     * @param index index
-     * @param type index type
+     *
+     * @param index   index
+     * @param type    index type
      * @param mapping mapping
      * @return this ingest
      */
-    Ingest newMapping(String index, String type, Map<String,Object> mapping);
+    Ingest newMapping(String index, String type, Map<String, Object> mapping);
 
     /**
      * Delete index
+     *
      * @param index index
      * @return this ingest
      */
@@ -216,25 +229,28 @@ public interface Ingest {
 
     /**
      * Start bulk mode
-     * @param index index
+     *
+     * @param index                index
      * @param startRefreshInterval refresh interval before bulk
-     * @param stopRefreshInterval refresh interval after bulk
-     * @throws IOException if bulk could not be started
+     * @param stopRefreshInterval  refresh interval after bulk
      * @return this ingest
+     * @throws IOException if bulk could not be started
      */
     Ingest startBulk(String index, long startRefreshInterval, long stopRefreshInterval) throws IOException;
 
     /**
      * Stops bulk mode
+     *
      * @param index index
-     * @throws IOException if bulk could not be stopped
      * @return this Ingest
+     * @throws IOException if bulk could not be stopped
      */
     Ingest stopBulk(String index) throws IOException;
 
     /**
      * Bulked index request. Each request will be added to a queue for bulking requests.
      * Submitting request will be done when bulk limits are exceeded.
+     *
      * @param indexRequest the index request to add
      * @return this ingest
      */
@@ -243,6 +259,7 @@ public interface Ingest {
     /**
      * Bulked delete request. Each request will be added to a queue for bulking requests.
      * Submitting request will be done when bulk limits are exceeded.
+     *
      * @param deleteRequest the delete request to add
      * @return this ingest
      */
@@ -266,6 +283,7 @@ public interface Ingest {
 
     /**
      * Refresh the index.
+     *
      * @param index index
      * @return this ingest
      */
@@ -273,6 +291,7 @@ public interface Ingest {
 
     /**
      * Flush the index.
+     *
      * @param index index
      * @return this ingest
      */
@@ -280,16 +299,18 @@ public interface Ingest {
 
     /**
      * Add replica level.
+     *
      * @param index index
      * @param level the replica level
-     * @throws IOException if replica could not be updated
      * @return number of shards after updating replica level
+     * @throws IOException if replica could not be updated
      */
     int updateReplicaLevel(String index, int level) throws IOException;
 
     /**
      * Wait for cluster being healthy.
-     * @param status cluster health status to wait for
+     *
+     * @param status    cluster health status to wait for
      * @param timeValue time value
      * @return this ingest
      * @throws IOException if wait failed
@@ -306,20 +327,23 @@ public interface Ingest {
     int waitForRecovery(String index) throws IOException;
 
     /**
+     * Get metric
+     *
+     * @return metric
+     */
+    Metric getMetric();
+
+    /**
      * Set metric
+     *
      * @param metric the metric
      * @return this ingest
      */
     Ingest setMetric(Metric metric);
 
     /**
-     * Get metric
-     * @return metric
-     */
-    Metric getMetric();
-
-    /**
      * Returns true is a throwable exists
+     *
      * @return true if a Throwable exists
      */
     boolean hasThrowable();

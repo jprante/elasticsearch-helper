@@ -15,7 +15,7 @@ public interface Search {
 
     Search init(Settings settings) throws IOException;
 
-    Search init(Map<String,String> settings) throws IOException;
+    Search init(Map<String, String> settings) throws IOException;
 
     /**
      * Return the Elasticsearch client
@@ -23,6 +23,13 @@ public interface Search {
      * @return the client
      */
     ElasticsearchClient client();
+
+    /**
+     * Get index
+     *
+     * @return the index
+     */
+    String getIndex();
 
     /**
      * Set index
@@ -33,20 +40,15 @@ public interface Search {
     Search setIndex(String index);
 
     /**
-     * Get index
-     *
-     * @return the index
-     */
-    String getIndex();
-
-    /**
      * Create new search request
+     *
      * @return this search request
      */
     BasicSearchRequest newSearchRequest();
 
     /**
      * Create new get request
+     *
      * @return this search request
      */
     BasicGetRequest newGetRequest();
