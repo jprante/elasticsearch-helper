@@ -7,6 +7,8 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -30,14 +32,19 @@ public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
         startNode("3");
         //startNode("4");
 
+        Settings settingsTest1 = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 3)
+                .build();
+        Settings settingsTest2 = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
+
         final BulkNodeClient ingest = new BulkNodeClient()
-                .newClient(client("1"))
-                .shards(2)
-                .replica(3)
-                .newIndex("test1")
-                .shards(2)
-                .replica(1)
-                .newIndex("test2");
+                .init(client("1"))
+                .newIndex("test1", settingsTest1, null)
+                .newIndex("test2", settingsTest2, null);
         try {
             for (int i = 0; i < 1234; i++) {
                 ingest.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");

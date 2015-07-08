@@ -24,7 +24,6 @@ import org.xbib.elasticsearch.support.client.State;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Ingest client
@@ -86,18 +85,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient newClient(Client client) throws IOException {
-        return this.newClient(findSettings());
+    public IngestTransportClient init(Client client) throws IOException {
+        return this.init(findSettings());
     }
 
     @Override
-    public IngestTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+    public IngestTransportClient init(Map<String,String> settings) throws IOException {
+        return this.init(ImmutableSettings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public IngestTransportClient newClient(Settings settings) throws IOException {
-        super.newClient(settings);
+    public IngestTransportClient init(Settings settings) throws IOException {
+        super.init(settings);
         this.state = new State();
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
@@ -174,16 +173,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return state;
     }
 
-    public IngestTransportClient shards(int value) {
-        super.shards(value);
-        return this;
-    }
-
-    public IngestTransportClient replica(int value) {
-        super.replica(value);
-        return this;
-    }
-
     @Override
     public IngestTransportClient newIndex(String index) {
         if (closed) {
@@ -193,6 +182,13 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return this;
     }
 
+    @Override
+    public IngestTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+        super.newIndex(index, settings, mappings);
+        return this;
+    }
+
+    @Override
     public IngestTransportClient deleteIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
@@ -201,22 +197,12 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return this;
     }
 
-
     @Override
     public IngestTransportClient putMapping(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.putMapping(index);
-        return this;
-    }
-
-    @Override
-    public IngestTransportClient deleteMapping(String index, String type) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        super.deleteMapping(index, type);
         return this;
     }
 

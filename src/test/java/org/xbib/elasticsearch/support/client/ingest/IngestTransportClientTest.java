@@ -34,11 +34,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testNewIndexIngest() throws IOException {
+        Settings settingsForIndex = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null);
         ingest.shutdown();
         if (ingest.hasThrowable()) {
             logger.error("error", ingest.getThrowable());
@@ -48,11 +50,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testDeleteIndexIngestClient() throws IOException {
+        Settings settingsForIndex = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null);
         try {
             ingest.deleteIndex("test")
               .newIndex("test")
@@ -70,12 +74,14 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testSingleDocIngestClient() throws IOException {
+        Settings settingsForIndex = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test");
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null);
         try {
             ingest.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
             ingest.flushIngest();
@@ -97,13 +103,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
 
     @Test
     public void testRandomDocsIngestClient() throws Exception {
+        Settings settingsForIndex = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(1000)
-                .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test")
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null)
                 .startBulk("test");
         try {
             for (int i = 0; i < 12345; i++) {
@@ -132,13 +140,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         int maxthreads = Runtime.getRuntime().availableProcessors();
         int maxactions = 1000;
         final int maxloop = 12345;
+        Settings settingsForIndex = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", 2)
+                .put("index.number_of_replicas", 1)
+                .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerBulkRequest(maxactions)
-                .newClient(getSettings())
-                .shards(2)
-                .replica(0)
-                .newIndex("test")
+                .init(getSettings())
+                .newIndex("test", settingsForIndex, null)
                 .startBulk("test");
         try {
             ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
@@ -197,7 +207,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             }
         }
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(settingsBuilder.build())
+                .init(settingsBuilder.build())
                 .newIndex("test");
         ingest.shutdown();
         if (ingest.hasThrowable()) {

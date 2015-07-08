@@ -16,20 +16,8 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getSimpleName());
 
-    public Ingest newClient(Settings settings) throws IOException {
+    public Ingest init(Settings settings) throws IOException {
         super.createClient(settings);
-        return this;
-    }
-
-    @Override
-    public BaseIngestTransportClient shards(int shards) {
-        super.addSetting("index.number_of_shards", shards);
-        return this;
-    }
-
-    @Override
-    public BaseIngestTransportClient replica(int replica) {
-        super.addSetting("index.number_of_replicas", replica);
         return this;
     }
 
@@ -107,15 +95,6 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
             return this;
         }
         configHelper.putMapping(client, index);
-        return this;
-    }
-
-    public BaseIngestTransportClient deleteMapping(String index, String type) {
-        if (client == null) {
-            logger.warn("no client for delete mapping");
-            return this;
-        }
-        configHelper.deleteMapping(client, index, type);
         return this;
     }
 

@@ -4,6 +4,8 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
@@ -27,11 +29,14 @@ public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
         int shardsAfterReplica;
 
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", numberOfShards)
+                .put("index.number_of_replicas", 0)
+                .build();
+
         final BulkNodeClient ingest = new BulkNodeClient()
-                .newClient(client("1"))
-                .shards(numberOfShards)
-                .replica(0)
-                .newIndex("replicatest");
+                .init(client("1"))
+                .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
 

@@ -1,10 +1,12 @@
 
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
@@ -28,11 +30,14 @@ public class BulkUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
         int shardsAfterReplica;
 
+        Settings settings = ImmutableSettings.settingsBuilder()
+                .put("index.number_of_shards", numberOfShards)
+                .put("index.number_of_replicas", 0)
+                .build();
+
         final BulkTransportClient ingest = new BulkTransportClient()
-                .newClient(getSettings())
-                .shards(numberOfShards)
-                .replica(0)
-                .newIndex("replicatest");
+                .init(getSettings())
+                .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
 

@@ -26,7 +26,7 @@ public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
         mappings.put("typename","{\"properties\":{\"message\":{\"type\":\"string\"}}}");
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .newClient(getSettings());
+                .init(getSettings());
         ingest.newIndex("test", settings, mappings);
 
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");

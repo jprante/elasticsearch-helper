@@ -29,7 +29,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     public void testNewIndexNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
-                .newClient(client("1"))
+                .init(client("1"))
                 .newIndex("test");
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -42,7 +42,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     public void testMappingNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
-                .newClient(client("1"));
+                .init(client("1"));
         XContentBuilder builder = jsonBuilder()
                 .startObject()
                 .startObject("test")
@@ -70,7 +70,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .newClient(client("1"))
+                .init(client("1"))
                 .newIndex("test");
         try {
             client.deleteIndex("test");
@@ -98,7 +98,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(1000)
                 .flushIngestInterval(TimeValue.timeValueSeconds(10))
-                .newClient(client("1"))
+                .init(client("1"))
                 .newIndex("test");
 
         try {
@@ -128,7 +128,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerBulkRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
-                .newClient(client("1"))
+                .init(client("1"))
                 .newIndex("test")
                 .startBulk("test");
         try {

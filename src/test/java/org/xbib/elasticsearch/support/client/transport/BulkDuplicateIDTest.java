@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -20,7 +20,7 @@ public class BulkDuplicateIDTest extends AbstractNodeRandomTestHelper {
     public void testDuplicateDocIDs() throws Exception {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerBulkRequest(1000)
-                .newClient(getSettings())
+                .init(getSettings())
                 .newIndex("test");
         try {
             for (int i = 0; i < 12345; i++) {

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.bulk;
+package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -88,18 +88,18 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient newClient(Client client) throws IOException {
-        return this.newClient(findSettings());
+    public BulkTransportClient init(Client client) throws IOException {
+        return this.init(findSettings());
     }
 
     @Override
-    public BulkTransportClient newClient(Map<String,String> settings) throws IOException {
-        return this.newClient(ImmutableSettings.settingsBuilder().put(settings).build());
+    public BulkTransportClient init(Map<String,String> settings) throws IOException {
+        return this.init(ImmutableSettings.settingsBuilder().put(settings).build());
     }
 
     @Override
-    public BulkTransportClient newClient(Settings settings) throws IOException {
-        super.newClient(settings);
+    public BulkTransportClient init(Settings settings) throws IOException {
+        super.init(settings);
         resetSettings();
         this.state = new State();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
@@ -177,22 +177,18 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         return client;
     }
 
-    public BulkTransportClient shards(int value) {
-        super.shards(value);
-        return this;
-    }
-
-    public BulkTransportClient replica(int value) {
-        super.replica(value);
-        return this;
-    }
-
     @Override
     public BulkTransportClient newIndex(String index) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         super.newIndex(index);
+        return this;
+    }
+
+    @Override
+    public BulkTransportClient newIndex(String index, Settings settings, Map<String,String> mappings) {
+        super.newIndex(index, settings, mappings);
         return this;
     }
 

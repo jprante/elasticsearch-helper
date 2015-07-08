@@ -23,11 +23,10 @@ import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
 import org.xbib.elasticsearch.support.client.State;
-import org.xbib.elasticsearch.support.client.bulk.BulkProcessorHelper;
+import org.xbib.elasticsearch.support.client.transport.BulkProcessorHelper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -60,17 +59,6 @@ public class BulkNodeClient implements Ingest {
 
     private Throwable throwable;
 
-    @Override
-    public BulkNodeClient shards(int shards) {
-        configHelper.setting("index.number_of_shards", shards);
-        return this;
-    }
-
-    @Override
-    public BulkNodeClient replica(int replica) {
-        configHelper.setting("index.number_of_replica", replica);
-        return this;
-    }
 
     @Override
     public BulkNodeClient maxActionsPerBulkRequest(int maxActionsPerBulkRequest) {
@@ -97,17 +85,17 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient newClient(Settings settings) {
+    public BulkNodeClient init(Settings settings) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public BulkNodeClient newClient(Map<String,String> settings) {
+    public BulkNodeClient init(Map<String,String> settings) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public BulkNodeClient newClient(Client client) {
+    public BulkNodeClient init(Client client) {
         this.client = client;
         this.state = new State();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
@@ -200,16 +188,6 @@ public class BulkNodeClient implements Ingest {
             return this;
         }
         configHelper.putMapping(client, index);
-        return this;
-    }
-
-    @Override
-    public BulkNodeClient deleteMapping(String index, String type) {
-        if (client == null) {
-            logger.warn("no client for delete mapping");
-            return this;
-        }
-        configHelper.deleteMapping(client, index, type);
         return this;
     }
 

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.ingest;
+package org.xbib.elasticsearch.support.client.mock;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -6,6 +6,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.client.ingest.IngestTransportClient;
 
 import java.io.IOException;
 import java.util.Map;
@@ -14,15 +15,15 @@ import java.util.Map;
  * Mock ingest client, it does not perform actions on a cluster.
  * Useful for testing or dry runs.
  */
-public class MockIngestTransportClient extends IngestTransportClient {
+public class MockTransportClient extends IngestTransportClient {
 
     @Override
-    public MockIngestTransportClient newClient(Map<String,String> settings) {
+    public MockTransportClient init(Map<String,String> settings) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient newClient(Settings settings) {
+    public MockTransportClient init(Settings settings) {
         return this;
     }
 
@@ -31,77 +32,77 @@ public class MockIngestTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockIngestTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
+    public MockTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockTransportClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient index(String index, String type, String id, String source) {
+    public MockTransportClient index(String index, String type, String id, String source) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient delete(String index, String type, String id) {
+    public MockTransportClient delete(String index, String type, String id) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient bulkIndex(IndexRequest indexRequest) {
+    public MockTransportClient bulkIndex(IndexRequest indexRequest) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient bulkDelete(DeleteRequest deleteRequest) {
+    public MockTransportClient bulkDelete(DeleteRequest deleteRequest) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient flushIngest() {
+    public MockTransportClient flushIngest() {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient waitForResponses(TimeValue timeValue) throws InterruptedException {
+    public MockTransportClient waitForResponses(TimeValue timeValue) throws InterruptedException {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient startBulk(String index) {
+    public MockTransportClient startBulk(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient stopBulk(String index) {
+    public MockTransportClient stopBulk(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient deleteIndex(String index) {
+    public MockTransportClient deleteIndex(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient newIndex(String index) {
+    public MockTransportClient newIndex(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient putMapping(String index) {
+    public MockTransportClient putMapping(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient refresh(String index) {
+    public MockTransportClient refresh(String index) {
         return this;
     }
 
     @Override
-    public MockIngestTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
+    public MockTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
         return this;
     }
 

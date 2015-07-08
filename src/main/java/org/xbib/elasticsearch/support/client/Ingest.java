@@ -39,11 +39,11 @@ public interface Ingest {
      */
     Ingest delete(String index, String type, String id);
 
-    Ingest newClient(Client client) throws IOException;
+    Ingest init(Client client) throws IOException;
 
-    Ingest newClient(Settings settings) throws IOException;
+    Ingest init(Settings settings) throws IOException;
 
-    Ingest newClient(Map<String,String> settings) throws IOException;
+    Ingest init(Map<String,String> settings) throws IOException;
 
     Client client();
 
@@ -78,22 +78,6 @@ public interface Ingest {
      * @return this ingest
      */
     Ingest flushIngestInterval(TimeValue flushInterval);
-
-    /**
-     * The number of shards for index creation
-     *
-     * @param shards the number of shards
-     * @return this
-     */
-    Ingest shards(int shards);
-
-    /**
-     * The number of replica for index creation
-     *
-     * @param replica the number of replica
-     * @return this
-     */
-    Ingest replica(int replica);
 
     void setSettings(Settings settings);
 
@@ -139,8 +123,6 @@ public interface Ingest {
     Map<String, String> getMappings();
 
     Ingest putMapping(String index);
-
-    Ingest deleteMapping(String index, String type);
 
     /**
      * Create a new index
