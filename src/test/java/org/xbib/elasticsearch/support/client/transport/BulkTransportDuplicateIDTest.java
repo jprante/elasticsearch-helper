@@ -19,7 +19,7 @@ public class BulkTransportDuplicateIDTest extends AbstractNodeRandomTestHelper {
     @Test
     public void testDuplicateDocIDs() throws Exception {
         final BulkTransportClient client = new BulkTransportClient()
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(1000)
                 .init(getSettings())
                 .newIndex("test");
         try {
@@ -28,7 +28,7 @@ public class BulkTransportDuplicateIDTest extends AbstractNodeRandomTestHelper {
             }
             client.flushIngest();
             client.waitForResponses(TimeValue.timeValueSeconds(30));
-            client.refresh("test");
+            client.refreshIndex("test");
             long hits = client.client().prepareSearch("test").setTypes("test")
                     .setQuery(matchAllQuery())
                     .execute().actionGet().getHits().getTotalHits();
@@ -38,7 +38,7 @@ public class BulkTransportDuplicateIDTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.shutdown();
-            assertEquals(13, client.getState().getTotalIngest().count());
+            assertEquals(13, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

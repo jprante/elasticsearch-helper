@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -14,10 +15,16 @@ import java.util.Map;
 
 public abstract class BaseIngestTransportClient extends BaseTransportClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getName());
+
+    protected Metric metric;
 
     public Ingest init(Settings settings) throws IOException {
         super.createClient(settings);
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         return this;
     }
 
@@ -46,30 +53,29 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
         }
         CreateIndexRequestBuilder createIndexRequestBuilder =
                 new CreateIndexRequestBuilder(client.admin().indices()).setIndex(index);
-        Settings concreteSettings;
-        if (settings == null && getSettings() != null) {
-            concreteSettings = getSettings();
-        } else if (settings != null) {
-            concreteSettings = settings;
-        } else {
-            concreteSettings = null;
+        if (settings != null) {
+            logger.info("settings = {}", settings.getAsStructuredMap());
+            createIndexRequestBuilder.setSettings(settings);
         }
-        if (concreteSettings != null) {
-            createIndexRequestBuilder.setSettings(getSettings());
-        }
-        if (mappings == null && getMappings() != null) {
-            for (String type : getMappings().keySet()) {
-                createIndexRequestBuilder.addMapping(type, getMappings().get(type));
-            }
-        } else if (mappings != null) {
+        if (mappings != null) {
             for (String type : mappings.keySet()) {
+                logger.info("found mapping for {}", type);
                 createIndexRequestBuilder.addMapping(type, mappings.get(type));
             }
         }
         createIndexRequestBuilder.execute().actionGet();
-        logger.info("index {} created with settings {} and {} mappings", index,
-                concreteSettings != null ? concreteSettings.getAsMap() : "",
-                mappings != null ? mappings.size() : 0);
+        logger.info("index {} created", index);
+        return this;
+    }
+
+    @Override
+    public BaseIngestTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
+        PutMappingRequestBuilder putMappingRequestBuilder = client.admin().indices().preparePutMapping()
+                        .setIndices(index)
+                        .setType(type)
+                        .setSource(mapping);
+        putMappingRequestBuilder.execute().actionGet();
+        logger.info("mapping created for index {} and type {}", index, type);
         return this;
     }
 
@@ -101,6 +107,30 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     @Override
     public BaseIngestTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
         ClientHelper.waitForCluster(client, status, timeValue);
+        return this;
+    }
+
+    @Override
+    public BaseIngestTransportClient startBulk(String index) throws IOException {
+        if (metric == null) {
+            return this;
+        }
+        if (!metric.isBulk(index)) {
+            metric.setupBulk(index, -1, 1000);
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", -1 + "ms");
+        }
+        return this;
+    }
+
+    @Override
+    public BaseIngestTransportClient stopBulk(String index) throws IOException {
+        if (metric == null) {
+            return this;
+        }
+        if (metric.isBulk(index)) {
+            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "ms");
+            metric.removeBulk(index);
+        }
         return this;
     }
 

@@ -70,12 +70,14 @@ public abstract class AbstractNodeTestHelper {
     protected Settings getNodeSettings() {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", cluster)
+                .put("cluster.routing.schedule", "50ms") // for replica update tests
                 .put("cluster.routing.allocation.disk.threshold_enabled", false) // for replica tests
                 .put("gateway.type", "none")
+                .put("index.store.type", "memory")
                 .put("http.enabled", false)
                 .put("discovery.zen.multicast.enabled", true) // for multi node start
                 .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
-                .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, maybe too low
+                .put("threadpool.bulk.queue_size", 250) // default is 50, which is too low for our tests
                 .put("path.home", getHome())
                 .build();
     }

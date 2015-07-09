@@ -88,8 +88,8 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         } catch (InterruptedException e) {
             // ignore
         } finally {
-            logger.info("total bulk requests = {}", ingest.getState().getTotalIngest().count());
-            assertEquals(1, ingest.getState().getTotalIngest().count());
+            logger.info("total bulk requests = {}", ingest.getMetric().getTotalIngest().count());
+            assertEquals(1, ingest.getMetric().getTotalIngest().count());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
@@ -106,7 +106,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .maxActionsPerBulkRequest(1000)
+                .maxActionsPerRequest(1000)
                 .init(getSettings())
                 .newIndex("test", settingsForIndex, null)
                 .startBulk("test");
@@ -122,8 +122,8 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             // ignore
         } finally {
             ingest.stopBulk("test");
-            logger.info("total requests = {}", ingest.getState().getTotalIngest().count());
-            assertEquals(13, ingest.getState().getTotalIngest().count());
+            logger.info("total requests = {}", ingest.getMetric().getTotalIngest().count());
+            assertEquals(13, ingest.getMetric().getTotalIngest().count());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
@@ -143,7 +143,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .maxActionsPerBulkRequest(maxactions)
+                .maxActionsPerRequest(maxactions)
                 .init(getSettings())
                 .newIndex("test", settingsForIndex, null)
                 .startBulk("test");
@@ -173,13 +173,13 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             ingest.stopBulk("test");
-            logger.info("total requests = {}", ingest.getState().getTotalIngest().count());
-            assertEquals(maxthreads * maxloop / maxactions + 1, ingest.getState().getTotalIngest().count());
+            logger.info("total requests = {}", ingest.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop / maxactions + 1, ingest.getMetric().getTotalIngest().count());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
             assertFalse(ingest.hasThrowable());
-            ingest.refresh("test");
+            ingest.refreshIndex("test");
             assertEquals(maxthreads * maxloop,
                     ingest.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
             );

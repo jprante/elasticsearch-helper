@@ -32,12 +32,12 @@ public class MockTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockTransportClient maxActionsPerBulkRequest(int maxBulkActions) {
+    public MockTransportClient maxActionsPerRequest(int maxBulkActions) {
         return this;
     }
 
     @Override
-    public MockTransportClient maxConcurrentBulkRequests(int maxConcurrentRequests) {
+    public MockTransportClient maxConcurrentRequests(int maxConcurrentRequests) {
         return this;
     }
 
@@ -97,7 +97,12 @@ public class MockTransportClient extends IngestTransportClient {
     }
 
     @Override
-    public MockTransportClient refresh(String index) {
+    public MockTransportClient flushIndex(String index) {
+        return this;
+    }
+
+    @Override
+    public MockTransportClient refreshIndex(String index) {
         return this;
     }
 

@@ -58,8 +58,8 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             logger.info("refreshing");
-            ingest.refresh("test1");
-            ingest.refresh("test2");
+            ingest.refreshIndex("test1");
+            ingest.refreshIndex("test2");
             long hits = ingest.client().prepareSearch("test1","test2")
                     .setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getHits().getTotalHits();
             logger.info("query total hits={}", hits);

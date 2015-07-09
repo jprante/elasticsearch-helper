@@ -14,6 +14,7 @@ import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
@@ -40,8 +41,6 @@ public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
                 .init(getSettings())
                 .newIndex("replicatest", settings, null);
 
-        ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
-
         try {
             for (int i = 0; i < 12345; i++) {
                 ingest.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -49,7 +48,7 @@ public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             ingest.flushIngest();
             ingest.waitForResponses(TimeValue.timeValueSeconds(30));
             shardsAfterReplica = ingest.updateReplicaLevel("replicatest", replicaLevel);
-            assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));
+            assertTrue(shardsAfterReplica >= numberOfShards * (replicaLevel + 1));
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {

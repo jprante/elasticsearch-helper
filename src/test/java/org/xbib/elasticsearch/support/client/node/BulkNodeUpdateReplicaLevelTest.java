@@ -38,8 +38,6 @@ public class BulkNodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper
                 .init(client("1"))
                 .newIndex("replicatest", settings, null);
 
-        ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
-
         try {
             for (int i = 0; i < 12345; i++) {
                 ingest.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
@@ -47,7 +45,7 @@ public class BulkNodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper
             ingest.flushIngest();
             ingest.waitForResponses(TimeValue.timeValueSeconds(30));
             shardsAfterReplica = ingest.updateReplicaLevel("replicatest", replicaLevel);
-            assertEquals(shardsAfterReplica, numberOfShards * (replicaLevel + 1));
+            assertEquals(numberOfShards * (replicaLevel + 1), shardsAfterReplica);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support;
+package suites;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -21,13 +21,13 @@ import org.xbib.elasticsearch.support.various.AliasTest;
 import org.xbib.elasticsearch.support.various.NPETest;
 import org.xbib.elasticsearch.support.various.SimpleTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
         SimpleTest.class,
         ConfigHelperTest.class,
         AliasTest.class,
         NPETest.class,
-        IngestClusterBlockTest.class,
+        //IngestClusterBlockTest.class,
         BulkNodeClientTest.class,
         BulkNodeDuplicateIDTest.class,
         BulkNodeReplicaTest.class,

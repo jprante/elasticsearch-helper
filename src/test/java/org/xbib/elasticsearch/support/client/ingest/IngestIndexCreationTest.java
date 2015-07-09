@@ -24,16 +24,18 @@ public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
 
         Map<String,String> mappings = newHashMap();
         mappings.put("typename","{\"properties\":{\"message\":{\"type\":\"string\"}}}");
-
-        final IngestTransportClient ingest = new IngestTransportClient()
-                .init(getSettings());
-        ingest.newIndex("test", settings, mappings);
-
-        GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
-        GetMappingsResponse getMappingsResponse = ingest.client().admin().indices()
-                .getMappings(getMappingsRequest).actionGet();
-        MappingMetaData md = getMappingsResponse.getMappings().get("test").get("typename");
-        assertEquals("{properties={message={type=string}}}", md.getSourceAsMap().toString());
+        final IngestTransportClient ingest = new IngestTransportClient();
+        try {
+            ingest.init(getSettings());
+            ingest.newIndex("test", settings, mappings);
+            GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
+            GetMappingsResponse getMappingsResponse = ingest.client().admin().indices()
+                    .getMappings(getMappingsRequest).actionGet();
+            MappingMetaData md = getMappingsResponse.getMappings().get("test").get("typename");
+            assertEquals("{properties={message={type=string}}}", md.getSourceAsMap().toString());
+        } finally {
+            ingest.shutdown();
+        }
     }
 
 }

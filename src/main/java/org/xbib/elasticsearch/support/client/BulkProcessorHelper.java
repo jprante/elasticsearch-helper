@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.client.transport;
+package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -8,7 +8,6 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class BulkProcessorHelper {
@@ -34,33 +33,15 @@ public class BulkProcessorHelper {
         }
     }
 
-    public static boolean waitFor(BulkProcessor bulkProcessor, TimeValue maxWait) {
-        Semaphore semaphore = null;
-        boolean acquired = false;
+    public static void waitFor(BulkProcessor bulkProcessor, TimeValue maxWait) {
         try {
-            Field field = bulkProcessor.getClass().getDeclaredField("semaphore");
-            if (field != null) {
-                field.setAccessible(true);
-                Field concurrentField = bulkProcessor.getClass().getDeclaredField("concurrentRequests");
-                concurrentField.setAccessible(true);
-                int concurrency = concurrentField.getInt(bulkProcessor);
-                // concurreny == 1 means there is no concurrency (default start value)
-                if (concurrency > 1) {
-                    semaphore = (Semaphore) field.get(bulkProcessor);
-                    acquired = semaphore.tryAcquire(concurrency, maxWait.getMillis(), TimeUnit.MILLISECONDS);
-                    return semaphore.availablePermits() == concurrency;
-                }
-            }
+            bulkProcessor.awaitClose(maxWait.getMillis(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("interrupted");
-        } catch (Throwable e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            if (semaphore != null && acquired) {
-                semaphore.release();
-            }
+        } catch (Throwable t) {
+            logger.error(t.getMessage(), t);
         }
-        return false;
     }
+
 }

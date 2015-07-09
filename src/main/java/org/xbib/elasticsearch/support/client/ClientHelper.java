@@ -9,27 +9,12 @@ import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
-import java.util.List;
-
-import static org.elasticsearch.common.collect.Lists.newLinkedList;
 
 public class ClientHelper {
-
-    public static List<String> getConnectedNodes(TransportClient client) {
-        List<String> nodes = newLinkedList();
-        if (client.connectedNodes() != null) {
-            for (DiscoveryNode discoveryNode : client.connectedNodes()) {
-                nodes.add(discoveryNode.toString());
-            }
-        }
-        return nodes;
-    }
 
     public static void updateIndexSetting(Client client, String index, String key, Object value) throws IOException {
         if (client == null) {
@@ -121,12 +106,16 @@ public class ClientHelper {
         updateIndexSetting(client, index, "refresh_interval", 1000);
     }
 
-    public static void flush(Client client, String index) {
-        client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
+    public static void flushIndex(Client client, String index) {
+        if (client != null && index != null) {
+            client.admin().indices().prepareFlush().setIndices(index).execute().actionGet();
+        }
     }
 
-    public static void refresh(Client client, String index) {
-        client.admin().indices().prepareRefresh().setIndices(index).execute().actionGet();
+    public static void refreshIndex(Client client, String index) {
+        if (client != null && index != null) {
+            client.admin().indices().prepareRefresh().setIndices(index).execute().actionGet();
+        }
     }
 
 }

@@ -56,10 +56,6 @@ public abstract class BaseTransportClient {
         return client;
     }
 
-    public List<String> getConnectedNodes() {
-        return ClientHelper.getConnectedNodes(client);
-    }
-
     public synchronized void shutdown() {
         if (client != null) {
             logger.debug("shutdown started");
@@ -161,14 +157,6 @@ public abstract class BaseTransportClient {
 
     public void addSetting(String key, Integer value) {
         configHelper.setting(key, value);
-    }
-
-    public void setSettings(Settings settings) {
-        configHelper.settings(settings);
-    }
-
-    public Settings getSettings() {
-        return configHelper.settings();
     }
 
     public void mapping(String type, String mapping) throws IOException {

@@ -39,8 +39,6 @@ public class BulkTransportUpdateReplicaLevelTest extends AbstractNodeRandomTestH
                 .init(getSettings())
                 .newIndex("replicatest", settings, null);
 
-        ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
-
         try {
             for (int i = 0; i < 12345; i++) {
                 ingest.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
