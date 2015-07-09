@@ -77,7 +77,7 @@ public abstract class AbstractNodeTestHelper {
                 .put("http.enabled", false)
                 .put("discovery.zen.multicast.enabled", true) // for multi node start
                 .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
-                .put("threadpool.bulk.queue_size", 250) // default is 50, which is too low for our tests
+                .put("threadpool.bulk.queue_size", 15 * Runtime.getRuntime().availableProcessors() ) // default is 50, which is too low for our tests
                 .put("path.home", getHome())
                 .build();
     }

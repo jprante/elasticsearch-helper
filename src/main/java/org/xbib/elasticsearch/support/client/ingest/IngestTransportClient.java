@@ -29,7 +29,7 @@ import java.util.Map;
  */
 public class IngestTransportClient extends BaseIngestTransportClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getName());
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
     private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
@@ -94,32 +94,28 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
                 metric.getSubmitted().inc(num);
                 metric.getCurrentIngestNumDocs().inc(num);
                 metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
-                if (logger.isInfoEnabled()) {
-                    logger.info("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
-                            request.ingestId(),
-                            num,
-                            request.estimatedSizeInBytes(),
-                            concurrency);
-                }
+                logger.debug("before ingest [{}] [actions={}] [bytes={}] [concurrent requests={}]",
+                        request.ingestId(),
+                        num,
+                        request.estimatedSizeInBytes(),
+                        concurrency);
             }
 
             @Override
             public void onResponse(int concurrency, IngestResponse response) {
                 setCurrentConcurrency(concurrency);
-                    metric.getSucceeded().inc(response.successSize());
-                    metric.getFailed().inc(response.getFailures().size());
-                    metric.getTotalIngest().inc(response.tookInMillis());
-                if (logger.isInfoEnabled()) {
-                    logger.info("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
-                            response.ingestId(),
-                            metric.getSucceeded().count(),
-                            metric.getFailed().count(),
-                            response.tookInMillis(),
-                            response.leaderShardResponse(),
-                            response.replicaShardResponses(),
-                            concurrency
-                    );
-                }
+                metric.getSucceeded().inc(response.successSize());
+                metric.getFailed().inc(response.getFailures().size());
+                metric.getTotalIngest().inc(response.tookInMillis());
+                logger.debug("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
+                        response.ingestId(),
+                        metric.getSucceeded().count(),
+                        metric.getFailed().count(),
+                        response.tookInMillis(),
+                        response.leaderShardResponse(),
+                        response.replicaShardResponses(),
+                        concurrency
+                );
                 if (!response.getFailures().isEmpty()) {
                     for (IngestActionFailure f : response.getFailures()) {
                         logger.error("ingest [{}] has failures, reason: {}", response.ingestId(), f.message());
