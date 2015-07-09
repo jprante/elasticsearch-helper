@@ -289,7 +289,7 @@ public class IngestRequest extends ActionRequest {
 
     /**
      * Take a number of requests from the bulk request queue.
-     * <p/>
+     *
      * This method is thread safe.
      *
      * @param numRequests number of requests
