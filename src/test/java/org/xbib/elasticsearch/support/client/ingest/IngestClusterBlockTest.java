@@ -5,6 +5,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
+import org.junit.Before;
 import org.junit.Test;
 
 import org.xbib.elasticsearch.action.index.IndexAction;
@@ -17,16 +18,19 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class IngestClusterBlockTest extends AbstractNodeTestHelper {
 
+    @Before
+    public void startNodes() throws Exception {
+        setClusterName();
+        startNode("1");
+        findNodeAddress();
+        // do not wait for green health state
+        logger.info("ready");
+    }
+
     protected Settings getNodeSettings() {
         return ImmutableSettings
                 .settingsBuilder()
-                .put("cluster.name", getClusterName())
-                .put("cluster.routing.schedule", "50ms")
-                .put("gateway.type", "none")
-                .put("index.store.type", "memory")
-                .put("http.enabled", false)
-                .put("discovery.zen.multicast.enabled", true)
-                .put("discovery.zen.multicast.ping_timeout", "5s")
+                .put(super.getNodeSettings())
                 .put("discovery.zen.minimum_master_nodes", 2) // block until we have two nodes
                 .build();
     }

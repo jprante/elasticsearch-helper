@@ -20,9 +20,9 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeReplicaTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeReplicaTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeReplicaTest.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws Exception {
@@ -90,10 +90,6 @@ public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }

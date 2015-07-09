@@ -60,9 +60,6 @@ public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

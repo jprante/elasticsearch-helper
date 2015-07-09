@@ -12,9 +12,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class BulkDuplicateIDTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportDuplicateIDTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkDuplicateIDTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportDuplicateIDTest.class.getSimpleName());
 
     @Test
     public void testDuplicateDocIDs() throws Exception {

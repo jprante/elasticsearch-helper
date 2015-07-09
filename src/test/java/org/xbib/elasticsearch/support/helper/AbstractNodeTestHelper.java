@@ -1,8 +1,16 @@
 package org.xbib.elasticsearch.support.helper;
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.Client;
@@ -12,6 +20,7 @@ import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
@@ -20,6 +29,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import org.junit.After;
 import org.junit.Before;
+import org.xbib.elasticsearch.support.client.ClientHelper;
 
 public abstract class AbstractNodeTestHelper {
 
@@ -45,6 +55,10 @@ public abstract class AbstractNodeTestHelper {
         return cluster;
     }
 
+    protected String getHome() {
+        return System.getProperty("path.home");
+    }
+
     protected Settings getSettings() {
         return ImmutableSettings.settingsBuilder()
                 .put("host", host)
@@ -56,12 +70,13 @@ public abstract class AbstractNodeTestHelper {
     protected Settings getNodeSettings() {
         return ImmutableSettings.settingsBuilder()
                 .put("cluster.name", cluster)
-                .put("cluster.routing.schedule", "50ms")
+                .put("cluster.routing.allocation.disk.threshold_enabled", false) // for replica tests
                 .put("gateway.type", "none")
-                .put("index.store.type", "memory")
                 .put("http.enabled", false)
-                .put("discovery.zen.multicast.enabled", false)
-                .put("threadpool.bulk.queue_size", 10 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
+                .put("discovery.zen.multicast.enabled", true) // for multi node start
+                .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
+                .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, maybe too low
+                .put("path.home", getHome())
                 .build();
     }
 
@@ -69,21 +84,22 @@ public abstract class AbstractNodeTestHelper {
     public void startNodes() throws Exception {
         setClusterName();
         startNode("1");
-        // find node address
-        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
-        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
-        Object obj = response.iterator().next().getTransport().getAddress()
-                .publishAddress();
-        if (obj instanceof InetSocketTransportAddress) {
-            InetSocketTransportAddress address = (InetSocketTransportAddress) obj;
-            host = address.address().getHostName();
-            port = address.address().getPort();
-        }
+        findNodeAddress();
+        ClientHelper.waitForCluster(client("1"), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+        logger.info("ready");
     }
 
     @After
     public void stopNodes() throws Exception {
-        closeAllNodes();
+        try {
+            logger.info("deleting all indices");
+            // delete all indices
+            client("1").admin().indices().prepareDelete("_all").execute().actionGet();
+        } catch (Exception e) {
+            logger.error("can not delete indexes", e);
+        } finally {
+            closeAllNodes();
+        }
     }
 
     protected Node startNode(String id) {
@@ -106,25 +122,25 @@ public abstract class AbstractNodeTestHelper {
         return node;
     }
 
-    protected void stopNode(String id) {
-        Client client = clients.remove(id);
-        if (client != null) {
-            client.close();
-        }
-        Node node = nodes.remove(id);
-        if (node != null) {
-            node.close();
-        }
-    }
-
     public Client client(String id) {
         return clients.get(id);
     }
 
-    public void closeAllNodes() {
+    protected void findNodeAddress() {
+        NodesInfoRequest nodesInfoRequest = new NodesInfoRequest().transport(true);
+        NodesInfoResponse response = client("1").admin().cluster().nodesInfo(nodesInfoRequest).actionGet();
+        Object obj = response.iterator().next().getTransport().getAddress()
+                .publishAddress();
+        if (obj instanceof InetSocketTransportAddress) {
+            InetSocketTransportAddress address = (InetSocketTransportAddress) obj;
+            host = address.address().getHostName();
+            port = address.address().getPort();
+        }
+    }
+
+    public void closeAllNodes() throws IOException {
         for (Client client : clients.values()) {
             client.close();
-            client = null;
         }
         clients.clear();
         for (Node node : nodes.values()) {
@@ -132,7 +148,28 @@ public abstract class AbstractNodeTestHelper {
                 node.close();
             }
         }
+        logger.info("all nodes closed");
         nodes.clear();
+        deleteFiles();
+        logger.info("data files wiped");
     }
 
+    private void deleteFiles() throws IOException {
+        Path directory = Paths.get(getHome() + "/data");
+        Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
+
+    }
 }

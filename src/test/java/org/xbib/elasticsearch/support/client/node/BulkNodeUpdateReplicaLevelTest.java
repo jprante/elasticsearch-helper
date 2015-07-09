@@ -13,9 +13,9 @@ import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeUpdateReplicaLevelTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeUpdateReplicaLevelTest.class.getSimpleName());
 
     @Test
     public void testUpdateReplicaLevel() throws Exception {
@@ -58,9 +58,6 @@ public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

@@ -179,6 +179,12 @@
                     <includes>
                         <include>**/SupportTestSuite*</include>
                     </includes>
+                    <systemProperties>
+                        <property>
+                            <name>path.home</name>
+                            <value>${project.basedir}/target</value>
+                        </property>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>

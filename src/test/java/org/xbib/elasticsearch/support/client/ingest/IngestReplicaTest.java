@@ -90,10 +90,6 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
             assertFalse(ingest.hasThrowable());
             ingest.shutdown();
         }
-
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }
