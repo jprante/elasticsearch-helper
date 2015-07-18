@@ -3,14 +3,14 @@ package org.xbib.elasticsearch.action.ingest;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.PlainListenableActionFuture;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.delete.DeleteRequestBuilder;
-import org.xbib.elasticsearch.action.index.IndexRequest;
-import org.xbib.elasticsearch.action.index.IndexRequestBuilder;
 
 public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, IngestResponse, IngestRequestBuilder, Client> {
 
@@ -74,9 +74,6 @@ public class IngestRequestBuilder extends ActionRequestBuilder<IngestRequest, In
         return this;
     }
 
-    /**
-     * The number of actions currently in the bulk.
-     */
     public int numberOfActions() {
         return request.numberOfActions();
     }

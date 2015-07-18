@@ -2,6 +2,8 @@ package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
@@ -10,8 +12,6 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;

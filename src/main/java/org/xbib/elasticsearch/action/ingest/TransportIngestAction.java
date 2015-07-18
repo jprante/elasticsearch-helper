@@ -4,6 +4,8 @@ import org.elasticsearch.ElasticsearchIllegalArgumentException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.cluster.ClusterService;
@@ -21,8 +23,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BaseTransportRequestHandler;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportService;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardRequest;
 import org.xbib.elasticsearch.action.ingest.leader.IngestLeaderShardResponse;
 import org.xbib.elasticsearch.action.ingest.leader.TransportLeaderShardIngestAction;
@@ -86,7 +86,7 @@ public class TransportIngestAction extends TransportAction<IngestRequest, Ingest
                     if (metaData.hasIndex(indexRequest.index())) {
                         mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());
                     }
-                    indexRequest.process(metaData, indexRequest.index(), mappingMd, allowIdGeneration);
+                    indexRequest.process(metaData, mappingMd, allowIdGeneration, indexRequest.index());
                     requests.add(indexRequest);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
