@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -8,8 +9,6 @@ import org.elasticsearch.discovery.MasterNotDiscoveredException;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.xbib.elasticsearch.action.index.IndexAction;
-import org.xbib.elasticsearch.action.index.IndexRequestBuilder;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
 import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
@@ -40,7 +39,7 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
             IngestRequestBuilder brb = client("1").prepareExecute(IngestAction.INSTANCE);
             XContentBuilder builder = jsonBuilder().startObject().field("field", "value").endObject();
             String jsonString = builder.string();
-            IndexRequestBuilder irb = client("1").prepareExecute(IndexAction.INSTANCE)
+            IndexRequestBuilder irb = client("1").prepareIndex()
                     .setIndex("test").setType("test").setId("1").setSource(jsonString);
             brb.add(irb);
             brb.execute().actionGet();
@@ -55,7 +54,7 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
             IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
             XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
             String jsonString = builder.string();
-            IndexRequestBuilder irb = ingest.client().prepareExecute(IndexAction.INSTANCE)
+            IndexRequestBuilder irb = ingest.client().prepareIndex()
                     .setIndex("test").setType("test").setId("1").setSource(jsonString);
             brb.add(irb);
             brb.execute().actionGet();
