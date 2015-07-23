@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
+import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
@@ -71,8 +72,10 @@ public class TransportLeaderShardIngestAction
     @Inject
     public TransportLeaderShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool,
-                                            MappingUpdatedAction mappingUpdatedAction, ActionFilters actionFilters) {
-        super(settings, IngestAction.NAME, threadPool, actionFilters);
+                                            MappingUpdatedAction mappingUpdatedAction,
+                                            ActionFilters actionFilters,
+                                            IndexNameExpressionResolver indexNameExpressionResolver) {
+        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver);
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -125,7 +128,7 @@ public class TransportLeaderShardIngestAction
         long[] versions = new long[size];
         IndexService indexService = indicesService.indexServiceSafe(request.index());
         for (int i = 0; i < size; i++) {
-            ActionRequest actionRequest = request.getActionRequests().get(i);
+            ActionRequest<?> actionRequest = request.getActionRequests().get(i);
             if (actionRequest instanceof IndexRequest) {
                 try {
                     IndexRequest indexRequest = (IndexRequest) actionRequest;
@@ -237,11 +240,6 @@ public class TransportLeaderShardIngestAction
         new AsyncShardOperationAction(request, listener).start();
     }
 
-    protected boolean resolveRequest(ClusterState state, IngestLeaderShardRequest request, ActionListener<IngestLeaderShardResponse> listener) {
-        request.index(state.metaData().concreteSingleIndex(request.index(), request.indicesOptions()));
-        return true;
-    }
-
     protected boolean retryLeaderException(Throwable e) {
         return TransportActions.isShardNotAvailableException(e);
     }
@@ -345,9 +343,6 @@ public class TransportLeaderShardIngestAction
                     } else {
                         throw blockException;
                     }
-                }
-                if (!resolveRequest(observer.observedState(), request, listener)) {
-                    return true;
                 }
                 blockException = checkRequestBlock(observer.observedState(), request);
                 if (blockException != null) {

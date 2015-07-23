@@ -2,6 +2,8 @@ package org.xbib.metrics;
 
 import org.elasticsearch.common.metrics.Metric;
 
+import java.util.concurrent.atomic.LongAdder;
+
 public class CounterMetric implements Metric {
 
     private final LongAdder counter = new LongAdder();

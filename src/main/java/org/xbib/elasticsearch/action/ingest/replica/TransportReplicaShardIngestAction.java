@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
@@ -74,8 +75,9 @@ public class TransportReplicaShardIngestAction
     @Inject
     public TransportReplicaShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                              IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                             ActionFilters actionFilters) {
-        super(settings, IngestAction.NAME, threadPool, actionFilters);
+                                             ActionFilters actionFilters,
+                                             IndexNameExpressionResolver indexNameExpressionResolver) {
+        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver);
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -93,10 +95,6 @@ public class TransportReplicaShardIngestAction
 
     protected TransportRequestOptions transportOptions() {
         return IngestAction.INSTANCE.transportOptions(settings);
-    }
-
-    protected IngestReplicaShardRequest newRequestInstance() {
-        return new IngestReplicaShardRequest();
     }
 
     protected IngestReplicaShardResponse newResponseInstance() {
@@ -131,7 +129,7 @@ public class TransportReplicaShardIngestAction
         List<IngestActionFailure> failure = new LinkedList<>();
         int size = request.actionRequests().size();
         for (int i = 0; i < size; i++) {
-            ActionRequest actionRequest = request.actionRequests().get(i);
+            ActionRequest<?> actionRequest = request.actionRequests().get(i);
             if (actionRequest == null) {
                 continue;
             }
@@ -191,11 +189,6 @@ public class TransportReplicaShardIngestAction
     @Override
     protected void doExecute(IngestReplicaShardRequest request, ActionListener<ReplicaOperationResponse> listener) {
         new AsyncShardOperationAction(request, listener).start();
-    }
-
-    protected boolean resolveRequest(ClusterState state, IngestReplicaShardRequest request) {
-        request.index(state.metaData().concreteSingleIndex(request.index(), request.indicesOptions()));
-        return true;
     }
 
     boolean ignoreReplicaException(Throwable e) {
@@ -262,9 +255,6 @@ public class TransportReplicaShardIngestAction
                     } else {
                         throw blockException;
                     }
-                }
-                if (!resolveRequest(observer.observedState(), request)) {
-                    return true;
                 }
                 blockException = checkRequestBlock(observer.observedState(), request);
                 if (blockException != null) {
@@ -430,8 +420,8 @@ public class TransportReplicaShardIngestAction
                                 logger.error(exp.getMessage(), exp);
                                 if (!ignoreReplicaException(exp.unwrapCause())) {
                                     logger.warn("failed to perform " + transportAction + " on replica " + node + shardIt.shardId(), exp);
-                                    shardStateAction.shardFailed(shardRouting, indexMetaData.getUUID(),
-                                            "failed to perform [" + transportAction + "] on replica, message [" + ExceptionsHelper.detailedMessage(exp) + "]");
+                                    shardStateAction.shardFailed(shardRouting, indexMetaData.getIndexUUID(),
+                                            "failed to perform [" + transportAction + "] on replica, message [" + ExceptionsHelper.detailedMessage(exp) + "]", exp);
                                 } else {
                                     logger.error(exp.getMessage(), exp);
                                 }

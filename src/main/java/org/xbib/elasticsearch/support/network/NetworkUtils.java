@@ -58,9 +58,8 @@ public abstract class NetworkUtils {
         if (networkInterface == null) {
             throw new IllegalArgumentException("network interface is null");
         }
-
-        for (Enumeration addresses = networkInterface.getInetAddresses(); addresses.hasMoreElements(); ) {
-            InetAddress address = (InetAddress) addresses.nextElement();
+        for (Enumeration<InetAddress> addresses = networkInterface.getInetAddresses(); addresses.hasMoreElements(); ) {
+            InetAddress address = addresses.nextElement();
             if (!address.isLoopbackAddress()) {
                 if ((address instanceof Inet4Address && ipVersion == ProtocolVersion.IPv4) ||
                         (address instanceof Inet6Address && ipVersion == ProtocolVersion.IPv6)) {
@@ -75,9 +74,8 @@ public abstract class NetworkUtils {
         if (networkInterface == null) {
             throw new IllegalArgumentException("network interface is null");
         }
-
-        for (Enumeration addresses = networkInterface.getInetAddresses(); addresses.hasMoreElements(); ) {
-            InetAddress address = (InetAddress) addresses.nextElement();
+        for (Enumeration<InetAddress> addresses = networkInterface.getInetAddresses(); addresses.hasMoreElements(); ) {
+            InetAddress address = addresses.nextElement();
             if ((address instanceof Inet4Address && ipVersion == ProtocolVersion.IPv4) ||
                     (address instanceof Inet6Address && ipVersion == ProtocolVersion.IPv6)) {
                 return address;

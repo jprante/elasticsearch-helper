@@ -1,6 +1,7 @@
 package org.xbib.metrics;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * An exponentially-weighted moving average.

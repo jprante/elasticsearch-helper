@@ -28,6 +28,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import org.junit.After;
 import org.junit.Before;
+import org.xbib.elasticsearch.plugin.support.SupportPlugin;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 
 public abstract class AbstractNodeTestHelper {
@@ -67,6 +68,7 @@ public abstract class AbstractNodeTestHelper {
                 .put("port", port)
                 .put("cluster.name", cluster)
                 .put("path.home", getHome())
+                .put("plugin.types", SupportPlugin.class.getName())
                 .build();
     }
 
@@ -82,6 +84,7 @@ public abstract class AbstractNodeTestHelper {
                 .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
                 .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
                 .put("path.home", getHome())
+                .put("plugin.types", SupportPlugin.class.getName())
                 .build();
     }
 
@@ -121,7 +124,6 @@ public abstract class AbstractNodeTestHelper {
                 .loadFromClasspath(settingsSource)
                 .put(getNodeSettings())
                 .put("name", id)
-                .put("path.home", getHome())
                 .build();
         logger.info("settings={}", finalSettings.getAsMap());
         Node node = nodeBuilder()

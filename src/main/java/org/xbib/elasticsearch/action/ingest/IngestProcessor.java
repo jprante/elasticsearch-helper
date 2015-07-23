@@ -39,7 +39,7 @@ public class IngestProcessor {
 
     private ScheduledThreadPoolExecutor scheduler;
 
-    private ScheduledFuture scheduledFuture;
+    private ScheduledFuture<?> scheduledFuture;
 
     private volatile boolean closed = false;
 

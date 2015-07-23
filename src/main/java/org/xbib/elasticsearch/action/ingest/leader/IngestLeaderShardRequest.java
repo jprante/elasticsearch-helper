@@ -33,7 +33,7 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
 
     private ShardId shardId;
 
-    private List<ActionRequest> actionRequests = new LinkedList<ActionRequest>();
+    private List<ActionRequest<?>> actionRequests = new LinkedList<ActionRequest<?>>();
 
     public IngestLeaderShardRequest() {
     }
@@ -57,11 +57,11 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
         return this;
     }
 
-    public List<ActionRequest> getActionRequests() {
+    public List<ActionRequest<?>> getActionRequests() {
         return actionRequests;
     }
 
-    public IngestLeaderShardRequest setActionRequests(List<ActionRequest> actionRequests) {
+    public IngestLeaderShardRequest setActionRequests(List<ActionRequest<?>> actionRequests) {
         this.actionRequests = actionRequests;
         return this;
     }
@@ -134,7 +134,7 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
         out.writeLong(ingestId);
         shardId.writeTo(out);
         out.writeVInt(actionRequests.size());
-        for (ActionRequest actionRequest : actionRequests) {
+        for (ActionRequest<?> actionRequest : actionRequests) {
             if (actionRequest == null) {
                 out.writeBoolean(false);
             } else {
@@ -160,7 +160,7 @@ public class IngestLeaderShardRequest extends ActionRequest<IngestLeaderShardReq
         ingestId = in.readLong();
         shardId = ShardId.readShardId(in);
         int size = in.readVInt();
-        actionRequests = new LinkedList<ActionRequest>();
+        actionRequests = new LinkedList<ActionRequest<?>>();
         for (int i = 0; i < size; i++) {
             boolean exists = in.readBoolean();
             if (exists) {

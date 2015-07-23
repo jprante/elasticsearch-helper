@@ -1,5 +1,7 @@
 package org.xbib.metrics;
 
+import java.util.concurrent.atomic.LongAdder;
+
 /**
  */
 public class MeanMetric implements Metric {

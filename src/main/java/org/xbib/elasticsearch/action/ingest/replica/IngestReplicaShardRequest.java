@@ -32,12 +32,12 @@ public class IngestReplicaShardRequest extends ActionRequest<IngestReplicaShardR
 
     private ShardId shardId;
 
-    private List<ActionRequest> actionRequests = new LinkedList<>();
+    private List<ActionRequest<?>> actionRequests = new LinkedList<>();
 
     public IngestReplicaShardRequest() {
     }
 
-    public IngestReplicaShardRequest(long ingestId, ShardId shardId, List<ActionRequest> actionRequests) {
+    public IngestReplicaShardRequest(long ingestId, ShardId shardId, List<ActionRequest<?>> actionRequests) {
         this.index = shardId.index().name();
         this.ingestId = ingestId;
         this.shardId = shardId;
@@ -52,7 +52,7 @@ public class IngestReplicaShardRequest extends ActionRequest<IngestReplicaShardR
         return shardId;
     }
 
-    public List<ActionRequest> actionRequests() {
+    public List<ActionRequest<?>> actionRequests() {
         return actionRequests;
     }
 
@@ -111,7 +111,7 @@ public class IngestReplicaShardRequest extends ActionRequest<IngestReplicaShardR
         out.writeLong(ingestId);
         shardId.writeTo(out);
         out.writeVInt(actionRequests.size());
-        for (ActionRequest actionRequest : actionRequests) {
+        for (ActionRequest<?> actionRequest : actionRequests) {
             if (actionRequest == null) {
                 out.writeBoolean(false);
                 continue;

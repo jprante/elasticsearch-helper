@@ -30,7 +30,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
 
     private static final int REQUEST_OVERHEAD = 50;
 
-    private final Queue<ActionRequest> requests = newQueue();
+    private final Queue<ActionRequest<?>> requests = newQueue();
 
     private final AtomicLong sizeInBytes = new AtomicLong();
 
@@ -67,22 +67,22 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
         return ingestId;
     }
 
-    public Queue<ActionRequest> newQueue() {
-        return new ConcurrentLinkedQueue<ActionRequest>();
+    public Queue<ActionRequest<?>> newQueue() {
+        return new ConcurrentLinkedQueue<ActionRequest<?>>();
     }
 
-    protected Queue<ActionRequest> requests() {
+    protected Queue<ActionRequest<?>> requests() {
         return requests;
     }
 
-    public IngestRequest add(ActionRequest... requests) {
-        for (ActionRequest request : requests) {
+    public IngestRequest add(ActionRequest<?>... requests) {
+        for (ActionRequest<?> request : requests) {
             add(request);
         }
         return this;
     }
 
-    public IngestRequest add(ActionRequest request) {
+    public IngestRequest add(ActionRequest<?> request) {
         if (request instanceof IndexRequest) {
             add((IndexRequest) request);
         } else if (request instanceof DeleteRequest) {
@@ -93,8 +93,8 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
         return this;
     }
 
-    public IngestRequest add(Iterable<ActionRequest> requests) {
-        for (ActionRequest request : requests) {
+    public IngestRequest add(Iterable<ActionRequest<?>> requests) {
+        for (ActionRequest<?> request : requests) {
             if (request instanceof IndexRequest) {
                 add((IndexRequest) request);
             } else if (request instanceof DeleteRequest) {
@@ -120,7 +120,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
     @SuppressWarnings("unchecked")
     public List<? extends IndicesRequest> subRequests() {
         List<IndicesRequest> indicesRequests = Lists.newArrayList();
-        for (ActionRequest request : requests) {
+        for (ActionRequest<?> request : requests) {
             assert request instanceof IndicesRequest;
             indicesRequests.add((IndicesRequest) request);
         }
@@ -295,7 +295,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
     public IngestRequest takeAll() {
         IngestRequest request = new IngestRequest();
         while (!requests.isEmpty()) {
-            ActionRequest actionRequest = requests.poll();
+            ActionRequest<?> actionRequest = requests.poll();
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) actionRequest;
@@ -318,7 +318,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
     public IngestRequest take(int numRequests) {
         IngestRequest request = new IngestRequest();
         for (int i = 0; i < numRequests; i++) {
-            ActionRequest actionRequest = requests.poll();
+            ActionRequest<?> actionRequest = requests.poll();
             request.add(actionRequest);
             if (actionRequest instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) actionRequest;
@@ -339,7 +339,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
         if (requests.isEmpty()) {
             validationException = addValidationError("no requests added", null);
         }
-        for (ActionRequest request : requests) {
+        for (ActionRequest<?> request : requests) {
             if (request == null) {
                 validationException = addValidationError("null request added", null);
             } else {
@@ -379,7 +379,7 @@ public class IngestRequest extends ActionRequest<IngestRequest> implements Compo
         timeout.writeTo(out);
         out.writeLong(ingestId);
         out.writeVInt(requests.size());
-        for (ActionRequest request : requests) {
+        for (ActionRequest<?> request : requests) {
             if (request instanceof IndexRequest) {
                 out.writeByte((byte) 0);
             } else if (request instanceof DeleteRequest) {

@@ -27,9 +27,9 @@ public class IngestLeaderShardResponse extends ActionResponse {
 
     private long tookInMillis;
 
-    private List<ActionRequest> actionRequests = new LinkedList<ActionRequest>();
+    private List<ActionRequest<?>> actionRequests = new LinkedList<ActionRequest<?>>();
 
-    private List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList());
+    private List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList<>());
 
     public IngestLeaderShardResponse() {
         super();
@@ -80,11 +80,11 @@ public class IngestLeaderShardResponse extends ActionResponse {
         return this;
     }
 
-    public List<ActionRequest> getActionRequests() {
+    public List<ActionRequest<?>> getActionRequests() {
         return actionRequests;
     }
 
-    public IngestLeaderShardResponse setActionRequests(List<ActionRequest> actionRequests) {
+    public IngestLeaderShardResponse setActionRequests(List<ActionRequest<?>> actionRequests) {
         this.actionRequests = actionRequests;
         return this;
     }
@@ -148,7 +148,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
         out.writeVInt(successCount);
         out.writeVInt(quorumShards);
         out.writeVInt(actionRequests.size());
-        for (ActionRequest actionRequest : actionRequests) {
+        for (ActionRequest<?> actionRequest : actionRequests) {
             if (actionRequest == null) {
                 out.writeBoolean(false);
             } else {

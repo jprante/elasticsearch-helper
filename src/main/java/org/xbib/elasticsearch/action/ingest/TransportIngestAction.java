@@ -4,13 +4,16 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.DocumentRequest;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
+import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
@@ -47,8 +50,9 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                                  TransportService transportService, ClusterService clusterService,
                                  TransportLeaderShardIngestAction leaderShardIngestAction,
                                  TransportReplicaShardIngestAction replicaShardIngestAction,
-                                 ActionFilters actionFilters) {
-        super(settings, IngestAction.NAME, threadPool, transportService, actionFilters, IngestRequest.class);
+                                 ActionFilters actionFilters,
+                                 IndexNameExpressionResolver indexNameExpressionResolver) {
+        super(settings, IngestAction.NAME, threadPool, transportService, actionFilters, indexNameExpressionResolver, IngestRequest.class);
         this.clusterService = clusterService;
         this.leaderShardIngestAction = leaderShardIngestAction;
         this.replicaShardIngestAction = replicaShardIngestAction;
@@ -67,19 +71,22 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
             listener.onFailure(e);
             return;
         }
+        final ConcreteIndices concreteIndices = new ConcreteIndices(clusterState, indexNameExpressionResolver);
         MetaData metaData = clusterState.metaData();
-        final List<ActionRequest> requests = new LinkedList<ActionRequest>();
+        final List<ActionRequest<?>> requests = new LinkedList<ActionRequest<?>>();
         // first, iterate over all requests and parse them for mapping, filter out erraneous requests
-        for (ActionRequest request : ingestRequest.requests()) {
+        for (ActionRequest<?> request : ingestRequest.requests()) {
+            String concreteIndex = concreteIndices.resolveIfAbsent((DocumentRequest)request);
             if (request instanceof IndexRequest) {
                 try {
                     IndexRequest indexRequest = (IndexRequest) request;
-                    indexRequest.index(clusterState.metaData().concreteSingleIndex(indexRequest.index(), indexRequest.indicesOptions()));
+                    indexRequest.routing(metaData.resolveIndexRouting(indexRequest.routing(), concreteIndex));
+                    indexRequest.index(concreteIndex);
                     MappingMetaData mappingMd = null;
-                    if (metaData.hasIndex(indexRequest.index())) {
-                        mappingMd = metaData.index(indexRequest.index()).mappingOrDefault(indexRequest.type());
+                    if (metaData.hasIndex(concreteIndex)) {
+                        mappingMd = metaData.index(concreteIndex).mappingOrDefault(indexRequest.type());
                     }
-                    indexRequest.process(metaData, mappingMd, allowIdGeneration, indexRequest.index());
+                    indexRequest.process(metaData, mappingMd, allowIdGeneration, concreteIndex);
                     requests.add(indexRequest);
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
@@ -87,22 +94,22 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                 }
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
-                deleteRequest.routing(clusterState.metaData().resolveIndexRouting(deleteRequest.routing(), deleteRequest.index()));
-                deleteRequest.index(clusterState.metaData().concreteSingleIndex(deleteRequest.index(), deleteRequest.indicesOptions()));
+                deleteRequest.routing(metaData.resolveIndexRouting(deleteRequest.routing(), concreteIndex));
+                deleteRequest.index(concreteIndex);
                 requests.add(deleteRequest);
             } else {
                 throw new ElasticsearchException("action request not known: " + request.getClass().getName());
             }
         }
         // second, go over all the requests and create a shard request map
-        Map<ShardId, List<ActionRequest>> requestsByShard = new HashMap<ShardId, List<ActionRequest>>();
-        for (ActionRequest request : requests) {
+        Map<ShardId, List<ActionRequest<?>>> requestsByShard = new HashMap<ShardId, List<ActionRequest<?>>>();
+        for (ActionRequest<?> request : requests) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
-                List<ActionRequest> list = requestsByShard.get(shardId);
+                List<ActionRequest<?>> list = requestsByShard.get(shardId);
                 if (list == null) {
-                    list = new LinkedList<ActionRequest>();
+                    list = new LinkedList<ActionRequest<?>>();
                     requestsByShard.put(shardId, list);
                 }
                 list.add(request);
@@ -112,18 +119,18 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                 if (mappingMd != null && mappingMd.routing().required() && deleteRequest.routing() == null) {
                     GroupShardsIterator groupShards = clusterService.operationRouting().broadcastDeleteShards(clusterState, deleteRequest.index());
                     for (ShardIterator shardIt : groupShards) {
-                        List<ActionRequest> list = requestsByShard.get(shardIt.shardId());
+                        List<ActionRequest<?>> list = requestsByShard.get(shardIt.shardId());
                         if (list == null) {
-                            list = new LinkedList<ActionRequest>();
+                            list = new LinkedList<ActionRequest<?>>();
                             requestsByShard.put(shardIt.shardId(), list);
                         }
                         list.add(deleteRequest);
                     }
                 } else {
                     ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
-                    List<ActionRequest> list = requestsByShard.get(shardId);
+                    List<ActionRequest<?>> list = requestsByShard.get(shardId);
                     if (list == null) {
-                        list = new LinkedList<ActionRequest>();
+                        list = new LinkedList<ActionRequest<?>>();
                         requestsByShard.put(shardId, list);
                     }
                     list.add(request);
@@ -141,9 +148,9 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
         // third, for each shard, execute leader/replica action
         final AtomicInteger successCount = new AtomicInteger(0);
         final AtomicInteger responseCounter = new AtomicInteger(requestsByShard.size());
-        for (Map.Entry<ShardId, List<ActionRequest>> entry : requestsByShard.entrySet()) {
+        for (Map.Entry<ShardId, List<ActionRequest<?>>> entry : requestsByShard.entrySet()) {
             final ShardId shardId = entry.getKey();
-            final List<ActionRequest> actionRequests = entry.getValue();
+            final List<ActionRequest<?>> actionRequests = entry.getValue();
             final IngestLeaderShardRequest ingestLeaderShardRequest = new IngestLeaderShardRequest()
                     .setIngestId(ingestRequest.ingestId())
                     .setShardId(shardId)
@@ -212,6 +219,30 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                 }
 
             });
+        }
+    }
+
+    private static class ConcreteIndices  {
+        private final ClusterState state;
+        private final IndexNameExpressionResolver indexNameExpressionResolver;
+        private final Map<String, String> indices = new HashMap<>();
+
+        ConcreteIndices(ClusterState state, IndexNameExpressionResolver indexNameExpressionResolver) {
+            this.state = state;
+            this.indexNameExpressionResolver = indexNameExpressionResolver;
+        }
+
+        String getConcreteIndex(String indexOrAlias) {
+            return indices.get(indexOrAlias);
+        }
+
+        String resolveIfAbsent(DocumentRequest<?> request) {
+            String concreteIndex = indices.get(request.index());
+            if (concreteIndex == null) {
+                concreteIndex = indexNameExpressionResolver.concreteSingleIndex(state, request);
+                indices.put(request.index(), concreteIndex);
+            }
+            return concreteIndex;
         }
     }
 
