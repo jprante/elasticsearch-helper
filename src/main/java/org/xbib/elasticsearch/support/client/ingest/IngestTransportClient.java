@@ -86,6 +86,10 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     public IngestTransportClient init(Settings settings) throws IOException {
         super.init(settings);
         resetSettings();
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
             public void onRequest(int concurrency, IngestRequest request) {

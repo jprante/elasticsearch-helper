@@ -85,6 +85,10 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     public BulkTransportClient init(Settings settings) throws IOException {
         super.init(settings);
         resetSettings();
+        if (metric == null) {
+            this.metric = new Metric();
+            metric.start();
+        }
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
