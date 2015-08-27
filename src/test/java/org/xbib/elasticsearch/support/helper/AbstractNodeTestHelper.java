@@ -17,7 +17,6 @@ import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
@@ -30,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.xbib.elasticsearch.plugin.support.SupportPlugin;
 import org.xbib.elasticsearch.support.client.ClientHelper;
+import org.xbib.elasticsearch.support.network.NetworkUtils;
 
 public abstract class AbstractNodeTestHelper {
 
@@ -110,7 +110,7 @@ public abstract class AbstractNodeTestHelper {
         }
     }
 
-    protected Node startNode(String id) {
+    protected Node startNode(String id) throws IOException {
         return buildNode(id).start();
     }
 
@@ -118,19 +118,17 @@ public abstract class AbstractNodeTestHelper {
         return clients.get(id);
     }
 
-    private Node buildNode(String id) {
-        String settingsSource = getClass().getName().replace('.', '/') + ".yml";
+    private Node buildNode(String id) throws IOException {
         Settings finalSettings = settingsBuilder()
-                .loadFromClasspath(settingsSource)
                 .put(getNodeSettings())
                 .put("name", id)
                 .build();
         logger.info("settings={}", finalSettings.getAsMap());
-        Node node = nodeBuilder()
-                .settings(finalSettings).build();
+        Node node = nodeBuilder().settings(finalSettings).build();
         AbstractClient client = (AbstractClient)node.client();
         nodes.put(id, node);
         clients.put(id, client);
+        logger.info("clients={}", clients);
         return node;
     }
 

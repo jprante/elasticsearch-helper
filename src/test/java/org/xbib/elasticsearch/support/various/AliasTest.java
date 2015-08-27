@@ -11,12 +11,12 @@ import org.elasticsearch.cluster.metadata.AliasAction;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
-import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.client.ClientHelper;
+import org.xbib.elasticsearch.support.network.NetworkUtils;
 
 import java.io.IOException;
 

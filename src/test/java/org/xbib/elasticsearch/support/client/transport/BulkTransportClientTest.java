@@ -126,8 +126,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
                 .newIndex("test", settingsForIndex, null)
                 .startBulk("test", -1, 1000);
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
-                    EsExecutors.daemonThreadFactory("bulkclient-test"));
+            ThreadPoolExecutor pool =
+                    EsExecutors.newFixed("bulkclient-test", maxthreads, 30, EsExecutors.daemonThreadFactory("bulkclient-test"));
             final CountDownLatch latch = new CountDownLatch(maxthreads);
             for (int i = 0; i < maxthreads; i++) {
                 pool.execute(new Runnable() {

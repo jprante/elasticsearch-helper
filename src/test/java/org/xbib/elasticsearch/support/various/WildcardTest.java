@@ -4,13 +4,13 @@ import java.io.IOException;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.node.Node;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.client.ClientHelper;
+import org.xbib.elasticsearch.support.network.NetworkUtils;
 
 import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;

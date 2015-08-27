@@ -1,7 +1,7 @@
 package org.xbib.elasticsearch.plugin.support;
 
 import org.elasticsearch.action.ActionModule;
-import org.elasticsearch.plugins.AbstractPlugin;
+import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestModule;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.TransportIngestAction;
@@ -10,7 +10,7 @@ import org.xbib.elasticsearch.rest.action.ingest.RestIngestAction;
 /**
  * Support plugin
  */
-public class SupportPlugin extends AbstractPlugin {
+public class SupportPlugin extends Plugin {
 
     @Override
     public String name() {

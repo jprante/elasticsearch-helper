@@ -160,8 +160,8 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
-            ThreadPoolExecutor pool = EsExecutors.newFixed(maxthreads, 30,
-                    EsExecutors.daemonThreadFactory("ingest-test"));
+            ThreadPoolExecutor pool =
+                    EsExecutors.newFixed("ingestclient-test", maxthreads, 30, EsExecutors.daemonThreadFactory("ingestclient-test"));
             final CountDownLatch latch = new CountDownLatch(maxthreads);
             for (int i = 0; i < maxthreads; i++) {
                 pool.execute(new Runnable() {
