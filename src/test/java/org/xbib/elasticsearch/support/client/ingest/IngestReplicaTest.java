@@ -46,6 +46,10 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
                 .newClient(getSettings())
                 .newIndex("test1", settingsTest1, null)
                 .newIndex("test2", settingsTest2, null);
+
+        ingest.waitForRecovery("test1");
+        ingest.waitForRecovery("test2");
+
         try {
             for (int i = 0; i < 1234; i++) {
                 ingest.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
