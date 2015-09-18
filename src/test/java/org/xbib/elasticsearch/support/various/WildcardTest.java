@@ -29,7 +29,6 @@ public class WildcardTest {
                     .put("cluster.name", getClusterName())
                     .put("cluster.routing.allocation.disk.threshold_enabled", false)
                     .put("discovery.zen.multicast.enabled", false)
-                    .put("gateway.type", "none")
                     .put("http.enabled", false)
                     .put("path.home", System.getProperty("path.home"))
                     .put("index.number_of_shards", 1)

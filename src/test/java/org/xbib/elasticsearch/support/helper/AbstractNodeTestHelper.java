@@ -79,7 +79,6 @@ public abstract class AbstractNodeTestHelper {
                 .put("cluster.routing.allocation.disk.threshold_enabled", false)
                 .put("discovery.zen.multicast.enabled", true)
                 .put("discovery.zen.multicast.ping_timeout", "5s")
-                .put("gateway.type", "none")
                 .put("http.enabled", false)
                 .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
                 .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
