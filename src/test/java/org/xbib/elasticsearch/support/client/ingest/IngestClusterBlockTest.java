@@ -18,12 +18,16 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 public class IngestClusterBlockTest extends AbstractNodeTestHelper {
 
     @Before
-    public void startNodes() throws Exception {
-        setClusterName();
-        startNode("1");
-        findNodeAddress();
-        // do not wait for green health state
-        logger.info("ready");
+    public void startNodes() {
+        try {
+            setClusterName();
+            startNode("1");
+            findNodeAddress();
+            // do not wait for green health state
+            logger.info("ready");
+        } catch (Throwable t) {
+            logger.error("startNodes failed", t);
+        }
     }
 
     protected Settings getNodeSettings() {

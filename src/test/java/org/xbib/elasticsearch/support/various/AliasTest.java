@@ -63,7 +63,7 @@ public class AliasTest {
             GetAliasesResponse getAliasesResponse = client.admin().indices().getAliases(getAliasesRequest).actionGet();
             long t1 = (System.nanoTime() - t0) / 1000000;
             logger.info("{} time(ms) = {}", getAliasesResponse.getAliases(), t1);
-            assertTrue(t1 > 0);
+            assertTrue(t1 >= 0);
         } finally {
             if (node !=null){
                 node.close();

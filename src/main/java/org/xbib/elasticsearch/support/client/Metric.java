@@ -1,7 +1,7 @@
 package org.xbib.elasticsearch.support.client;
 
-import org.elasticsearch.common.metrics.CounterMetric;
-import org.elasticsearch.common.metrics.MeanMetric;
+import org.xbib.metrics.CounterMetric;
+import org.xbib.metrics.MeanMetric;
 
 import java.util.HashMap;
 import java.util.HashSet;

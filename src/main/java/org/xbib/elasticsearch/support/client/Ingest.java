@@ -3,8 +3,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -55,7 +54,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(Client client) throws IOException;
+    Ingest init(ElasticsearchClient client) throws IOException;
 
     /**
      * Initialize, create new ingest client.
@@ -80,7 +79,7 @@ public interface Ingest {
      *
      * @return Elasticsearch client
      */
-    AbstractClient client();
+    ElasticsearchClient client();
 
     /**
      * Set the maximum number of actions per request

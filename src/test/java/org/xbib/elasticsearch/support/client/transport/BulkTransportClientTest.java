@@ -1,6 +1,8 @@
 
 package org.xbib.elasticsearch.support.client.transport;
 
+import org.elasticsearch.action.count.CountAction;
+import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -151,16 +153,17 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count() );
+            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
             assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
             assertFalse(client.hasThrowable());
             client.refreshIndex("test");
+            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(client.client(), CountAction.INSTANCE)
+                    .setQuery(QueryBuilders.matchAllQuery());
             assertEquals(maxthreads * maxloop,
-                    client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
-            );
+                    countRequestBuilder.execute().actionGet().getCount());
             client.shutdown();
         }
     }

@@ -1,7 +1,6 @@
 package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.client.Client;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.settings.Settings;
 
@@ -87,15 +86,6 @@ public class ConfigHelper {
         StringWriter sw = new StringWriter();
         Streams.copy(new InputStreamReader(in), sw);
         mappings.put(type, sw.toString());
-        return this;
-    }
-
-    public ConfigHelper putMapping(Client client, String index) {
-        if (!mappings.isEmpty()) {
-            for (Map.Entry<String, String> me : mappings.entrySet()) {
-                client.admin().indices().putMapping(new PutMappingRequest(index).type(me.getKey()).source(me.getValue())).actionGet();
-            }
-        }
         return this;
     }
 

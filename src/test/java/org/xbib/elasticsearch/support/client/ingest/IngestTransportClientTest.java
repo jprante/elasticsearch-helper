@@ -1,12 +1,9 @@
 
 package org.xbib.elasticsearch.support.client.ingest;
 
-import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
+import org.elasticsearch.action.count.CountAction;
+import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
@@ -34,11 +31,15 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
     private final static Integer NUM_ACTIONS = 12345;
 
     @Before
-    public void startNodes() throws Exception {
-        super.startNodes();
-        startNode("2");
-        startNode("3");
-        logger.info("started 3 nodes");
+    public void startNodes() {
+        try {
+            super.startNodes();
+            startNode("2");
+            startNode("3");
+            logger.info("started 3 nodes");
+        } catch (Throwable t) {
+            logger.error("startNodes failed", t);
+        }
     }
 
     @Test
@@ -192,9 +193,10 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
             ingest.refreshIndex("test");
+            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(ingest.client(), CountAction.INSTANCE)
+                    .setQuery(QueryBuilders.matchAllQuery());
             assertEquals(maxthreads * maxloop,
-                    ingest.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
-            );
+                    countRequestBuilder.execute().actionGet().getCount());
             ingest.shutdown();
         }
     }

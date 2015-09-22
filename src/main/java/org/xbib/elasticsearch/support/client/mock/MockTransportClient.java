@@ -3,8 +3,7 @@ package org.xbib.elasticsearch.support.client.mock;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportClient;
@@ -19,7 +18,7 @@ import java.util.Map;
 public class MockTransportClient extends BulkTransportClient {
 
     @Override
-    public MockTransportClient init(Client client) {
+    public MockTransportClient init(ElasticsearchClient client) {
         return this;
     }
 
@@ -33,7 +32,7 @@ public class MockTransportClient extends BulkTransportClient {
         return this;
     }
 
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return null;
     }
 

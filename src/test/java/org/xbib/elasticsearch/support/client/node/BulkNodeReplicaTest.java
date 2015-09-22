@@ -3,19 +3,23 @@ package org.xbib.elasticsearch.support.client.node;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequestBuilder;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
+import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.util.Map;
 
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -59,11 +63,15 @@ public class BulkNodeReplicaTest extends AbstractNodeRandomTestHelper {
             logger.info("refreshing");
             ingest.refreshIndex("test1");
             ingest.refreshIndex("test2");
-            long hits = ingest.client().prepareSearch("test1","test2")
-                    .setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getHits().getTotalHits();
+            SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(ingest.client(), SearchAction.INSTANCE)
+                    .setIndices("test1", "test2")
+                    .setQuery(matchAllQuery());
+            long hits = searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
             logger.info("query total hits={}", hits);
             assertEquals(2468, hits);
-            IndicesStatsResponse response = ingest.client().admin().indices().prepareStats().all().execute().actionGet();
+            IndicesStatsRequestBuilder indicesStatsRequestBuilder = new IndicesStatsRequestBuilder(ingest.client(), IndicesStatsAction.INSTANCE)
+                    .all();
+            IndicesStatsResponse response = indicesStatsRequestBuilder.execute().actionGet();
             for (Map.Entry<String,IndexStats> m : response.getIndices().entrySet()) {
                 IndexStats indexStats = m.getValue();
                 CommonStats commonStats = indexStats.getTotal();

@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
@@ -26,8 +27,8 @@ public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
             ingest.init(getSettings())
                     .newIndex("test", settingsForIndex, mappings);
             GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
-            GetMappingsResponse getMappingsResponse = ingest.client().admin().indices()
-                    .getMappings(getMappingsRequest).actionGet();
+            GetMappingsResponse getMappingsResponse =
+                    ingest.client().execute(GetMappingsAction.INSTANCE, getMappingsRequest).actionGet();
             MappingMetaData md = getMappingsResponse.getMappings().get("test").get("typename");
             assertEquals("{properties={message={type=string}}}", md.getSourceAsMap().toString());
         } finally {

@@ -106,7 +106,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient
             logger.warn("no client for put mapping");
             return this;
         }
-        configHelper.putMapping(client, index);
+        ClientHelper.putMapping(client, configHelper, index);
         return this;
     }
 

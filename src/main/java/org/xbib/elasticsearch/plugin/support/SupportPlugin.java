@@ -14,9 +14,7 @@ public class SupportPlugin extends Plugin {
 
     @Override
     public String name() {
-        return "support-" + Build.getInstance().getVersion()
-                + "-" + Build.getInstance().getShortHash()
-                + " " + Build.getInstance().getPlatform();
+        return "support";
     }
 
     @Override

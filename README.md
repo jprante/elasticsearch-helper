@@ -6,30 +6,35 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 ![Travis](https://travis-ci.org/jprante/elasticsearch-support.png)
 
-## Versions
+## Compatibility matrix
 
-| Elasticsearch version    | Plugin      | Release date |
-| ------------------------ | ----------- | -------------|
-| 1.6.0                    | 1.6.0.0     | Jul  1, 2015 |
-| 1.5.2                    | 1.5.2.2     | May 11, 2015 |
-| 1.5.2                    | 1.5.2.1     | May  3, 2015 |
-| 1.5.1                    | 1.5.1.0     | Apr 23, 2015 |
-| 1.3.1                    | 1.3.0.3     | Aug  8, 2014 |
-| 1.3.1                    | 1.3.0.1     | Aug  4, 2014 |
-| 1.3.0                    | 1.3.0.0     | Jul 23, 2014 |
-| 1.2.2                    | 1.2.2.0     | Jul 19, 2014 |
-| 1.2.1                    | 1.2.1.0     | Jun  4, 2014 |
-| 1.2.0                    | 1.2.0.1     | May 28, 2014 |
-| 1.2.0                    | 1.2.0.0     | May 22, 2014 |
-| 1.1.0                    | 1.1.0.7     | May 11, 2014 |
-| 1.0.0.RC2                | 1.0.0.RC2.1 | Feb  3, 2014 |
-| 0.90.7                   | 0.90.7.1    | Dec  3, 2013 |
-| 0.20.6                   | 0.20.6.1    | Feb  4, 2014 |
-| 0.19.11.2                | 0.19.11.2   | Feb  1, 2013 |
+| Elasticsearch     | Plugin         | Release date |
+| ----------------- | -------------- | -------------|
+| 2.0.0-beta2       | 2.0.0-beta2.1  | Sep 22, 2015 |
+| 1.6.0             | 1.6.0.0        | Jul  1, 2015 |
+| 1.5.2             | 1.5.2.2        | May 11, 2015 |
+| 1.5.2             | 1.5.2.1        | May  3, 2015 |
+| 1.5.1             | 1.5.1.0        | Apr 23, 2015 |
+| 1.3.1             | 1.3.0.3        | Aug  8, 2014 |
+| 1.3.1             | 1.3.0.1        | Aug  4, 2014 |
+| 1.3.0             | 1.3.0.0        | Jul 23, 2014 |
+| 1.2.2             | 1.2.2.0        | Jul 19, 2014 |
+| 1.2.1             | 1.2.1.0        | Jun  4, 2014 |
+| 1.2.0             | 1.2.0.1        | May 28, 2014 |
+| 1.2.0             | 1.2.0.0        | May 22, 2014 |
+| 1.1.0             | 1.1.0.7        | May 11, 2014 |
+| 1.0.0.RC2         | 1.0.0.RC2.1    | Feb  3, 2014 |
+| 0.90.7            | 0.90.7.1       | Dec  3, 2013 |
+| 0.20.6            | 0.20.6.1       | Feb  4, 2014 |
+| 0.19.11.2         | 0.19.11.2      | Feb  1, 2013 |
 
-## Installation
+## Installation 1.x
 
     ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.6.0.0/elasticsearch-support-1.6.0.0.zip
+
+## Installation 2.x
+
+    ./bin/plugin install http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/2.0.0-beta2.1/elasticsearch-support-2.0.0-beta2.1-plugin.zip
 
 Do not forget to restart the node after installing.
 

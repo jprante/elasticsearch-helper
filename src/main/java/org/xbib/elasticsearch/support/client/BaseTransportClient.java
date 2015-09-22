@@ -2,7 +2,7 @@ package org.xbib.elasticsearch.support.client;
 
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -61,7 +61,7 @@ public abstract class BaseTransportClient {
         }
     }
 
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return client;
     }
 

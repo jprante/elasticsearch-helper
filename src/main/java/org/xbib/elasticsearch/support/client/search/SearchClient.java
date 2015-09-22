@@ -1,6 +1,6 @@
 package org.xbib.elasticsearch.support.client.search;
 
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.xbib.elasticsearch.action.search.support.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.support.BasicSearchRequest;
@@ -50,7 +50,7 @@ public class SearchClient extends BaseTransportClient implements Search {
         return this;
     }
 
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return super.client();
     }
 

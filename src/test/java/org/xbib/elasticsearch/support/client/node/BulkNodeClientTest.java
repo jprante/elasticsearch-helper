@@ -1,7 +1,10 @@
 package org.xbib.elasticsearch.support.client.node;
 
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
+import org.elasticsearch.action.count.CountAction;
+import org.elasticsearch.action.count.CountRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -60,7 +63,8 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         client.mapping("test", builder.string());
         client.newIndex("test");
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
-        GetMappingsResponse getMappingsResponse = client.client().admin().indices().getMappings(getMappingsRequest).actionGet();
+        GetMappingsResponse getMappingsResponse =
+                client.client().execute(GetMappingsAction.INSTANCE, getMappingsRequest).actionGet();
         logger.info("mappings={}", getMappingsResponse.getMappings());
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -167,9 +171,10 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(client.hasThrowable());
             client.refreshIndex("test");
+            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(client.client(), CountAction.INSTANCE)
+                    .setQuery(QueryBuilders.matchAllQuery());
             assertEquals(maxthreads * maxloop,
-                    client.client().prepareCount("test").setQuery(QueryBuilders.matchAllQuery()).execute().actionGet().getCount()
-            );
+                    countRequestBuilder.execute().actionGet().getCount());
             client.shutdown();
         }
     }

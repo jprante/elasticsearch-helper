@@ -1,5 +1,7 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
+import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -36,9 +38,11 @@ public class IngestTransportDuplicateIDTest extends AbstractNodeRandomTestHelper
             logger.info("refreshing");
             client.refreshIndex("test");
             logger.info("searching");
-            long hits = client.client().prepareSearch("test").setTypes("test")
-                    .setQuery(matchAllQuery())
-                    .execute().actionGet().getHits().getTotalHits();
+            SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client.client(), SearchAction.INSTANCE)
+                    .setIndices("test")
+                    .setTypes("test")
+                    .setQuery(matchAllQuery());
+            long hits = searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
             logger.info("hits = {}", hits);
             assertTrue(hits < NUM_ACTIONS);
         } catch (NoNodeAvailableException e) {

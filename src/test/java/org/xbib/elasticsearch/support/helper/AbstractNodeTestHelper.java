@@ -82,30 +82,39 @@ public abstract class AbstractNodeTestHelper {
                 .put("http.enabled", false)
                 .put("threadpool.bulk.size", Runtime.getRuntime().availableProcessors())
                 .put("threadpool.bulk.queue_size", 16 * Runtime.getRuntime().availableProcessors()) // default is 50, too low
+                .put("index.number_of_replicas", 0)
                 .put("path.home", getHome())
                 .put("plugin.types", SupportPlugin.class.getName())
                 .build();
     }
 
     @Before
-    public void startNodes() throws Exception {
-        setClusterName();
-        startNode("1");
-        findNodeAddress();
-        ClientHelper.waitForCluster(client("1"), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
-        logger.info("ready");
+    public void startNodes() {
+        try {
+            setClusterName();
+            startNode("1");
+            findNodeAddress();
+            ClientHelper.waitForCluster(client("1"), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+            logger.info("ready");
+        } catch (Throwable t) {
+            logger.error("startNodes failed", t);
+        }
     }
 
     @After
-    public void stopNodes() throws Exception {
+    public void stopNodes() {
         try {
-            logger.info("deleting all indices");
+            //logger.info("deleting all indices");
             // delete all indices
-            client("1").admin().indices().prepareDelete("_all").execute().actionGet();
+            //client("1").admin().indices().prepareDelete("_all").execute().actionGet();
         } catch (Exception e) {
             logger.error("can not delete indexes", e);
         } finally {
-            closeAllNodes();
+            try {
+                closeAllNodes();
+            } catch (Throwable t) {
+                logger.error("close all nodes failed", t);
+            }
         }
     }
 

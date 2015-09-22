@@ -5,8 +5,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -70,7 +69,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient init(Client client) throws IOException {
+    public IngestTransportClient init(ElasticsearchClient client) throws IOException {
         return this.init(findSettings());
     }
 
@@ -142,7 +141,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return client;
     }
 

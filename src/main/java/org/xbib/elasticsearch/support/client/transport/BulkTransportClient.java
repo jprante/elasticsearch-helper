@@ -9,8 +9,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -71,7 +70,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient init(Client client) throws IOException {
+    public BulkTransportClient init(ElasticsearchClient client) throws IOException {
         return this.init(findSettings());
     }
 
@@ -149,7 +148,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return client;
     }
 

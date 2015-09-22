@@ -16,8 +16,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.client.support.AbstractClient;
+import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
@@ -44,7 +43,7 @@ public class BulkNodeClient implements Ingest {
     private int maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
     private ByteSizeValue maxVolume = DEFAULT_MAX_VOLUME_PER_REQUEST;
     private TimeValue flushInterval = DEFAULT_FLUSH_INTERVAL;
-    private NodeClient client;
+    private ElasticsearchClient client;
 
     private BulkProcessor bulkProcessor;
 
@@ -79,11 +78,8 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient init(Client client) {
-        if (!(client instanceof NodeClient)) {
-            throw new ElasticsearchException("not a node client");
-        }
-        this.client = (NodeClient) client;
+    public BulkNodeClient init(ElasticsearchClient client) {
+        this.client = client;
         if (metric == null) {
             this.metric = new Metric();
             metric.start();
@@ -141,7 +137,7 @@ public class BulkNodeClient implements Ingest {
                 logger.error("after bulk [" + executionId + "] error", failure);
             }
         };
-        BulkProcessor.Builder builder = BulkProcessor.builder(client, listener)
+        BulkProcessor.Builder builder = BulkProcessor.builder((Client) client, listener)
                 .setBulkActions(maxActionsPerRequest)
                 .setConcurrentRequests(maxConcurrentRequests)
                 .setFlushInterval(flushInterval);
@@ -170,7 +166,7 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public AbstractClient client() {
+    public ElasticsearchClient client() {
         return client;
     }
 
@@ -191,7 +187,7 @@ public class BulkNodeClient implements Ingest {
             logger.warn("no client for put mapping");
             return this;
         }
-        configHelper.putMapping(client, index);
+        ClientHelper.putMapping(client, configHelper, index);
         return this;
     }
 
@@ -368,9 +364,6 @@ public class BulkNodeClient implements Ingest {
                     stopBulk(index);
                 }
             }
-            logger.debug("shutting down...");
-            client.close();
-            logger.debug("shutting down completed");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
