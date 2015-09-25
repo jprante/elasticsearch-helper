@@ -9,7 +9,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -20,7 +20,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportClientTest extends AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 

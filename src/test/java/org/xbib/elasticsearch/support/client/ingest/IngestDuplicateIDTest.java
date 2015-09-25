@@ -5,14 +5,14 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class IngestDuplicateIDTest extends AbstractNodeRandomTestHelper {
+public class IngestDuplicateIDTest extends AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestDuplicateIDTest.class.getSimpleName());
 

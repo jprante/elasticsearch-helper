@@ -1,5 +1,7 @@
 package org.xbib.metrics;
 
+import org.elasticsearch.common.util.concurrent.jsr166e.LongAdder;
+
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

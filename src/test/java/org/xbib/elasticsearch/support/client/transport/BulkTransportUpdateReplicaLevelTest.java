@@ -9,14 +9,14 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportUpdateReplicaLevelTest extends AbstractNodeTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkUpdateReplicaLevelTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportUpdateReplicaLevelTest.class.getSimpleName());
 
     @Test
     public void testUpdateReplicaLevel() throws Exception {
@@ -61,9 +61,6 @@ public class BulkUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

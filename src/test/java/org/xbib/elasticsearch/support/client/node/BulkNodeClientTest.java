@@ -9,7 +9,7 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeClientTest extends AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClientTest.class.getSimpleName());
 

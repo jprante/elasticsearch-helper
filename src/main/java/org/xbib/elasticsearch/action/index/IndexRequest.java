@@ -267,7 +267,7 @@ public class IndexRequest extends LeaderShardOperationRequest<IndexRequest> {
     }
 
     /**
-     * Sets the relative ttl value. It musts be > 0 as it makes little sense otherwise. Setting it
+     * Sets the relative ttl value. It musts be &gt; 0 as it makes little sense otherwise. Setting it
      * to <tt>null</tt> will reset to have no ttl.
      */
     public IndexRequest ttl(Long ttl) throws ElasticsearchGenerationException {

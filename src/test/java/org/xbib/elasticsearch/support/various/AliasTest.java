@@ -27,7 +27,7 @@ public class AliasTest {
         try {
             Settings settings = ImmutableSettings.settingsBuilder()
                     .put("cluster.name", "test")
-                    .put("gateway.type", "none")
+                    .put("index.number_of_replicas", 0)
                     .build();
             node = nodeBuilder().settings(settings).local(true).node();
             Client client = node.client();

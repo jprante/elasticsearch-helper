@@ -9,13 +9,13 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
+public class IngestUpdateReplicaLevelTest extends AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestUpdateReplicaLevelTest.class.getSimpleName());
 
@@ -60,9 +60,6 @@ public class IngestUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

@@ -6,14 +6,14 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import java.util.Map;
 
 import static org.elasticsearch.common.collect.Maps.newHashMap;
 import static org.junit.Assert.assertEquals;
 
-public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
+public class IngestIndexCreationTest extends AbstractNodeTestHelper {
 
     @Test
     public void testIngestCreation() throws Exception {

@@ -8,14 +8,14 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeUpdateReplicaLevelTest extends AbstractNodeTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeUpdateReplicaLevelTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeUpdateReplicaLevelTest.class.getSimpleName());
 
     @Test
     public void testUpdateReplicaLevel() throws Exception {
@@ -36,8 +36,6 @@ public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
 
         final BulkNodeClient ingest = new BulkNodeClient()
                 .newClient(client("1"))
-//                .shards(numberOfShards)
-//                .replica(0)
                 .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
@@ -60,9 +58,6 @@ public class NodeUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        stopNode("3");
-        stopNode("2");
     }
 
 }

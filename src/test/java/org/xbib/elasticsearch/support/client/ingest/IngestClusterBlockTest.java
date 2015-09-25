@@ -13,6 +13,8 @@ import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
 import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
+import java.io.IOException;
+
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class IngestClusterBlockTest extends AbstractNodeTestHelper {
@@ -21,14 +23,17 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
         return ImmutableSettings
                 .settingsBuilder()
                 .put("cluster.name", getClusterName())
-                .put("cluster.routing.schedule", "50ms")
-                .put("gateway.type", "none")
-                .put("index.store.type", "memory")
                 .put("http.enabled", false)
+                .put("index.number_of_replicas", 0)
                 .put("discovery.zen.multicast.enabled", true)
                 .put("discovery.zen.multicast.ping_timeout", "5s")
                 .put("discovery.zen.minimum_master_nodes", 2) // block until we have two nodes
                 .build();
+    }
+
+    @Override
+    protected void waitForCluster() throws IOException {
+        // do not wait for cluster health
     }
 
     @Test(expected = ClusterBlockException.class)
@@ -59,6 +64,5 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
             brb.add(irb);
             brb.execute().actionGet();
     }
-
 
 }

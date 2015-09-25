@@ -13,14 +13,14 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
+public class IngestReplicaTest extends AbstractNodeTestHelper {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestReplicaTest.class.getSimpleName());
 
@@ -96,9 +96,6 @@ public class IngestReplicaTest extends AbstractNodeRandomTestHelper {
             ingest.shutdown();
         }
 
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
 
 }

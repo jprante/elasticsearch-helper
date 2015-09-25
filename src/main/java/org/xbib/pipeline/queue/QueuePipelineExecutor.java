@@ -24,9 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * An Queue Pipeline setExecutor. This setExecutor can execute pipelines in parallel
  * and manage a queue that have to be processed by the pipelines.
- * <p/>
  * By doing this, the concurrency works on archive entry level, not URI level.
- * <p/>
  * Pipelines are created by a pipeline provider.
  * The maximum number of concurrent pipelines is 256.
  * Each pipeline can receive archive entries, which are put into a blocking queue by

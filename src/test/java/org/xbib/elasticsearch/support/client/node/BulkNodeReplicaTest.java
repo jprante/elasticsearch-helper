@@ -13,24 +13,23 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeReplicaTest extends AbstractNodeTestHelper {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(NodeReplicaTest.class.getSimpleName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeReplicaTest.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws Exception {
 
-        // we need nodes for replica levels
+        // we need 3 nodes for replica level 3
         startNode("2");
         startNode("3");
-        //startNode("4");
 
         Settings settingsTest1 = ImmutableSettings.settingsBuilder()
                 .put("index.number_of_shards", 2)
@@ -94,10 +93,5 @@ public class NodeReplicaTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
         }
-
-        //stopNode("4");
-        stopNode("3");
-        stopNode("2");
     }
-
 }

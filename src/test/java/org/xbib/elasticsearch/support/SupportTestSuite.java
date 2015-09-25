@@ -3,10 +3,10 @@ package org.xbib.elasticsearch.support;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.support.client.ConfigHelperTest;
-import org.xbib.elasticsearch.support.client.transport.BulkDuplicateIDTest;
-import org.xbib.elasticsearch.support.client.transport.BulkReplicaTest;
+import org.xbib.elasticsearch.support.client.transport.BulkTransportDuplicateIDTest;
+import org.xbib.elasticsearch.support.client.transport.BulkTransportReplicaTest;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportClientTest;
-import org.xbib.elasticsearch.support.client.transport.BulkUpdateReplicaLevelTest;
+import org.xbib.elasticsearch.support.client.transport.BulkTransportUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestClusterBlockTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestDuplicateIDTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestIndexCreationTest;
@@ -14,27 +14,27 @@ import org.xbib.elasticsearch.support.client.ingest.IngestReplicaTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestTransportClientTest;
 import org.xbib.elasticsearch.support.client.ingest.IngestUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.client.node.BulkNodeClientTest;
-import org.xbib.elasticsearch.support.client.node.NodeDuplicateIDTest;
-import org.xbib.elasticsearch.support.client.node.NodeReplicaTest;
-import org.xbib.elasticsearch.support.client.node.NodeUpdateReplicaLevelTest;
+import org.xbib.elasticsearch.support.client.node.BulkNodeDuplicateIDTest;
+import org.xbib.elasticsearch.support.client.node.BulkNodeReplicaTest;
+import org.xbib.elasticsearch.support.client.node.BulkNodeUpdateReplicaLevelTest;
 import org.xbib.elasticsearch.support.various.AliasTest;
 import org.xbib.elasticsearch.support.various.NPETest;
 import org.xbib.elasticsearch.support.various.SimpleTest;
 
-@RunWith(Suite.class)
+@RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({
-        SimpleTest.class,
-        ConfigHelperTest.class,
-        AliasTest.class,
-        NPETest.class,
+        //SimpleTest.class,
+        //ConfigHelperTest.class,
+        //AliasTest.class,
+        //NPETest.class,
         BulkNodeClientTest.class,
-        NodeDuplicateIDTest.class,
-        NodeReplicaTest.class,
-        NodeUpdateReplicaLevelTest.class,
+        BulkNodeDuplicateIDTest.class,
+        BulkNodeReplicaTest.class,
+        BulkNodeUpdateReplicaLevelTest.class,
         BulkTransportClientTest.class,
-        BulkDuplicateIDTest.class,
-        BulkReplicaTest.class,
-        BulkUpdateReplicaLevelTest.class,
+        BulkTransportDuplicateIDTest.class,
+        BulkTransportReplicaTest.class,
+        BulkTransportUpdateReplicaLevelTest.class,
         IngestIndexCreationTest.class,
         IngestClusterBlockTest.class,
         IngestTransportClientTest.class,

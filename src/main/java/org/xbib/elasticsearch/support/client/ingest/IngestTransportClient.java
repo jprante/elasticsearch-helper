@@ -164,15 +164,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return metric;
     }
 
-    /*public IngestTransportClient shards(int value) {
-        super.shards(value);
-        return this;
-    }
-
-    public IngestTransportClient replica(int value) {
-        super.replica(value);
-        return this;
-    }*/
 
     @Override
     public IngestTransportClient newIndex(String index) {

@@ -17,7 +17,6 @@ import org.xbib.elasticsearch.support.network.NetworkUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -77,12 +76,10 @@ public abstract class BaseTransportClient {
         ImmutableSettings.Builder settingsBuilder = ImmutableSettings.settingsBuilder();
         settingsBuilder.put("host", "localhost");
         try {
-            String hostname = InetAddress.getLocalHost().getHostName();
+            String hostname = NetworkUtils.getLocalAddress().getHostName();  //InetAddress.getLocalHost().getHostName();
             logger.debug("the hostname is {}", hostname);
             settingsBuilder.put("host", hostname)
                     .put("port", 9300);
-        } catch (UnknownHostException e) {
-            logger.warn("can't resolve host name, probably something wrong with network config: " + e.getMessage(), e);
         } catch (Exception e) {
             logger.warn(e.getMessage(), e);
         }

@@ -1,6 +1,7 @@
 package org.xbib.metrics;
 
 import org.elasticsearch.common.metrics.Metric;
+import org.elasticsearch.common.util.concurrent.jsr166e.LongAdder;
 
 public class CounterMetric implements Metric {
 

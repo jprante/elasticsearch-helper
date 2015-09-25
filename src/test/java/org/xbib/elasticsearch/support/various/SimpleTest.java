@@ -11,6 +11,7 @@ import static org.elasticsearch.common.settings.ImmutableSettings.settingsBuilde
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import static org.junit.Assert.assertTrue;
 
 public class SimpleTest {
 
@@ -24,6 +25,7 @@ public class SimpleTest {
         Client client = nodeBuilder()
                 .settings(settingsBuilder()
                         .put("cluster.name", "test")
+                        .put("index.number_of_replicas", 0)
                         .put("index.analysis.analyzer.default.filter.0", "lowercase")
                         .put("index.analysis.analyzer.default.filter.1", "trim")
                         .put("index.analysis.analyzer.default.tokenizer", "keyword"))
@@ -34,7 +36,9 @@ public class SimpleTest {
             // ignore
         }
         client.index(indexRequest()
-                .index(INDEX).type(TYPE).id("1")
+                .index(INDEX)
+                .type(TYPE)
+                .id("1")
                 .source(jsonBuilder().startObject().field(FIELD, "1%2fPJJP3JV2C24iDfEu9XpHBaYxXh%2fdHTbmchB35SDznXO2g8Vz4D7GTIvY54iMiX_149c95f02a8").endObject())
                 .refresh(true)).actionGet();
         String doc = client.prepareSearch(INDEX).setTypes(TYPE)
@@ -42,5 +46,13 @@ public class SimpleTest {
                 .execute().actionGet().getHits().getAt(0).getSourceAsString();
 
         logger.info("{}", doc);
+        assertTrue(!doc.isEmpty());
+
+        try {
+            client.admin().indices().delete(deleteIndexRequest(INDEX)).actionGet();
+        } catch (Exception e) {
+            // ignore
+        }
+
     }
 }
