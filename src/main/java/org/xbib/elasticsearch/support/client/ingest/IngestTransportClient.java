@@ -5,6 +5,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -302,6 +303,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             metric.getCurrentIngest().dec();
         }
         return this;
+    }
+
+    @Override
+    public Ingest update(String index, String type, String id, String source) {
+        // we will never implement this!
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Ingest bulkUpdate(UpdateRequest updateRequest) {
+        // we will never implement this!
+        throw new UnsupportedOperationException();
     }
 
     @Override

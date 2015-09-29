@@ -15,6 +15,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.logging.ESLogger;
@@ -275,6 +276,42 @@ public class BulkNodeClient implements Ingest {
             if (metric != null) {
                 metric.getCurrentIngest().dec();
             }
+        }
+        return this;
+    }
+
+    @Override
+    public BulkNodeClient update(String index, String type, String id, String source) {
+        if (closed) {
+            throw new ElasticsearchException("client is closed");
+        }
+        try {
+            metric.getCurrentIngest().inc();
+            bulkProcessor.add(new UpdateRequest().index(index).type(type).id(id).upsert(source));
+        } catch (Exception e) {
+            throwable = e;
+            closed = true;
+            logger.error("bulk add of update request failed: " + e.getMessage(), e);
+        } finally {
+            metric.getCurrentIngest().dec();
+        }
+        return this;
+    }
+
+    @Override
+    public BulkNodeClient bulkUpdate(UpdateRequest updateRequest) {
+        if (closed) {
+            throw new ElasticsearchException("client is closed");
+        }
+        try {
+            metric.getCurrentIngest().inc();
+            bulkProcessor.add(updateRequest);
+        } catch (Exception e) {
+            throwable = e;
+            closed = true;
+            logger.error("bulk add of update request failed: " + e.getMessage(), e);
+        } finally {
+            metric.getCurrentIngest().dec();
         }
         return this;
     }

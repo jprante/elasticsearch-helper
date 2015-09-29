@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -46,6 +47,17 @@ public interface Ingest {
      * @return this ingest
      */
     Ingest delete(String index, String type, String id);
+
+    /**
+     * Update document
+     *
+     * @param index  the index
+     * @param type   the type
+     * @param id     the id
+     * @param source the source
+     * @return this
+     */
+    Ingest update(String index, String type, String id, String source);
 
     /**
      * Initialize, create new ingest client.
@@ -263,6 +275,16 @@ public interface Ingest {
      * @return this ingest
      */
     Ingest bulkDelete(DeleteRequest deleteRequest);
+
+    /**
+     * Bulked update request. Each request will be added to a queue for bulking requests.
+     * Submitting request will be done when bulk limits are exceeded.
+     * Note that updates only work correctly when all operations between nodes are synchronized!
+     *
+     * @param updateRequest the update request to add
+     * @return this ingest
+     */
+    Ingest bulkUpdate(UpdateRequest updateRequest);
 
     /**
      * Flush ingest, move all pending documents to the cluster.
