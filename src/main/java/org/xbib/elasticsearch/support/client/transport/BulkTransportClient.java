@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.support.client.transport;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -263,23 +264,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
         return this;
     }
 
-    @Override
-    public BulkTransportClient bulkIndex(IndexRequest indexRequest) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        try {
-            metric.getCurrentIngest().inc();
-            bulkProcessor.add(indexRequest);
-        } catch (Exception e) {
-            throwable = e;
-            closed = true;
-            logger.error("bulk add of index request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
-        }
-        return this;
-    }
+
 
     @Override
     public BulkTransportClient delete(String index, String type, String id) {
@@ -300,22 +285,23 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient bulkDelete(DeleteRequest deleteRequest) {
+    public BulkTransportClient action(ActionRequest request) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
         try {
             metric.getCurrentIngest().inc();
-            bulkProcessor.add(deleteRequest);
+            bulkProcessor.add(request);
         } catch (Exception e) {
             throwable = e;
             closed = true;
-            logger.error("bulk add of delete request failed: " + e.getMessage(), e);
+            logger.error("bulk action request failed: " + e.getMessage(), e);
         } finally {
             metric.getCurrentIngest().dec();
         }
         return this;
     }
+
 
 
     @Override

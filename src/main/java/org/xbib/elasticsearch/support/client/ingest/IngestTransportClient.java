@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
@@ -268,27 +269,6 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         return this;
     }
 
-    @Override
-    public IngestTransportClient bulkIndex(org.elasticsearch.action.index.IndexRequest indexRequest) {
-        if (closed) {
-            if (throwable != null) {
-                throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
-            } else {
-                throw new ElasticsearchIllegalStateException("client is closed");
-            }
-        }
-        try {
-            metric.getCurrentIngest().inc();
-            ingestProcessor.add(new IndexRequest(indexRequest));
-        } catch (Exception e) {
-            logger.error("add of index request failed: " + e.getMessage(), e);
-            throwable = e;
-            closed = true;
-        } finally {
-            metric.getCurrentIngest().dec();
-        }
-        return this;
-    }
 
     @Override
     public IngestTransportClient delete(String index, String type, String id) {
@@ -313,7 +293,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient bulkDelete(org.elasticsearch.action.delete.DeleteRequest deleteRequest) {
+    public IngestTransportClient action(ActionRequest request) {
         if (closed) {
             if (throwable != null) {
                 throw new ElasticsearchIllegalStateException("client is closed, possible reason: ", throwable);
@@ -323,9 +303,9 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             metric.getCurrentIngest().inc();
-            ingestProcessor.add(new DeleteRequest(deleteRequest));
+            ingestProcessor.add(request);
         } catch (Exception e) {
-            logger.error("add of delete request failed: " + e.getMessage(), e);
+            logger.error("bulk action request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
         } finally {

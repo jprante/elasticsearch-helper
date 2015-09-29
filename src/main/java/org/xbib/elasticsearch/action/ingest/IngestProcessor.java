@@ -2,6 +2,7 @@ package org.xbib.elasticsearch.action.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -9,14 +10,8 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.xbib.elasticsearch.action.delete.DeleteRequest;
-import org.xbib.elasticsearch.action.index.IndexRequest;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IngestProcessor {
@@ -94,13 +89,7 @@ public class IngestProcessor {
         return this;
     }
 
-    public IngestProcessor add(IndexRequest request) {
-        ingestRequest.add(request);
-        flushIfNeeded(ingestListener);
-        return this;
-    }
-
-    public IngestProcessor add(DeleteRequest request) {
+    public IngestProcessor add(ActionRequest request) {
         ingestRequest.add(request);
         flushIfNeeded(ingestListener);
         return this;

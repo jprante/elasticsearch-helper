@@ -1,6 +1,7 @@
 package org.xbib.elasticsearch.support.client.node;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
@@ -239,27 +240,6 @@ public class BulkNodeClient implements Ingest {
         return this;
     }
 
-    @Override
-    public BulkNodeClient bulkIndex(IndexRequest indexRequest) {
-        if (closed) {
-            throw new ElasticsearchIllegalStateException("client is closed");
-        }
-        try {
-            if (metric != null) {
-                metric.getCurrentIngest().inc();
-            }
-            bulkProcessor.add(indexRequest);
-        } catch (Exception e) {
-            throwable = e;
-            closed = true;
-            logger.error("bulk add of index request failed: " + e.getMessage(), e);
-        } finally {
-            if (metric != null) {
-                metric.getCurrentIngest().dec();
-            }
-        }
-        return this;
-    }
 
     @Override
     public BulkNodeClient delete(String index, String type, String id) {
@@ -284,7 +264,7 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient bulkDelete(DeleteRequest deleteRequest) {
+    public BulkNodeClient action(ActionRequest actionRequest) {
         if (closed) {
             throw new ElasticsearchIllegalStateException("client is closed");
         }
@@ -292,11 +272,11 @@ public class BulkNodeClient implements Ingest {
             if (metric != null) {
                 metric.getCurrentIngest().inc();
             }
-            bulkProcessor.add(deleteRequest);
+            bulkProcessor.add(actionRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
-            logger.error("bulk add of delete failed: " + e.getMessage(), e);
+            logger.error("bulk action request failed: " + e.getMessage(), e);
         } finally {
             if (metric != null) {
                 metric.getCurrentIngest().dec();
@@ -304,6 +284,8 @@ public class BulkNodeClient implements Ingest {
         }
         return this;
     }
+
+
     @Override
     public BulkNodeClient flushIngest() {
         if (closed) {
