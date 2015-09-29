@@ -3,6 +3,7 @@ package org.xbib.elasticsearch.support.client.mock;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -52,12 +53,22 @@ public class MockTransportClient extends BulkTransportClient {
     }
 
     @Override
+    public MockTransportClient update(String index, String type, String id, String source) {
+        return this;
+    }
+
+    @Override
     public MockTransportClient bulkIndex(IndexRequest indexRequest) {
         return this;
     }
 
     @Override
     public MockTransportClient bulkDelete(DeleteRequest deleteRequest) {
+        return this;
+    }
+
+    @Override
+    public MockTransportClient bulkUpdate(UpdateRequest updateRequest) {
         return this;
     }
 

@@ -2,6 +2,7 @@ package org.xbib.elasticsearch.support.client.ingest;
 
 import org.elasticsearch.ElasticsearchIllegalStateException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.collect.ImmutableSet;
 import org.elasticsearch.common.logging.ESLogger;
@@ -332,6 +333,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
             metric.getCurrentIngest().dec();
         }
         return this;
+    }
+
+    @Override
+    public Ingest update(String index, String type, String id, String source) {
+        // we will never support this!
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Ingest bulkUpdate(UpdateRequest updateRequest) {
+        // we will never support this!
+        throw new UnsupportedOperationException();
     }
 
     @Override
