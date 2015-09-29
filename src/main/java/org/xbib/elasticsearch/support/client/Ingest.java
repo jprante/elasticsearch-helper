@@ -1,8 +1,7 @@
 package org.xbib.elasticsearch.support.client;
 
+import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -167,21 +166,13 @@ public interface Ingest {
      */
     Ingest stopBulk(String index) throws IOException;
 
-    /**
-     * Bulked index request. Each request will be added to a queue for bulking requests.
-     * Submitting request will be done when bulk limits are exceeded.
-     * @param indexRequest the index request to add
-     * @return this ingest
-     */
-    Ingest bulkIndex(IndexRequest indexRequest);
 
     /**
-     * Bulked delete request. Each request will be added to a queue for bulking requests.
-     * Submitting request will be done when bulk limits are exceeded.
-     * @param deleteRequest the delete request to add
+     * Add action
+     * @param actionRequest ActionRequest
      * @return this ingest
      */
-    Ingest bulkDelete(DeleteRequest deleteRequest);
+    Ingest action(ActionRequest actionRequest);
 
     /**
      * Flush ingest, move all pending documents to the bulk indexer
