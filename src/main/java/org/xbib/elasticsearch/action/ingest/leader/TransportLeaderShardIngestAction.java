@@ -4,7 +4,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
-import org.elasticsearch.action.RoutingMissingException;
 import org.elasticsearch.action.UnavailableShardsException;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -14,11 +13,9 @@ import org.elasticsearch.action.support.TransportActions;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
-import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.cluster.routing.ShardRouting;
@@ -34,7 +31,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
-import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.SourceToParse;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
@@ -67,12 +63,10 @@ public class TransportLeaderShardIngestAction
     private final ClusterService clusterService;
     private final IndicesService indicesService;
     private final TransportRequestOptions transportOptions;
-    private final MappingUpdatedAction mappingUpdatedAction;
 
     @Inject
     public TransportLeaderShardIngestAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                             IndicesService indicesService, ThreadPool threadPool,
-                                            MappingUpdatedAction mappingUpdatedAction,
                                             ActionFilters actionFilters,
                                             IndexNameExpressionResolver indexNameExpressionResolver) {
         super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver);
@@ -82,7 +76,6 @@ public class TransportLeaderShardIngestAction
         this.transportAction = transportAction();
         this.transportOptions = transportOptions();
         this.executor = executor();
-        this.mappingUpdatedAction = mappingUpdatedAction;
         transportService.registerRequestHandler(transportAction, IngestLeaderShardRequest.class,
                 ThreadPool.Names.SAME, new LeaderOperationTransportHandler());
     }
@@ -132,7 +125,7 @@ public class TransportLeaderShardIngestAction
             if (actionRequest instanceof IndexRequest) {
                 try {
                     IndexRequest indexRequest = (IndexRequest) actionRequest;
-                    long version = indexOperationOnLeader(clusterState, indexRequest, request);
+                    long version = indexOperationOnLeader(indexRequest, request);
                     versions[i] = indexRequest.version();
                     indexRequest.version(indexRequest.version() == Versions.MATCH_ANY ? Versions.MATCH_ANY : version);
                     successCount++;
@@ -181,12 +174,8 @@ public class TransportLeaderShardIngestAction
                 .setFailures(failures);
     }
 
-    private long indexOperationOnLeader(ClusterState clusterState, IndexRequest indexRequest,
+    private long indexOperationOnLeader(IndexRequest indexRequest,
                                         IngestLeaderShardRequest request) {
-        MappingMetaData mappingMd = clusterState.metaData().index(request.index()).mappingOrDefault(indexRequest.type());
-        if (mappingMd != null && mappingMd.routing().required() && indexRequest.routing() == null) {
-            throw new RoutingMissingException(indexRequest.index(), indexRequest.type(), indexRequest.id());
-        }
         SourceToParse sourceToParse = SourceToParse.source(SourceToParse.Origin.PRIMARY, indexRequest.source())
                 .type(indexRequest.type())
                 .id(indexRequest.id())
@@ -201,14 +190,6 @@ public class TransportLeaderShardIngestAction
                     indexRequest.versionType(),
                     Engine.Operation.Origin.PRIMARY,
                     false);
-            Mapping mapping = index.parsedDoc().dynamicMappingsUpdate();
-            if (mapping != null) {
-                try {
-                    mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
-                } catch (Throwable t) {
-                    logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
-                }
-            }
             indexShard.index(index);
             return index.version();
         } else if (indexRequest.opType() == IndexRequest.OpType.CREATE) {
@@ -218,14 +199,6 @@ public class TransportLeaderShardIngestAction
                     Engine.Operation.Origin.PRIMARY,
                     false,
                     indexRequest.autoGeneratedId());
-            Mapping mapping = create.parsedDoc().dynamicMappingsUpdate();
-            if (mapping != null) {
-                try {
-                    mappingUpdatedAction.updateMappingOnMasterSynchronously(indexRequest.index(), indexRequest.type(), mapping);
-                } catch (Throwable t) {
-                    logger.error("mapping update on master failed on {}/{}", indexRequest.index(), indexRequest.type());
-                }
-            }
             indexShard.create(create);
             return create.version();
         } else {

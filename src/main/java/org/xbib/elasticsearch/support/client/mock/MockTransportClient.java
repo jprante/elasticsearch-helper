@@ -19,6 +19,11 @@ import java.util.Map;
 public class MockTransportClient extends BulkTransportClient {
 
     @Override
+    public ElasticsearchClient client() {
+        return null;
+    }
+
+    @Override
     public MockTransportClient init(ElasticsearchClient client) {
         return this;
     }
@@ -31,10 +36,6 @@ public class MockTransportClient extends BulkTransportClient {
     @Override
     public MockTransportClient init(Settings settings) {
         return this;
-    }
-
-    public ElasticsearchClient client() {
-        return null;
     }
 
     @Override
@@ -104,6 +105,11 @@ public class MockTransportClient extends BulkTransportClient {
 
     @Override
     public MockTransportClient newIndex(String index) {
+        return this;
+    }
+
+    @Override
+    public MockTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
         return this;
     }
 
