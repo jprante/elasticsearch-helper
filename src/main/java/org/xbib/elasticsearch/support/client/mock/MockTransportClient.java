@@ -92,6 +92,11 @@ public class MockTransportClient extends IngestTransportClient {
     }
 
     @Override
+    public MockTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
+        return this;
+    }
+
+    @Override
     public MockTransportClient putMapping(String index) {
         return this;
     }
