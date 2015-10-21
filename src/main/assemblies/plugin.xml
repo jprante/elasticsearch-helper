@@ -11,10 +11,9 @@
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <useTransitiveDependencies>true</useTransitiveDependencies>
-            <unpack>false</unpack>
-            <includes>
-                <include>org.xbib.elasticsearch.plugin</include>
-            </includes>
+            <excludes>
+                <exclude>org.elasticsearch</exclude>
+            </excludes>
         </dependencySet>
     </dependencySets>
     <files>
