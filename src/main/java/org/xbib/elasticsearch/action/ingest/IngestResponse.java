@@ -20,9 +20,9 @@ public class IngestResponse extends ActionResponse implements Iterable<IngestRep
 
     protected IngestLeaderShardResponse leaderResponse = new IngestLeaderShardResponse();
 
-    protected List<IngestReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList<>());
+    protected List<IngestReplicaShardResponse> replicaResponses = Collections.synchronizedList(new LinkedList<IngestReplicaShardResponse>());
 
-    protected List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList<>());
+    protected List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList<IngestActionFailure>());
 
     protected long tookInMillis;
 

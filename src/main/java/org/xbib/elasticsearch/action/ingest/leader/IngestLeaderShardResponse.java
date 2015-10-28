@@ -29,7 +29,7 @@ public class IngestLeaderShardResponse extends ActionResponse {
 
     private List<ActionRequest<?>> actionRequests = new LinkedList<ActionRequest<?>>();
 
-    private List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList<>());
+    private List<IngestActionFailure> failures = Collections.synchronizedList(new LinkedList<IngestActionFailure>());
 
     public IngestLeaderShardResponse() {
         super();
