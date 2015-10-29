@@ -12,6 +12,7 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;
@@ -36,7 +37,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     public void testNewIndexNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
-                .init(client("1"))
+                .init(client("1"), new LongAdderIngestMetric())
                 .newIndex("test");
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -49,7 +50,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
     public void testMappingNodeClient() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(5))
-                .init(client("1"));
+                .init(client("1"), new LongAdderIngestMetric());
         XContentBuilder builder = jsonBuilder()
                 .startObject()
                 .startObject("test")
@@ -78,7 +79,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .init(client("1"))
+                .init(client("1"), new LongAdderIngestMetric())
                 .newIndex("test");
         try {
             client.deleteIndex("test");
@@ -106,7 +107,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(10))
-                .init(client("1"))
+                .init(client("1"), new LongAdderIngestMetric())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {
@@ -135,7 +136,7 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
-                .init(client("1"))
+                .init(client("1"), new LongAdderIngestMetric())
                 .newIndex("test")
                 .startBulk("test", -1, 1000);
         try {

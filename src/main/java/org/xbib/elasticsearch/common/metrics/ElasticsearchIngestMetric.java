@@ -1,5 +1,6 @@
-package org.xbib.elasticsearch.support.client;
+package org.xbib.elasticsearch.common.metrics;
 
+import org.xbib.elasticsearch.support.client.IngestMetric;
 import org.xbib.metrics.CounterMetric;
 import org.xbib.metrics.MeanMetric;
 
@@ -8,18 +9,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Metric {
+public class ElasticsearchIngestMetric implements IngestMetric {
 
     private final Set<String> indexNames = new HashSet<String>();
     private final Map<String, Long> startBulkRefreshIntervals = new HashMap<String, Long>();
     private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<String, Long>();
-    private final MeanMetric totalIngest = new MeanMetric();
-    private final CounterMetric totalIngestSizeInBytes = new CounterMetric();
-    private final CounterMetric currentIngest = new CounterMetric();
-    private final CounterMetric currentIngestNumDocs = new CounterMetric();
-    private final CounterMetric submitted = new CounterMetric();
-    private final CounterMetric succeeded = new CounterMetric();
-    private final CounterMetric failed = new CounterMetric();
+    private final MeanMetric totalIngest = new ElasticsearchMeanMetric();
+    private final CounterMetric totalIngestSizeInBytes = new ElasticsearchCounterMetric();
+    private final CounterMetric currentIngest = new ElasticsearchCounterMetric();
+    private final CounterMetric currentIngestNumDocs = new ElasticsearchCounterMetric();
+    private final CounterMetric submitted = new ElasticsearchCounterMetric();
+    private final CounterMetric succeeded = new ElasticsearchCounterMetric();
+    private final CounterMetric failed = new ElasticsearchCounterMetric();
     private long started;
 
     public MeanMetric getTotalIngest() {
@@ -50,7 +51,7 @@ public class Metric {
         return failed;
     }
 
-    public Metric start() {
+    public ElasticsearchIngestMetric start() {
         this.started = System.nanoTime();
         return this;
     }
@@ -59,7 +60,7 @@ public class Metric {
         return System.nanoTime() - started;
     }
 
-    public Metric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
+    public ElasticsearchIngestMetric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
         synchronized (indexNames) {
             indexNames.add(indexName);
             startBulkRefreshIntervals.put(indexName, startRefreshInterval);
@@ -72,7 +73,7 @@ public class Metric {
         return indexNames.contains(indexName);
     }
 
-    public Metric removeBulk(String indexName) {
+    public ElasticsearchIngestMetric removeBulk(String indexName) {
         synchronized (indexNames) {
             indexNames.remove(indexName);
         }

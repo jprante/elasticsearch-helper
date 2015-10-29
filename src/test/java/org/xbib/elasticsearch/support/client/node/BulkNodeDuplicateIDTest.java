@@ -7,6 +7,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
@@ -26,7 +27,7 @@ public class BulkNodeDuplicateIDTest extends AbstractNodeRandomTestHelper {
     public void testDuplicateDocIDs() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .init(client("1"))
+                .init(client("1"), new LongAdderIngestMetric())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {

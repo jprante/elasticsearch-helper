@@ -27,7 +27,7 @@ import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.ConfigHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.Metric;
+import org.xbib.elasticsearch.support.client.IngestMetric;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +48,7 @@ public class BulkNodeClient implements Ingest {
 
     private BulkProcessor bulkProcessor;
 
-    private Metric metric;
+    private IngestMetric metric;
 
     private Throwable throwable;
 
@@ -79,21 +79,24 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient init(ElasticsearchClient client) {
+    public BulkNodeClient init(ElasticsearchClient client, final IngestMetric metric) {
         this.client = client;
-        if (metric == null) {
-            this.metric = new Metric();
+        this.metric = metric;
+        if (metric != null) {
             metric.start();
         }
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
-                metric.getCurrentIngest().inc();
-                long l = metric.getCurrentIngest().count();
-                int n = request.numberOfActions();
-                metric.getSubmitted().inc(n);
-                metric.getCurrentIngestNumDocs().inc(n);
-                metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                long l = -1;
+                if (metric != null) {
+                    metric.getCurrentIngest().inc();
+                    l = metric.getCurrentIngest().count();
+                    int n = request.numberOfActions();
+                    metric.getSubmitted().inc(n);
+                    metric.getCurrentIngestNumDocs().inc(n);
+                    metric.getTotalIngestSizeInBytes().inc(request.estimatedSizeInBytes());
+                }
                 logger.debug("before bulk [{}] [actions={}] [bytes={}] [concurrent requests={}]",
                         executionId,
                         request.numberOfActions(),
@@ -103,36 +106,45 @@ public class BulkNodeClient implements Ingest {
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
-                metric.getCurrentIngest().dec();
-                long l = metric.getCurrentIngest().count();
-                metric.getSucceeded().inc(response.getItems().length);
-                metric.getFailed().inc(0);
-                metric.getTotalIngest().inc(response.getTookInMillis());
+                long l = -1;
+                if (metric != null) {
+                    metric.getCurrentIngest().dec();
+                    l = metric.getCurrentIngest().count();
+                    metric.getSucceeded().inc(response.getItems().length);
+                    metric.getFailed().inc(0);
+                    metric.getTotalIngest().inc(response.getTookInMillis());
+                }
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
                     if (itemResponse.isFailed()) {
                         n++;
-                        metric.getSucceeded().dec(1);
-                        metric.getFailed().inc(1);
+                        if (metric != null) {
+                            metric.getSucceeded().dec(1);
+                            metric.getFailed().inc(1);
+                        }
                     }
                 }
                 logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms] {} concurrent requests",
                         executionId,
-                        metric.getSucceeded().count(),
-                        metric.getFailed().count(),
+                        metric != null ? metric.getSucceeded().count() : -1,
+                        metric != null ? metric.getFailed().count() : -1,
                         response.getTook().millis(),
                         l);
                 if (n > 0) {
                     logger.error("bulk [{}] failed with {} failed items, failure message = {}",
                             executionId, n, response.buildFailureMessage());
                 } else {
-                    metric.getCurrentIngestNumDocs().dec(response.getItems().length);
+                    if (metric != null) {
+                        metric.getCurrentIngestNumDocs().dec(response.getItems().length);
+                    }
                 }
             }
 
             @Override
             public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
-                metric.getCurrentIngest().dec();
+                if (metric != null) {
+                    metric.getCurrentIngest().dec();
+                }
                 throwable = failure;
                 closed = true;
                 logger.error("after bulk [" + executionId + "] error", failure);
@@ -157,12 +169,12 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient init(Settings settings) {
+    public BulkNodeClient init(Settings settings, IngestMetric metric) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public BulkNodeClient init(Map<String, String> settings) {
+    public BulkNodeClient init(Map<String, String> settings, IngestMetric metric) {
         throw new UnsupportedOperationException();
     }
 
@@ -172,14 +184,8 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public Metric getMetric() {
+    public IngestMetric getMetric() {
         return metric;
-    }
-
-    @Override
-    public BulkNodeClient setMetric(Metric metric) {
-        this.metric = metric;
-        return this;
     }
 
     @Override
@@ -525,10 +531,6 @@ public class BulkNodeClient implements Ingest {
 
     public void mapping(String type, String mapping) throws IOException {
         configHelper.mapping(type, mapping);
-    }
-
-    public Map<String, String> getMappings() {
-        return configHelper.mappings();
     }
 
 }

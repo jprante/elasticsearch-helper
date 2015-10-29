@@ -1,42 +1,16 @@
 package org.xbib.metrics;
 
-import java.util.concurrent.atomic.LongAdder;
+public interface MeanMetric extends Metric {
 
-/**
- */
-public class MeanMetric implements Metric {
+    void inc(long n);
 
-    private final LongAdder counter = new LongAdder();
-    private final LongAdder sum = new LongAdder();
+    void dec(long n);
 
-    public void inc(long n) {
-        counter.increment();
-        sum.add(n);
-    }
+    long count();
 
-    public void dec(long n) {
-        counter.decrement();
-        sum.add(-n);
-    }
+    long sum();
 
-    public long count() {
-        return counter.sum();
-    }
+    double mean() ;
 
-    public long sum() {
-        return sum.sum();
-    }
-
-    public double mean() {
-        long count = count();
-        if (count > 0) {
-            return sum.sum() / (double) count;
-        }
-        return 0.0;
-    }
-
-    public void clear() {
-        counter.reset();
-        sum.reset();
-    }
+    void clear();
 }

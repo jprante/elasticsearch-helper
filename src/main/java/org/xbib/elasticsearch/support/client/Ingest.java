@@ -60,13 +60,13 @@ public interface Ingest {
     Ingest update(String index, String type, String id, String source);
 
     /**
-     * Initialize, create new ingest client.
+     * Initialize new ingest client, and set up metrics.
      *
      * @param client the Elasticsearch client
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(ElasticsearchClient client) throws IOException;
+    Ingest init(ElasticsearchClient client, IngestMetric metric) throws IOException;
 
     /**
      * Initialize, create new ingest client.
@@ -75,7 +75,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(Settings settings) throws IOException;
+    Ingest init(Settings settings, IngestMetric metric) throws IOException;
 
     /**
      * Initialize, create new ingest client.
@@ -84,7 +84,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(Map<String, String> settings) throws IOException;
+    Ingest init(Map<String, String> settings, IngestMetric metric) throws IOException;
 
     /**
      * Return Elasticsearch client to execute actions
@@ -352,15 +352,7 @@ public interface Ingest {
      *
      * @return metric
      */
-    Metric getMetric();
-
-    /**
-     * Set metric
-     *
-     * @param metric the metric
-     * @return this ingest
-     */
-    Ingest setMetric(Metric metric);
+    IngestMetric getMetric();
 
     /**
      * Returns true is a throwable exists

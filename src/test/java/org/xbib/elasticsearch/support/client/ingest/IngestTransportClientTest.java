@@ -7,6 +7,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
@@ -49,7 +50,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settingsForIndex, null);
         ingest.shutdown();
         if (ingest.hasThrowable()) {
@@ -65,7 +66,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .put("index.number_of_replicas", 1)
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settings, null);
         try {
             ingest.deleteIndex("test")
@@ -90,7 +91,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settings, null);
         try {
             ingest.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
@@ -120,7 +121,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {
@@ -157,7 +158,7 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
         final IngestTransportClient ingest = new IngestTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600))
                 .maxActionsPerRequest(maxactions)
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settings, null)
                 .startBulk("test", -1, 1000);
         try {

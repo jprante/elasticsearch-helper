@@ -19,7 +19,7 @@ import org.xbib.elasticsearch.action.ingest.IngestResponse;
 import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.Metric;
+import org.xbib.elasticsearch.support.client.IngestMetric;
 
 import java.io.IOException;
 import java.util.Map;
@@ -70,18 +70,18 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public IngestTransportClient init(ElasticsearchClient client) throws IOException {
-        return this.init(findSettings());
+    public IngestTransportClient init(ElasticsearchClient client, IngestMetric metric) throws IOException {
+        return this.init(findSettings(), metric);
     }
 
     @Override
-    public IngestTransportClient init(Map<String, String> settings) throws IOException {
-        return this.init(Settings.settingsBuilder().put(settings).build());
+    public IngestTransportClient init(Map<String, String> settings, IngestMetric metric) throws IOException {
+        return this.init(Settings.settingsBuilder().put(settings).build(), metric);
     }
 
     @Override
-    public IngestTransportClient init(Settings settings) throws IOException {
-        super.init(settings);
+    public IngestTransportClient init(Settings settings, final IngestMetric metric) throws IOException {
+        super.init(settings, metric);
         resetSettings();
         IngestProcessor.IngestListener ingestListener = new IngestProcessor.IngestListener() {
             @Override
@@ -147,14 +147,8 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
     }
 
     @Override
-    public Metric getMetric() {
+    public IngestMetric getMetric() {
         return metric;
-    }
-
-    @Override
-    public IngestTransportClient setMetric(Metric metric) {
-        this.metric = metric;
-        return this;
     }
 
     @Override

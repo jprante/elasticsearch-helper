@@ -15,6 +15,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.util.Map;
@@ -45,7 +46,7 @@ public class BulkTransportReplicaTest extends AbstractNodeRandomTestHelper {
                 .build();
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test1", settingsTest1, null)
                 .newIndex("test2", settingsTest2, null);
         try {

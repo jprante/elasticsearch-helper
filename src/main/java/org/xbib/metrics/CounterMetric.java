@@ -1,30 +1,14 @@
 package org.xbib.metrics;
 
-import org.elasticsearch.common.metrics.Metric;
+public interface CounterMetric {
 
-import java.util.concurrent.atomic.LongAdder;
+    void inc();
 
-public class CounterMetric implements Metric {
+    void inc(long n);
 
-    private final LongAdder counter = new LongAdder();
+    void dec();
 
-    public void inc() {
-        counter.increment();
-    }
+    void dec(long n);
 
-    public void inc(long n) {
-        counter.add(n);
-    }
-
-    public void dec() {
-        counter.decrement();
-    }
-
-    public void dec(long n) {
-        counter.add(-n);
-    }
-
-    public long count() {
-        return counter.sum();
-    }
+    long count();
 }

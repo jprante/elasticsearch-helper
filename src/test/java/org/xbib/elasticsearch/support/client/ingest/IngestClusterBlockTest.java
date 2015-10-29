@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -56,7 +57,7 @@ public class IngestClusterBlockTest extends AbstractNodeTestHelper {
                 .build();
         final IngestTransportClient ingest = new IngestTransportClient();
         try {
-            ingest.init(getSettings())
+            ingest.init(getSettings(), new LongAdderIngestMetric())
                     .newIndex("test", settings, null);
             IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
             XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();

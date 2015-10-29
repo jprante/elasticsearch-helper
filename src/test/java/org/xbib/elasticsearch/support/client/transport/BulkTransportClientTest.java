@@ -10,6 +10,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
     public void testBulkClient() throws IOException {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test");
         if (client.hasThrowable()) {
             logger.error("error", client.getThrowable());
@@ -59,7 +60,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test");
         try {
             client.deleteIndex("test");
@@ -87,7 +88,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test");
         try {
             for (int i = 0; i < NUM_ACTIONS; i++) {
@@ -124,7 +125,7 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
         final BulkTransportClient client = new BulkTransportClient()
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
                 .maxActionsPerRequest(maxactions)
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("test", settingsForIndex, null)
                 .startBulk("test", -1, 1000);
         try {

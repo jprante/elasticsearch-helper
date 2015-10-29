@@ -6,6 +6,7 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
         mappings.put("typename","{\"properties\":{\"message\":{\"type\":\"string\"}}}");
         final IngestTransportClient ingest = new IngestTransportClient();
         try {
-            ingest.init(getSettings())
+            ingest.init(getSettings(), new LongAdderIngestMetric())
                     .newIndex("test", settingsForIndex, mappings);
             GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices("test");
             GetMappingsResponse getMappingsResponse =

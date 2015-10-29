@@ -8,6 +8,7 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +36,7 @@ public class BulkTransportUpdateReplicaLevelTest extends AbstractNodeRandomTestH
                 .build();
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .init(getSettings())
+                .init(getSettings(), new LongAdderIngestMetric())
                 .newIndex("replicatest", settings, null);
 
         ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));

@@ -7,6 +7,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.xbib.elasticsearch.support.client.IngestMetric;
 import org.xbib.elasticsearch.support.client.transport.BulkTransportClient;
 
 import java.io.IOException;
@@ -24,17 +25,17 @@ public class MockTransportClient extends BulkTransportClient {
     }
 
     @Override
-    public MockTransportClient init(ElasticsearchClient client) {
+    public MockTransportClient init(ElasticsearchClient client, IngestMetric metric) {
         return this;
     }
 
     @Override
-    public MockTransportClient init(Map<String, String> settings) {
+    public MockTransportClient init(Map<String, String> settings, IngestMetric metric) {
         return this;
     }
 
     @Override
-    public MockTransportClient init(Settings settings) {
+    public MockTransportClient init(Settings settings, IngestMetric metric) {
         return this;
     }
 

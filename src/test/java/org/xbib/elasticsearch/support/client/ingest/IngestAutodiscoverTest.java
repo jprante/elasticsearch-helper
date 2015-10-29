@@ -7,6 +7,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.junit.Test;
+import org.xbib.elasticsearch.support.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class IngestAutodiscoverTest extends AbstractNodeTestHelper {
         }
         final IngestTransportClient ingest = new IngestTransportClient();
         try {
-            ingest.init(settingsBuilder.build())
+            ingest.init(settingsBuilder.build(), new LongAdderIngestMetric())
                     .newIndex("test");
         } finally {
             ingest.shutdown();

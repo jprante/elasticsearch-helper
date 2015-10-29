@@ -20,7 +20,7 @@ import org.xbib.elasticsearch.support.client.BaseIngestTransportClient;
 import org.xbib.elasticsearch.support.client.BulkProcessorHelper;
 import org.xbib.elasticsearch.support.client.ClientHelper;
 import org.xbib.elasticsearch.support.client.Ingest;
-import org.xbib.elasticsearch.support.client.Metric;
+import org.xbib.elasticsearch.support.client.IngestMetric;
 
 import java.io.IOException;
 import java.util.Map;
@@ -71,18 +71,18 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public BulkTransportClient init(ElasticsearchClient client) throws IOException {
-        return this.init(findSettings());
+    public BulkTransportClient init(ElasticsearchClient client, IngestMetric metric) throws IOException {
+        return this.init(findSettings(), metric);
     }
 
     @Override
-    public BulkTransportClient init(Map<String, String> settings) throws IOException {
-        return this.init(Settings.settingsBuilder().put(settings).build());
+    public BulkTransportClient init(Map<String, String> settings, IngestMetric metric) throws IOException {
+        return this.init(Settings.settingsBuilder().put(settings).build(), metric);
     }
 
     @Override
-    public BulkTransportClient init(Settings settings) throws IOException {
-        super.init(settings);
+    public BulkTransportClient init(Settings settings, final IngestMetric metric) throws IOException {
+        super.init(settings, metric);
         resetSettings();
         BulkProcessor.Listener listener = new BulkProcessor.Listener() {
             @Override
@@ -154,14 +154,8 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
     }
 
     @Override
-    public Metric getMetric() {
+    public IngestMetric getMetric() {
         return metric;
-    }
-
-    @Override
-    public BulkTransportClient setMetric(Metric metric) {
-        this.metric = metric;
-        return this;
     }
 
     @Override

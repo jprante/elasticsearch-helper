@@ -16,18 +16,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public abstract class BaseIngestTransportClient extends BaseTransportClient
-        implements Ingest {
+public abstract class BaseIngestTransportClient extends BaseTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getName());
 
-    protected Metric metric;
+    protected IngestMetric metric;
 
     @Override
-    public Ingest init(Settings settings) throws IOException {
+    public Ingest init(Settings settings, IngestMetric metric) throws IOException {
         super.createClient(settings);
-        if (metric == null) {
-            this.metric = new Metric();
+        this.metric = metric;
+        if (metric != null) {
             metric.start();
         }
         return this;
