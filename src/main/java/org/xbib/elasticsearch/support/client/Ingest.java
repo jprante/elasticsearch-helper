@@ -63,6 +63,7 @@ public interface Ingest {
      * Initialize new ingest client, and set up metrics.
      *
      * @param client the Elasticsearch client
+     * @param metric a metric or null
      * @return this ingest
      * @throws IOException if client could not get created
      */
@@ -72,6 +73,7 @@ public interface Ingest {
      * Initialize, create new ingest client.
      *
      * @param settings settings
+     * @param metric a metric or null
      * @return this ingest
      * @throws IOException if client could not get created
      */
@@ -81,6 +83,7 @@ public interface Ingest {
      * Initialize, create new ingest client.
      *
      * @param settings settings
+     * @param metric a metric or null
      * @return this ingest
      * @throws IOException if client could not get created
      */

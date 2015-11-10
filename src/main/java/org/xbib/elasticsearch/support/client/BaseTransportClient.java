@@ -11,6 +11,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.xbib.elasticsearch.common.GcMonitor;
 import org.xbib.elasticsearch.support.network.NetworkUtils;
 
 import java.io.IOException;
@@ -29,6 +30,8 @@ public abstract class BaseTransportClient {
     protected TransportClient client;
 
     protected ConfigHelper configHelper = new ConfigHelper();
+
+    protected GcMonitor gcmon;
 
     private boolean isShutdown;
 
@@ -58,6 +61,7 @@ public abstract class BaseTransportClient {
                 throw new NoNodeAvailableException("no cluster nodes available, check settings "
                         + settings.getAsMap());
             }
+            this.gcmon = new GcMonitor(settings, client.threadPool());
         }
     }
 
