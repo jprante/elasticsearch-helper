@@ -70,7 +70,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.compiler.version>1.7</java.compiler.version>
         <elasticsearch.version>1.5.2</elasticsearch.version>
-        <jackson.version>2.5.2</jackson.version><!-- must match Jackson version in Elasticsearch -->
     </properties>
 
     <dependencies>
@@ -81,15 +80,6 @@
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <type>jar</type>
-            <version>${jackson.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>junit</groupId>
