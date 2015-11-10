@@ -6,15 +6,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
-    <artifactId>elasticsearch-support</artifactId>
-    <version>1.5.2.5</version>
+    <artifactId>elasticsearch-helper</artifactId>
+    <version>1.5.2.6</version>
 
     <packaging>jar</packaging>
 
-    <name>elasticsearch-support</name>
-    <description>Support classes for Elasticsearch</description>
+    <name>elasticsearch-helper</name>
+    <description>Helper classes for Elasticsearch</description>
 
-    <url>http://github.com/jprante/elasticsearch-support</url>
+    <url>http://github.com/jprante/elasticsearch-helper</url>
 
     <inceptionYear>2013</inceptionYear>
 
@@ -35,14 +35,14 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:jprante/elasticsearch-support.git</connection>
-        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-support.git</developerConnection>
-        <url>http://github.com/jprante/elasticsearch-support</url>
+        <connection>scm:git:git@github.com:jprante/elasticsearch-helper.git</connection>
+        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-helper.git</developerConnection>
+        <url>http://github.com/jprante/elasticsearch-helper</url>
     </scm>
 
     <issueManagement>
         <system>Github Issue Tracker</system>
-        <url>https://github.com/jprante/elasticsearch-support/issues</url>
+        <url>https://github.com/jprante/elasticsearch-helper/issues</url>
     </issueManagement>
 
     <distributionManagement>
@@ -70,6 +70,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.compiler.version>1.7</java.compiler.version>
         <elasticsearch.version>1.5.2</elasticsearch.version>
+        <jackson.version>2.5.2</jackson.version><!-- must match Jackson version in Elasticsearch -->
     </properties>
 
     <dependencies>
@@ -80,22 +81,15 @@
             <type>jar</type>
             <scope>compile</scope>
         </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <type>jar</type>
-            <version>2.5.2</version>
-            <scope>compile</scope>
-        </dependency>
-
+        <!--
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <type>jar</type>
-            <version>2.5.2</version>
+            <version>${jackson.version}</version>
             <scope>compile</scope>
         </dependency>
+        -->
 
         <dependency>
             <groupId>junit</groupId>
@@ -177,7 +171,7 @@
                     <skip>false</skip>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <includes>
-                        <include>**/SupportTestSuite*</include>
+                        <include>**/HelperTestSuite*</include>
                     </includes>
                     <systemProperties>
                         <property>

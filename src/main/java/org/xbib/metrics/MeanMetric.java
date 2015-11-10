@@ -1,40 +1,16 @@
 package org.xbib.metrics;
 
-/**
- */
-public class MeanMetric implements Metric {
+public interface MeanMetric extends Metric {
 
-    private final LongAdder counter = new LongAdder();
-    private final LongAdder sum = new LongAdder();
+    void inc(long n);
 
-    public void inc(long n) {
-        counter.increment();
-        sum.add(n);
-    }
+    void dec(long n);
 
-    public void dec(long n) {
-        counter.decrement();
-        sum.add(-n);
-    }
+    long count();
 
-    public long count() {
-        return counter.sum();
-    }
+    long sum();
 
-    public long sum() {
-        return sum.sum();
-    }
+    double mean() ;
 
-    public double mean() {
-        long count = count();
-        if (count > 0) {
-            return sum.sum() / (double) count;
-        }
-        return 0.0;
-    }
-
-    public void clear() {
-        counter.reset();
-        sum.reset();
-    }
+    void clear();
 }

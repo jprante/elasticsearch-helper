@@ -1,6 +1,6 @@
 ![Support](https://github.com/jprante/elasticsearch-support/raw/master/src/site/resources/support.jpg)
 
-# Elasticsearch support plugin
+# Elasticsearch helper plugin
 
 This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
@@ -10,52 +10,27 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 | Elasticsearch version    | Plugin      | Release date |
 | ------------------------ | ----------- | -------------|
-| 1.3.1                    | 1.3.0.3     | Aug  8, 2014 |
-| 1.3.1                    | 1.3.0.1     | Aug  4, 2014 |
-| 1.3.0                    | 1.3.0.0     | Jul 23, 2014 |
-| 1.2.2                    | 1.2.2.0     | Jul 19, 2014 |
-| 1.2.1                    | 1.2.1.0     | Jun  4, 2014 |
-| 1.2.0                    | 1.2.0.1     | May 28, 2014 |
-| 1.2.0                    | 1.2.0.0     | May 22, 2014 |
-| 1.1.0                    | 1.1.0.7     | May 11, 2014 |
-| 1.0.0.RC2                | 1.0.0.RC2.1 | Feb  3, 2014 |
-| 0.90.7                   | 0.90.7.1    | Dec  3, 2013 |
-| 0.20.6                   | 0.20.6.1    | Feb  4, 2014 |
-| 0.19.11.2                | 0.19.11.2   | Feb  1, 2013 |
+
 
 ## Installation
 
-    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.3.0.3/elasticsearch-support-1.3.0.3.zip
+    ./bin/plugin -install helper -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-helper/1.5.2.6/elasticsearch-helper-1.5.2.6.zip
 
 Do not forget to restart the node after installing.
 
-## Checksum
-
-| File                                          | SHA1                                     |
-| --------------------------------------------- | -----------------------------------------|
-| elasticsearch-support-1.3.0.3.zip             | 51d9c4197feebe6bfc73131d3fef3b75d7768103 |
-| elasticsearch-support-1.3.0.2.zip             | (retracted) |
-| elasticsearch-support-1.3.0.1.zip             | 9d7b72bff66fba8aa9c9e031603c141b6f28d861 |
-| elasticsearch-support-1.3.0.0.zip             | c5135e5675cf304868759413b87d94f858bce302 |
-| elasticsearch-support-1.2.2.0.zip             | 45f21f8ef93d347de7e8b1f08565243df79b81e0 |
-| elasticsearch-support-1.2.1.0.zip             | 2013659572ea9e81249e3c80493e967d4940f44a |
-| elasticsearch-support-1.2.0.1.zip             | 8c4a631eb62e1616e886451c582f60a3248927c0 |
-| elasticsearch-support-1.2.0.0.zip             | 63de4c8dbfb15ae3db0f6e7f2708cc3710c88ca6 |
-| elasticsearch-support-1.1.0.7.zip             | 05e7194cd2a1f508d071bf74564621176684e598 |
-
 ## Project docs
 
-The Maven project site is available at `Github <http://jprante.github.io/elasticsearch-support>`_
+The Maven project site is available at `Github <http://jprante.github.io/elasticsearch-helper>`_
 
 ## Issues
 
-All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-support/issues>`_
+All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-helper/issues>`_
 
 # License
 
-Elasticsearch Support Plugin
+Elasticsearch Helper Plugin
 
-Copyright (C) 2013 Jörg Prante
+Copyright (C) 2015 Jörg Prante
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -1,0 +1,68 @@
+package org.xbib.elasticsearch.helper.client.ingest;
+
+import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.cluster.block.ClusterBlockException;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.discovery.MasterNotDiscoveredException;
+import org.junit.Before;
+import org.junit.Test;
+
+import org.xbib.elasticsearch.action.ingest.IngestAction;
+import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
+import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
+import org.xbib.elasticsearch.helper.helper.AbstractNodeTestHelper;
+
+import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+
+public class IngestClusterBlockTest extends AbstractNodeTestHelper {
+
+    @Before
+    public void startNodes() throws Exception {
+        setClusterName();
+        startNode("1");
+        findNodeAddress();
+        // do not wait for green health state
+        logger.info("ready");
+    }
+
+    protected Settings getNodeSettings() {
+        return ImmutableSettings
+                .settingsBuilder()
+                .put(super.getNodeSettings())
+                .put("discovery.zen.minimum_master_nodes", 2) // block until we have two nodes
+                .build();
+    }
+
+    @Test(expected = ClusterBlockException.class)
+    public void testClusterBlockNodeClient() throws Exception {
+            IngestRequestBuilder brb = client("1").prepareExecute(IngestAction.INSTANCE);
+            XContentBuilder builder = jsonBuilder().startObject().field("field", "value").endObject();
+            String jsonString = builder.string();
+            IndexRequestBuilder irb = client("1").prepareIndex()
+                    .setIndex("test").setType("test").setId("1").setSource(jsonString);
+            brb.add(irb);
+            brb.execute().actionGet();
+    }
+
+    @Test(expected = MasterNotDiscoveredException.class)
+    public void testClusterBlockTransportClient() throws Exception {
+        final IngestTransportClient ingest = new IngestTransportClient();
+        try {
+            ingest.init(getSettings(), new LongAdderIngestMetric())
+                    .newIndex("test");
+            IngestRequestBuilder brb = ingest.client().prepareExecute(IngestAction.INSTANCE);
+            XContentBuilder builder = jsonBuilder().startObject().field("field", "bvalue").endObject();
+            String jsonString = builder.string();
+            IndexRequestBuilder irb = ingest.client().prepareIndex()
+                    .setIndex("test").setType("test").setId("1").setSource(jsonString);
+            brb.add(irb);
+            brb.execute().actionGet();
+        } finally {
+            ingest.shutdown();
+        }
+    }
+
+
+}

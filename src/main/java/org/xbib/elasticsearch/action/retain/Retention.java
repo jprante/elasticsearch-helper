@@ -9,7 +9,7 @@ import org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.xbib.elasticsearch.support.client.Ingest;
+import org.xbib.elasticsearch.helper.client.Ingest;
 
 import java.util.ArrayList;
 import java.util.List;
