@@ -1,7 +1,8 @@
-package org.xbib.elasticsearch.common.metrics;
+package org.xbib.elasticsearch.helper.client;
 
-import org.xbib.elasticsearch.helper.client.IngestMetric;
 import org.xbib.metrics.CounterMetric;
+import org.xbib.metrics.LongAdderCounterMetric;
+import org.xbib.metrics.LongAdderMeanMetric;
 import org.xbib.metrics.MeanMetric;
 
 import java.util.HashMap;
@@ -9,18 +10,18 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ElasticsearchIngestMetric implements IngestMetric {
+public class LongAdderIngestMetric implements IngestMetric {
 
     private final Set<String> indexNames = new HashSet<String>();
     private final Map<String, Long> startBulkRefreshIntervals = new HashMap<String, Long>();
     private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<String, Long>();
-    private final MeanMetric totalIngest = new ElasticsearchMeanMetric();
-    private final CounterMetric totalIngestSizeInBytes = new ElasticsearchCounterMetric();
-    private final CounterMetric currentIngest = new ElasticsearchCounterMetric();
-    private final CounterMetric currentIngestNumDocs = new ElasticsearchCounterMetric();
-    private final CounterMetric submitted = new ElasticsearchCounterMetric();
-    private final CounterMetric succeeded = new ElasticsearchCounterMetric();
-    private final CounterMetric failed = new ElasticsearchCounterMetric();
+    private final MeanMetric totalIngest = new LongAdderMeanMetric();
+    private final CounterMetric totalIngestSizeInBytes = new LongAdderCounterMetric();
+    private final CounterMetric currentIngest = new LongAdderCounterMetric();
+    private final CounterMetric currentIngestNumDocs = new LongAdderCounterMetric();
+    private final CounterMetric submitted = new LongAdderCounterMetric();
+    private final CounterMetric succeeded = new LongAdderCounterMetric();
+    private final CounterMetric failed = new LongAdderCounterMetric();
     private long started;
 
     public MeanMetric getTotalIngest() {
@@ -51,7 +52,7 @@ public class ElasticsearchIngestMetric implements IngestMetric {
         return failed;
     }
 
-    public ElasticsearchIngestMetric start() {
+    public LongAdderIngestMetric start() {
         this.started = System.nanoTime();
         return this;
     }
@@ -60,7 +61,7 @@ public class ElasticsearchIngestMetric implements IngestMetric {
         return System.nanoTime() - started;
     }
 
-    public ElasticsearchIngestMetric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
+    public LongAdderIngestMetric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
         synchronized (indexNames) {
             indexNames.add(indexName);
             startBulkRefreshIntervals.put(indexName, startRefreshInterval);
@@ -73,7 +74,7 @@ public class ElasticsearchIngestMetric implements IngestMetric {
         return indexNames.contains(indexName);
     }
 
-    public ElasticsearchIngestMetric removeBulk(String indexName) {
+    public LongAdderIngestMetric removeBulk(String indexName) {
         synchronized (indexNames) {
             indexNames.remove(indexName);
         }

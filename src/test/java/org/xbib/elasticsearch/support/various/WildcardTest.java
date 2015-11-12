@@ -9,8 +9,8 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.node.Node;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.client.ClientHelper;
-import org.xbib.elasticsearch.support.network.NetworkUtils;
+import org.xbib.elasticsearch.helper.client.ClientHelper;
+import org.xbib.elasticsearch.helper.network.NetworkUtils;
 
 import static org.elasticsearch.client.Requests.deleteIndexRequest;
 import static org.elasticsearch.client.Requests.indexRequest;

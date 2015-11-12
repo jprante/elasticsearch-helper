@@ -2,10 +2,10 @@ package suites;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.xbib.elasticsearch.support.client.transport.BulkTransportClientTest;
-import org.xbib.elasticsearch.support.client.transport.BulkTransportDuplicateIDTest;
-import org.xbib.elasticsearch.support.client.transport.BulkTransportReplicaTest;
-import org.xbib.elasticsearch.support.client.transport.BulkTransportUpdateReplicaLevelTest;
+import org.xbib.elasticsearch.helper.client.transport.BulkTransportClientTest;
+import org.xbib.elasticsearch.helper.client.transport.BulkTransportDuplicateIDTest;
+import org.xbib.elasticsearch.helper.client.transport.BulkTransportReplicaTest;
+import org.xbib.elasticsearch.helper.client.transport.BulkTransportUpdateReplicaLevelTest;
 
 @RunWith(ListenerSuite.class)
 @Suite.SuiteClasses({

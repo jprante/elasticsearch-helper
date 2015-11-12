@@ -4,14 +4,15 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.xbib.elasticsearch.common.jvm.GarbageCollector;
 import org.xbib.elasticsearch.common.jvm.JvmInfo;
 import org.xbib.elasticsearch.common.jvm.MemoryPool;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.common.unit.TimeValue.timeValueSeconds;
 
@@ -23,11 +24,9 @@ public class GcMonitor {
 
     private volatile ScheduledFuture<?> scheduledFuture;
 
-    public GcMonitor(Settings settings, ThreadPool threadPool) {
-
+    public GcMonitor(Settings settings) {
         this.enabled = settings.getAsBoolean("monitor.gc.enabled", true);
         TimeValue interval = settings.getAsTime("monitor.gc.interval", timeValueSeconds(1));
-
         this.gcThresholds = new HashMap<>();
         Map<String, Settings> gcThresholdGroups = settings.getGroups("monitor.gc.level");
         for (Map.Entry<String, Settings> entry : gcThresholdGroups.entrySet()) {
@@ -50,10 +49,9 @@ public class GcMonitor {
         if (!gcThresholds.containsKey("default")) {
             gcThresholds.put("default", new GcThreshold("default", 10000, 5000, 2000));
         }
-
         logger.debug("enabled [{}], interval [{}], gc_threshold [{}]", enabled, interval, this.gcThresholds);
         if (enabled) {
-            scheduledFuture = threadPool.scheduleWithFixedDelay(new GcMonitorThread(), interval);
+            scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleWithFixedDelay(new GcMonitorThread(), 0L, interval.seconds(), TimeUnit.SECONDS);
         }
     }
 

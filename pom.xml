@@ -6,15 +6,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
-    <artifactId>elasticsearch-support</artifactId>
-    <version>2.0.0.2</version>
+    <artifactId>elasticsearch-helper</artifactId>
+    <version>2.0.0.3</version>
 
     <packaging>jar</packaging>
 
-    <name>elasticsearch-support</name>
-    <description>Support classes for Elasticsearch</description>
+    <name>elasticsearch-helper</name>
+    <description>Helper classes for Elasticsearch</description>
 
-    <url>http://github.com/jprante/elasticsearch-support</url>
+    <url>http://github.com/jprante/elasticsearch-helper</url>
 
     <inceptionYear>2013</inceptionYear>
 
@@ -35,14 +35,14 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@github.com:jprante/elasticsearch-support.git</connection>
-        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-support.git</developerConnection>
-        <url>http://github.com/jprante/elasticsearch-support</url>
+        <connection>scm:git:git@github.com:jprante/elasticsearch-helper.git</connection>
+        <developerConnection>scm:git:git@github.com:jprante/elasticsearch-helper.git</developerConnection>
+        <url>http://github.com/jprante/elasticsearch-helper</url>
     </scm>
 
     <issueManagement>
         <system>Github Issue Tracker</system>
-        <url>https://github.com/jprante/elasticsearch-support/issues</url>
+        <url>https://github.com/jprante/elasticsearch-helper/issues</url>
     </issueManagement>
 
     <distributionManagement>

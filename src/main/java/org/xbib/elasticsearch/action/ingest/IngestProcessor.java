@@ -10,7 +10,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.xbib.elasticsearch.support.client.Ingest;
+import org.xbib.elasticsearch.helper.client.Ingest;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;

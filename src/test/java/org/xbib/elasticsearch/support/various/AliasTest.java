@@ -15,8 +15,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.Node;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.client.ClientHelper;
-import org.xbib.elasticsearch.support.network.NetworkUtils;
+import org.xbib.elasticsearch.helper.client.ClientHelper;
+import org.xbib.elasticsearch.helper.network.NetworkUtils;
 
 import java.io.IOException;
 
