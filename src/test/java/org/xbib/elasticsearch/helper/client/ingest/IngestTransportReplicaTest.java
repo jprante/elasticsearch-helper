@@ -16,7 +16,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.junit.Test;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import java.util.Map;
 
@@ -24,16 +24,17 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestTransportReplicaTest extends AbstractNodeRandomTestHelper {
+public class IngestTransportReplicaTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportReplicaTest.class.getSimpleName());
 
     @Test
     public void testReplicaLevel() throws Exception {
 
-        // we need nodes for quorum. 4 nodes => quorum = 2
+        // we need nodes for quorum. 4 nodes => replica leve = 3, quorum = 2
         startNode("2");
         startNode("3");
+        startNode("4");
 
         Settings settingsTest1 = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
@@ -66,7 +67,8 @@ public class IngestTransportReplicaTest extends AbstractNodeRandomTestHelper {
             ingest.refreshIndex("test2");
             SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(ingest.client(), SearchAction.INSTANCE)
                     .setIndices("test1", "test2")
-                    .setQuery(matchAllQuery());
+                    .setQuery(matchAllQuery())
+                    .setSize(0);
             long hits = searchRequestBuilder.execute().actionGet().getHits().getTotalHits();
             logger.info("query total hits={}", hits);
             assertEquals(2468, hits);

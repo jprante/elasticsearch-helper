@@ -8,13 +8,14 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;
+import org.xbib.elasticsearch.util.NodeTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestTransportUpdateReplicaLevelTest extends AbstractNodeRandomTestHelper {
+public class IngestTransportUpdateReplicaLevelTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportUpdateReplicaLevelTest.class.getSimpleName());
 

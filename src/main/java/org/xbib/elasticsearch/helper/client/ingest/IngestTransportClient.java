@@ -16,7 +16,7 @@ import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
 import org.xbib.elasticsearch.action.ingest.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
-import org.xbib.elasticsearch.helper.client.BaseIngestTransportClient;
+import org.xbib.elasticsearch.helper.client.BaseMetricTransportClient;
 import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.Ingest;
 import org.xbib.elasticsearch.helper.client.IngestMetric;
@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Ingest transport client
  */
-public class IngestTransportClient extends BaseIngestTransportClient implements Ingest {
+public class IngestTransportClient extends BaseMetricTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getName());
 
@@ -222,7 +222,7 @@ public class IngestTransportClient extends BaseIngestTransportClient implements 
         }
         try {
             metric.getCurrentIngest().inc();
-            ingestProcessor.add(new IndexRequest(index).type(type).id(id).create(false).source(source));
+            ingestProcessor.add(new IndexRequest(index).type(type).id(id).source(source));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;

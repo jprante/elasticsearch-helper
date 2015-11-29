@@ -8,13 +8,13 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.junit.Test;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import java.io.IOException;
 
 import static org.junit.Assert.assertFalse;
 
-public class IngestAutodiscoverTest extends AbstractNodeTestHelper {
+public class IngestAutodiscoverTest extends NodeTestUtils {
 
     @Test
     public void testAutodiscover() throws IOException {

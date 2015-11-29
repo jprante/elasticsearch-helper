@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.various;
+package org.xbib.elasticsearch.helper;
 
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.index.IndexAction;
@@ -9,9 +9,9 @@ import org.elasticsearch.client.Requests;
 import org.junit.Test;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
-import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
-public class IngestRequestTest extends AbstractNodeTestHelper {
+public class IngestRequestTest extends NodeTestUtils {
 
     @Test(expected = ActionRequestValidationException.class)
     public void testIngest1() {

@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.various;
+package org.xbib.elasticsearch.helper;
 
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.logging.ESLogger;

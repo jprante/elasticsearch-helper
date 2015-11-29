@@ -23,7 +23,6 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.helper.client.BulkProcessorHelper;
 import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.ConfigHelper;
 import org.xbib.elasticsearch.helper.client.Ingest;
@@ -32,6 +31,8 @@ import org.xbib.elasticsearch.helper.client.IngestMetric;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Node client support
@@ -328,16 +329,18 @@ public class BulkNodeClient implements Ingest {
             throw new ElasticsearchException("client is closed");
         }
         logger.debug("flushing bulk processor");
-        BulkProcessorHelper.flush(bulkProcessor);
+        bulkProcessor.flush();
         return this;
     }
 
     @Override
-    public BulkNodeClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
+    public BulkNodeClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException, ExecutionException {
         if (closed) {
             throw new ElasticsearchException("client is closed");
         }
-        BulkProcessorHelper.waitFor(bulkProcessor, maxWaitTime);
+        while (!bulkProcessor.awaitClose(maxWaitTime.getMillis(), TimeUnit.MILLISECONDS)) {
+            logger.warn("still waiting for responses");
+        }
         return this;
     }
 

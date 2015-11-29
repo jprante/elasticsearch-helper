@@ -16,9 +16,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public abstract class BaseIngestTransportClient extends BaseTransportClient implements Ingest {
+public abstract class BaseMetricTransportClient extends BaseTransportClient implements Ingest {
 
-    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseIngestTransportClient.class.getName());
+    private final static ESLogger logger = ESLoggerFactory.getLogger(BaseMetricTransportClient.class.getName());
 
     protected IngestMetric metric;
 
@@ -33,12 +33,12 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public BaseIngestTransportClient newIndex(String index) {
+    public BaseMetricTransportClient newIndex(String index) {
         return newIndex(index, null, null);
     }
 
     @Override
-    public BaseIngestTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
+    public BaseMetricTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
         configHelper.reset();
         configHelper.setting(settings);
         configHelper.mapping(type, mappings);
@@ -46,7 +46,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public BaseIngestTransportClient newIndex(String index, Settings settings, Map<String, String> mappings) {
+    public BaseMetricTransportClient newIndex(String index, Settings settings, Map<String, String> mappings) {
         if (client == null) {
             logger.warn("no client for create index");
             return this;
@@ -73,7 +73,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public BaseIngestTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
+    public BaseMetricTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
         PutMappingRequestBuilder putMappingRequestBuilder =
                 new PutMappingRequestBuilder(client(), PutMappingAction.INSTANCE)
                         .setIndices(index)
@@ -85,7 +85,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public synchronized BaseIngestTransportClient deleteIndex(String index) {
+    public synchronized BaseMetricTransportClient deleteIndex(String index) {
         if (client == null) {
             logger.warn("no client for delete index");
             return this;
@@ -100,7 +100,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
         return this;
     }
 
-    public BaseIngestTransportClient putMapping(String index) {
+    public BaseMetricTransportClient putMapping(String index) {
         if (client == null) {
             logger.warn("no client for put mapping");
             return this;
@@ -110,13 +110,13 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public BaseIngestTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
+    public BaseMetricTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
         ClientHelper.waitForCluster(client, status, timeValue);
         return this;
     }
 
     @Override
-    public BaseIngestTransportClient startBulk(String index, long startRefreshIntervalSeconds, long stopRefreshIntervalSeconds) throws IOException {
+    public BaseMetricTransportClient startBulk(String index, long startRefreshIntervalSeconds, long stopRefreshIntervalSeconds) throws IOException {
         if (metric == null) {
             return this;
         }
@@ -128,7 +128,7 @@ public abstract class BaseIngestTransportClient extends BaseTransportClient impl
     }
 
     @Override
-    public BaseIngestTransportClient stopBulk(String index) throws IOException {
+    public BaseMetricTransportClient stopBulk(String index) throws IOException {
         if (metric == null) {
             return this;
         }

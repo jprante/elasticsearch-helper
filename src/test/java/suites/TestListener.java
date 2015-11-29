@@ -25,12 +25,12 @@ public class TestListener extends RunListener {
     }
 
     public void testFinished(Description description) throws java.lang.Exception {
-        logger.info("finished execution of {} {}",
+        logger.info("successful execution of {} {}",
                 description.getClassName(), description.getMethodName());
     }
 
     public void testFailure(Failure failure) throws java.lang.Exception {
-        logger.info("execution of tests failed: {}",
+        logger.info("failed execution of tests: {}",
                 failure.getMessage());
     }
 

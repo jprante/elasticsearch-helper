@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.support.various;
+package org.xbib.elasticsearch.helper;
 
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -9,13 +9,13 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import static org.elasticsearch.client.Requests.indexRequest;
 import static org.elasticsearch.client.Requests.refreshRequest;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class SearchTest extends AbstractNodeTestHelper {
+public class SearchTest extends NodeTestUtils {
 
     @Test
     public void testSearch() throws Exception {

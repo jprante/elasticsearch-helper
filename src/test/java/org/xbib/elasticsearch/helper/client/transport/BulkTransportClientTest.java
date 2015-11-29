@@ -1,8 +1,8 @@
 
 package org.xbib.elasticsearch.helper.client.transport;
 
-import org.elasticsearch.action.count.CountAction;
-import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -11,18 +11,20 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.xbib.elasticsearch.util.NodeTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
@@ -70,6 +72,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             client.waitForResponses(TimeValue.timeValueSeconds(30));
         } catch (InterruptedException e) {
             // ignore
+        } catch (ExecutionException e) {
+            logger.error(e.getMessage(), e);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
@@ -98,6 +102,8 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             client.waitForResponses(TimeValue.timeValueSeconds(30));
         } catch (InterruptedException e) {
             // ignore
+        } catch (ExecutionException e) {
+            logger.error(e.getMessage(), e);
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
@@ -161,10 +167,12 @@ public class BulkTransportClientTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(client.hasThrowable());
             client.refreshIndex("test");
-            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(client.client(), CountAction.INSTANCE)
-                    .setQuery(QueryBuilders.matchAllQuery());
+            SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client.client(), SearchAction.INSTANCE)
+                    .setIndices("_all") // to avoid NPE at org.elasticsearch.action.search.SearchRequest.writeTo(SearchRequest.java:580)
+                    .setQuery(QueryBuilders.matchAllQuery())
+                    .setSize(0);
             assertEquals(maxthreads * maxloop,
-                    countRequestBuilder.execute().actionGet().getCount());
+                    searchRequestBuilder.execute().actionGet().getHits().getTotalHits());
             client.shutdown();
         }
     }

@@ -1,5 +1,5 @@
 
-package org.xbib.elasticsearch.support.various;
+package org.xbib.elasticsearch.helper;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;

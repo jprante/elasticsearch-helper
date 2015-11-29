@@ -3,8 +3,8 @@ package org.xbib.elasticsearch.helper.client.node;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsAction;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
-import org.elasticsearch.action.count.CountAction;
-import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
@@ -13,11 +13,12 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 
 import org.junit.Test;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +26,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
+public class BulkNodeClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClientTest.class.getSimpleName());
 
@@ -91,6 +92,8 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
             // ignore
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
+        } catch (ExecutionException e) {
+            logger.error(e.getMessage(), e);
         } finally {
             logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
             assertEquals(1, client.getMetric().getTotalIngest().count());
@@ -172,10 +175,10 @@ public class BulkNodeClientTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(client.hasThrowable());
             client.refreshIndex("test");
-            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(client.client(), CountAction.INSTANCE)
-                    .setQuery(QueryBuilders.matchAllQuery());
+            SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client.client(), SearchAction.INSTANCE)
+                    .setQuery(QueryBuilders.matchAllQuery()).setSize(0);
             assertEquals(maxthreads * maxloop,
-                    countRequestBuilder.execute().actionGet().getCount());
+                    searchRequestBuilder.execute().actionGet().getHits().getTotalHits());
             client.shutdown();
         }
     }

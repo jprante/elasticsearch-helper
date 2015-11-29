@@ -16,19 +16,20 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
-import org.xbib.elasticsearch.helper.client.BaseIngestTransportClient;
-import org.xbib.elasticsearch.helper.client.BulkProcessorHelper;
+import org.xbib.elasticsearch.helper.client.BaseMetricTransportClient;
 import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.Ingest;
 import org.xbib.elasticsearch.helper.client.IngestMetric;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Transport client using the BulkProcessor of Elasticsearch
  */
-public class BulkTransportClient extends BaseIngestTransportClient implements Ingest {
+public class BulkTransportClient extends BaseMetricTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getName());
 
@@ -327,12 +328,12 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             return this;
         }
         logger.debug("flushing bulk processor");
-        BulkProcessorHelper.flush(bulkProcessor);
+        bulkProcessor.flush();
         return this;
     }
 
     @Override
-    public synchronized BulkTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException {
+    public synchronized BulkTransportClient waitForResponses(TimeValue maxWaitTime) throws InterruptedException, ExecutionException {
         if (closed) {
             throw new ElasticsearchException("client is closed");
         }
@@ -340,7 +341,7 @@ public class BulkTransportClient extends BaseIngestTransportClient implements In
             logger.warn("no client");
             return this;
         }
-        BulkProcessorHelper.waitFor(bulkProcessor, maxWaitTime);
+        bulkProcessor.awaitClose(maxWaitTime.getMillis(), TimeUnit.MILLISECONDS);
         return this;
     }
 

@@ -13,6 +13,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
@@ -303,7 +304,7 @@ public interface Ingest {
      * @return this ingest
      * @throws InterruptedException if wait is interrupted
      */
-    Ingest waitForResponses(TimeValue maxWait) throws InterruptedException;
+    Ingest waitForResponses(TimeValue maxWait) throws InterruptedException, ExecutionException;
 
     /**
      * Refresh the index.

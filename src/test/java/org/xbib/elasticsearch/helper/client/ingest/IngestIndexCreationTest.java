@@ -7,14 +7,14 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.Settings;
 import org.junit.Test;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class IngestIndexCreationTest extends AbstractNodeRandomTestHelper {
+public class IngestIndexCreationTest extends NodeTestUtils {
 
     @Test
     public void testIngestCreation() throws Exception {

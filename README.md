@@ -1,15 +1,14 @@
-![Support](https://github.com/jprante/elasticsearch-support/raw/master/src/site/resources/support.jpg)
+![Helper](https://github.com/jprante/elasticsearch-helper/raw/master/src/site/resources/helper.jpg)
 
-# Elasticsearch support plugin
+# Elasticsearch helper plugin
 
 This plugin offers some Java helper classes for easier use of Elasticsearch API.
-
-![Travis](https://travis-ci.org/jprante/elasticsearch-support.png)
 
 ## Compatibility matrix
 
 | Elasticsearch     | Plugin         | Release date |
 | ----------------- | -------------- | -------------|
+| 2.1.0             | 2.1.0.0        | Nov 29, 2015 |
 | 2.0.0             | 2.0.0.2        | Nov  3, 2015 |
 | 2.0.0             | 2.0.0.1        | Oct 29, 2015 |
 | 2.0.0             | 2.0.0.0        | Oct 28, 2015 |
@@ -32,25 +31,25 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 ## Installation 1.x
 
-    ./bin/plugin -install support -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/1.6.0.0/elasticsearch-support-1.6.0.0.zip
+    ./bin/plugin -install helper -url http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-helper/1.6.0.0/elasticsearch-helper-1.6.0.0.zip
 
 ## Installation 2.x
 
-    ./bin/plugin install http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-support/2.0.0.0/elasticsearch-support-2.0.0.0-plugin.zip
+    ./bin/plugin install http://xbib.org/repository/org/xbib/elasticsearch/plugin/elasticsearch-helper/2.1.0.0/elasticsearch-helper-2.1.0.0-plugin.zip
 
 Do not forget to restart the node after installing.
 
 ## Project docs
 
-The Maven project site is available at `Github <http://jprante.github.io/elasticsearch-support>`_
+The Maven project site is available at `Github <http://jprante.github.io/elasticsearch-helper>`_
 
 ## Issues
 
-All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-support/issues>`_
+All feedback is welcome! If you find issues, please post them at `Github <https://github.com/jprante/elasticsearch-helper/issues>`_
 
 # License
 
-Elasticsearch Support Plugin
+Elasticsearch Helper Plugin (formerly Elasticsearch Support Plugin)
 
 Copyright (C) 2013 Jörg Prante
 

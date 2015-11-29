@@ -1,14 +1,13 @@
 
 package org.xbib.elasticsearch.helper.client.ingest;
 
-import org.elasticsearch.action.count.CountAction;
-import org.elasticsearch.action.count.CountRequestBuilder;
+import org.elasticsearch.action.search.SearchAction;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -20,10 +19,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
+import org.xbib.elasticsearch.util.NodeTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
+public class IngestTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
@@ -194,10 +195,12 @@ public class IngestTransportClientTest extends AbstractNodeRandomTestHelper {
             }
             assertFalse(ingest.hasThrowable());
             ingest.refreshIndex("test");
-            CountRequestBuilder countRequestBuilder = new CountRequestBuilder(ingest.client(), CountAction.INSTANCE)
-                    .setQuery(QueryBuilders.matchAllQuery());
+            SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(ingest.client(), SearchAction.INSTANCE)
+                    .setIndices("_all") // to avoid NPE
+                    .setQuery(QueryBuilders.matchAllQuery())
+                    .setSize(0);
             assertEquals(maxthreads * maxloop,
-                    countRequestBuilder.execute().actionGet().getCount());
+                    searchRequestBuilder.execute().actionGet().getHits().getTotalHits());
             ingest.shutdown();
         }
     }

@@ -7,11 +7,11 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.junit.Before;
 import org.junit.Test;
-import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class BulkNodeClusterBlockTest extends AbstractNodeTestHelper {
+public class BulkNodeClusterBlockTest extends NodeTestUtils {
 
     @Before
     public void startNodes() {

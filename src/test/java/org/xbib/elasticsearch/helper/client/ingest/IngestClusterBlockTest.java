@@ -12,11 +12,11 @@ import org.junit.Test;
 import org.xbib.elasticsearch.action.ingest.IngestAction;
 import org.xbib.elasticsearch.action.ingest.IngestRequestBuilder;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
-public class IngestClusterBlockTest extends AbstractNodeTestHelper {
+public class IngestClusterBlockTest extends NodeTestUtils {
 
     @Before
     public void startNodes() {

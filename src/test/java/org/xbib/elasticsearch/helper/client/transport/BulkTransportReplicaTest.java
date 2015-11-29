@@ -16,7 +16,7 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.indexing.IndexingStats;
 import org.junit.Test;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
-import org.xbib.elasticsearch.support.helper.AbstractNodeRandomTestHelper;
+import org.xbib.elasticsearch.util.NodeTestUtils;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class BulkTransportReplicaTest extends AbstractNodeRandomTestHelper {
+public class BulkTransportReplicaTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportReplicaTest.class.getSimpleName());
 
@@ -34,6 +34,7 @@ public class BulkTransportReplicaTest extends AbstractNodeRandomTestHelper {
         // we need nodes for replica levels
         startNode("2");
         startNode("3");
+        startNode("4");
 
         Settings settingsTest1 = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
