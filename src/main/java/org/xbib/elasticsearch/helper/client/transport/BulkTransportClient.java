@@ -133,7 +133,9 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             public void afterBulk(long executionId, BulkRequest requst, Throwable failure) {
                 metric.getCurrentIngest().dec();
                 throwable = failure;
-                closed = true;
+                if (!ignoreBulkErrors) {
+                    closed = true;
+                }
                 logger.error("bulk [" + executionId + "] error", failure);
             }
         };

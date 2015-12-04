@@ -29,38 +29,6 @@ public interface Ingest {
     TimeValue DEFAULT_FLUSH_INTERVAL = TimeValue.timeValueSeconds(30);
 
     /**
-     * Index document
-     *
-     * @param index  the index
-     * @param type   the type
-     * @param id     the id
-     * @param source the source
-     * @return this
-     */
-    Ingest index(String index, String type, String id, String source);
-
-    /**
-     * Delete document
-     *
-     * @param index the index
-     * @param type  the type
-     * @param id    the id
-     * @return this ingest
-     */
-    Ingest delete(String index, String type, String id);
-
-    /**
-     * Update document
-     *
-     * @param index  the index
-     * @param type   the type
-     * @param id     the id
-     * @param source the source
-     * @return this
-     */
-    Ingest update(String index, String type, String id, String source);
-
-    /**
      * Initialize new ingest client, and set up metrics.
      *
      * @param client the Elasticsearch client
@@ -96,6 +64,38 @@ public interface Ingest {
      * @return Elasticsearch client
      */
     ElasticsearchClient client();
+
+    /**
+     * Index document
+     *
+     * @param index  the index
+     * @param type   the type
+     * @param id     the id
+     * @param source the source
+     * @return this
+     */
+    Ingest index(String index, String type, String id, String source);
+
+    /**
+     * Delete document
+     *
+     * @param index the index
+     * @param type  the type
+     * @param id    the id
+     * @return this ingest
+     */
+    Ingest delete(String index, String type, String id);
+
+    /**
+     * Update document
+     *
+     * @param index  the index
+     * @param type   the type
+     * @param id     the id
+     * @param source the source
+     * @return this
+     */
+    Ingest update(String index, String type, String id, String source);
 
     /**
      * Set the maximum number of actions per request

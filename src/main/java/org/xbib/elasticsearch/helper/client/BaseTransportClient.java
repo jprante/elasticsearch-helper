@@ -26,6 +26,8 @@ public abstract class BaseTransportClient extends BaseClient {
 
     protected GcMonitor gcmon;
 
+    protected boolean ignoreBulkErrors;
+
     private boolean isShutdown;
 
     protected void createClient(Settings settings) throws IOException {
@@ -54,6 +56,7 @@ public abstract class BaseTransportClient extends BaseClient {
                         + settings.getAsMap());
             }
             this.gcmon = new GcMonitor(settings);
+            this.ignoreBulkErrors = settings.getAsBoolean("ignoreBulkErrors", true);
         }
     }
 
