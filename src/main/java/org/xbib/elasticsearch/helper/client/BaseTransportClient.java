@@ -30,6 +30,8 @@ public abstract class BaseTransportClient {
 
     protected ConfigHelper configHelper = new ConfigHelper();
 
+    protected boolean ignoreBulkErrors;
+
     protected void createClient(Map<String,String> settings) throws IOException {
         createClient(ImmutableSettings.settingsBuilder().put(settings).build());
     }
@@ -49,6 +51,7 @@ public abstract class BaseTransportClient {
             this.client = new TransportClient(settings, false);
             Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
             connect(addrs, settings.getAsBoolean("autodiscover", false));
+            this.ignoreBulkErrors = settings.getAsBoolean("ignoreBulkErrors", true);
         }
     }
 
