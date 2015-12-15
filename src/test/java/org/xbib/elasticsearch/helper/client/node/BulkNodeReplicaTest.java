@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.helper.client.node;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
@@ -40,16 +41,18 @@ public class BulkNodeReplicaTest extends NodeTestUtils {
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 3)
                 .build();
+
         Settings settingsTest2 = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
                 .build();
 
         final BulkNodeClient ingest = new BulkNodeClient()
-                .init(client("1"), new LongAdderIngestMetric())
-                .newIndex("test1", settingsTest1, null)
-                .newIndex("test2", settingsTest2, null);
+                .init(client("1"), new LongAdderIngestMetric());
         try {
+            ingest.newIndex("test1", settingsTest1, null)
+                    .newIndex("test2", settingsTest2, null);
+            ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 1234; i++) {
                 ingest.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }

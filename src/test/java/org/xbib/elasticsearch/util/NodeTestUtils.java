@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.elasticsearch.common.settings.Settings.settingsBuilder;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 public class NodeTestUtils {
 
@@ -74,14 +73,17 @@ public class NodeTestUtils {
             try {
                 deleteFiles();
                 logger.info("data files wiped");
+                Thread.sleep(2000L);
             } catch (IOException e) {
                 logger.error(e.getMessage(), e);
+            } catch (InterruptedException e) {
+                // ignore
             }
         }
     }
 
     protected void setClusterName() {
-        this.cluster = "test-helper-plugin-cluster-"
+        this.cluster = "test-helper-cluster-"
                 + NetworkUtils.getLocalAddress().getHostName()
                 + "-" + System.getProperty("user.name")
                 + "-" + counter.incrementAndGet();
@@ -115,24 +117,8 @@ public class NodeTestUtils {
                 .build();
     }
 
-
     protected String getHome() {
         return System.getProperty("path.home");
-    }
-
-    public static Node createNode() {
-        Settings nodeSettings = Settings.settingsBuilder()
-                .put("path.home", System.getProperty("path.home"))
-                .put("index.number_of_shards", 1)
-                .put("index.number_of_replica", 0)
-                .build();
-        // ES 2.1 renders NodeBuilder as useless
-        //Node node = NodeBuilder.nodeBuilder().settings(nodeSettings).local(true).build().start();
-        Set<Class<? extends Plugin>> plugins = new HashSet<>();
-        plugins.add(HelperPlugin.class);
-        Node node = new MockNode(nodeSettings, plugins);
-        node.start();
-        return node;
     }
 
     public void startNode(String id) throws IOException {

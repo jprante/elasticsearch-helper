@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.helper.client.node;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
@@ -7,6 +8,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.unit.TimeValue;
 import org.junit.Test;
+import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
 import org.xbib.elasticsearch.util.NodeTestUtils;
 
@@ -27,9 +29,10 @@ public class BulkNodeDuplicateIDTest extends NodeTestUtils {
     public void testDuplicateDocIDs() throws Exception {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .init(client("1"), new LongAdderIngestMetric())
-                .newIndex("test");
+                .init(client("1"), new LongAdderIngestMetric());
         try {
+            ClientHelper.waitForCluster(client.client(), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(10));
+            client.newIndex("test");
             for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }

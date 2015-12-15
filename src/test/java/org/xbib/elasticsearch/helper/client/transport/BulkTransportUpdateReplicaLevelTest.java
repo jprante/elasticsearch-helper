@@ -36,12 +36,11 @@ public class BulkTransportUpdateReplicaLevelTest extends NodeTestUtils {
                 .build();
 
         final BulkTransportClient ingest = new BulkTransportClient()
-                .init(getSettings(), new LongAdderIngestMetric())
-                .newIndex("replicatest", settings, null);
-
-        ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+                .init(getSettings(), new LongAdderIngestMetric());
 
         try {
+            ingest.newIndex("replicatest", settings, null);
+            ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 12345; i++) {
                 ingest.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
@@ -52,7 +51,6 @@ public class BulkTransportUpdateReplicaLevelTest extends NodeTestUtils {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            ingest.deleteIndex("replicatest");
             ingest.shutdown();
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());

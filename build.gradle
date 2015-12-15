@@ -1,0 +1,120 @@
+
+def xbibGroup = 'org.xbib.elasticsearch.plugin'
+def xbibVersion = '2.1.0.1'
+
+group = xbibGroup
+version = xbibVersion
+
+println "Current JVM: " + org.gradle.internal.jvm.Jvm.current()
+
+ext {
+    versions = [
+            'log4j': '2.5',
+            'junit' : '4.12',
+            'elasticsearch' : '2.1.0',
+            'jna' : '4.1.0'
+    ]
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    jcenter()
+    maven {
+        url "http://xbib.org/repository"
+    }
+}
+configurations {
+    providedCompile
+    releaseJars
+    wagon
+}
+dependencies {
+    compile "org.elasticsearch:elasticsearch:${versions.elasticsearch}"
+    testCompile "net.java.dev.jna:jna:${versions.jna}"
+    testCompile "junit:junit:${versions.junit}"
+    testCompile "org.apache.logging.log4j:log4j-slf4j-impl:${versions.log4j}"
+    testCompile "org.apache.logging.log4j:log4j-core:${versions.log4j}"
+    wagon 'org.apache.maven.wagon:wagon-ssh-external:2.10'
+}
+compileJava {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+test {
+    systemProperties['path.home'] = System.getProperty("user.dir")
+    testLogging {
+        showStandardStreams = false
+        exceptionFormat = 'full'
+    }
+}
+task buildDevelJar(type: Jar, dependsOn: [':classes']) {
+    from sourceSets.main.output
+    include 'org/xbib/**'
+    include 'META-INF/**'
+    exclude 'es-plugin.properties'
+    archiveName = project.property('name') + '-' + project.property('version') + '-devel.jar'
+}
+task buildPluginJar(type: Jar, dependsOn: [':buildDevelJar']) {
+    from sourceSets.main.output
+    include 'org/xbib/**'
+    include 'META-INF/**'
+    include 'es-plugin.properties'
+    archiveName = project.property('name') + '-' + project.property('version') + '.jar'
+}
+task buildPluginZip(type: Zip, dependsOn: [':buildPluginJar']) {
+    from files(libsDir)
+    from configurations.releaseJars
+    classifier = 'plugin'
+    exclude project.property('name') + '-' + project.property('version') + "-devel.jar"
+}
+task unpackPlugin(type: Copy, dependsOn: [':buildPluginZip']) {
+    into 'plugins/helper'
+    from 'build/libs/' + project.property('name') + '-' + project.property('version')+ '.jar'
+    from configurations.releaseJars
+}
+task sourcesJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+    classifier 'sources'
+}
+artifacts {
+    archives sourcesJar
+    archives file: file('build/libs/' + project.property('name') + '-' + project.property('version') + '-devel.jar'),
+            name: project.property('name') + '-' + project.property('version'),
+            type: 'jar', classifier: 'devel'
+    archives buildPluginZip
+}
+uploadArchives {
+    repositories {
+        if (project.hasProperty("xbibUsername")) {
+            mavenDeployer {
+                configuration = configurations.wagon
+                repository(
+                        id: 'xbib.org',
+                        url: uri('scpexe://xbib.org/repository'),
+                        authentication: [userName: xbibUsername, privateKey: xbibPrivateKey]
+                )
+                pom.project {
+                    inceptionYear '2013'
+                    licenses {
+                        license {
+                            name 'The Apache Software License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                            distribution 'repo'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+clean {
+    delete "data"
+}
+test.mustRunAfter clean

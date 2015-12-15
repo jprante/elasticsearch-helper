@@ -27,9 +27,9 @@ public class BulkTransportDuplicateIDTest extends NodeTestUtils {
     public void testDuplicateDocIDs() throws Exception {
         final BulkTransportClient client = new BulkTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .init(getSettings(), new LongAdderIngestMetric())
-                .newIndex("test");
+                .init(getSettings(), new LongAdderIngestMetric());
         try {
+            client.newIndex("test");
             for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }

@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.helper.client.ingest;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.IndexStats;
@@ -47,10 +48,11 @@ public class IngestTransportReplicaTest extends NodeTestUtils {
                 .build();
 
         final IngestTransportClient ingest = new IngestTransportClient()
-                .init(getSettings(), new LongAdderIngestMetric())
-                .newIndex("test1", settingsTest1, null)
-                .newIndex("test2", settingsTest2, null);
+                .init(getSettings(), new LongAdderIngestMetric());
         try {
+            ingest.newIndex("test1", settingsTest1, null)
+                    .newIndex("test2", settingsTest2, null);
+            ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 1234; i++) {
                 ingest.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }

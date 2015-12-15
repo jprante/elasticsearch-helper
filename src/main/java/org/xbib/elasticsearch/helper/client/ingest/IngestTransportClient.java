@@ -43,7 +43,7 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
 
     private Throwable throwable;
 
-    private volatile boolean closed = false;
+    private volatile boolean closed;
 
     @Override
     public IngestTransportClient maxActionsPerRequest(int maxActionsPerRequest) {

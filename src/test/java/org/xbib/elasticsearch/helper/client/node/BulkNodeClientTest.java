@@ -12,6 +12,7 @@ import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.junit.Before;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
 
 import org.junit.Test;
@@ -33,6 +34,18 @@ public class BulkNodeClientTest extends NodeTestUtils {
     private final static Integer MAX_ACTIONS = 10000;
 
     private final static Integer NUM_ACTIONS = 12345;
+
+    @Before
+    public void startNodes() {
+        try {
+            super.startNodes();
+            startNode("2");
+            startNode("3");
+            logger.info("started 3 nodes");
+        } catch (Throwable t) {
+            logger.error("startNodes failed", t);
+        }
+    }
 
     @Test
     public void testNewIndexNodeClient() throws Exception {
@@ -80,10 +93,8 @@ public class BulkNodeClientTest extends NodeTestUtils {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(30))
-                .init(client("1"), new LongAdderIngestMetric())
-                .newIndex("test");
+                .init(client("1"), new LongAdderIngestMetric());
         try {
-            client.deleteIndex("test");
             client.newIndex("test");
             client.index("test", "test", "1", "{ \"name\" : \"Hello World\"}"); // single doc ingest
             client.flushIngest();
@@ -110,9 +121,9 @@ public class BulkNodeClientTest extends NodeTestUtils {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
                 .flushIngestInterval(TimeValue.timeValueSeconds(10))
-                .init(client("1"), new LongAdderIngestMetric())
-                .newIndex("test");
+                .init(client("1"), new LongAdderIngestMetric());
         try {
+            client.newIndex("test");
             for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
@@ -139,10 +150,10 @@ public class BulkNodeClientTest extends NodeTestUtils {
         final BulkNodeClient client = new BulkNodeClient()
                 .maxActionsPerRequest(maxactions)
                 .flushIngestInterval(TimeValue.timeValueSeconds(600)) // disable auto flush for this test
-                .init(client("1"), new LongAdderIngestMetric())
-                .newIndex("test")
-                .startBulk("test", -1, 1000);
+                .init(client("1"), new LongAdderIngestMetric());
         try {
+            client.newIndex("test")
+                    .startBulk("test", -1, 1000);
             ThreadPoolExecutor pool = EsExecutors.newFixed("bulk-nodeclient-test", maxthreads, 30,
                     EsExecutors.daemonThreadFactory("bulk-nodeclient-test"));
             final CountDownLatch latch = new CountDownLatch(maxthreads);

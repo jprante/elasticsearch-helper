@@ -17,9 +17,9 @@ import org.xbib.elasticsearch.helper.WildcardTest;
         IngestRequestTest.class,
         SearchTest.class,
         WildcardTest.class,
-        BulkNodeTestSuite.class,
-        BulkTransportTestSuite.class,
-        IngestTransportTestSuite.class
+        //BulkNodeTestSuite.class,
+        //BulkTransportTestSuite.class,
+        //IngestTransportTestSuite.class
 })
 public class AllTestSuite {
 }

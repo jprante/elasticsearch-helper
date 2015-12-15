@@ -45,7 +45,7 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
 
     private Throwable throwable;
 
-    private boolean closed = false;
+    private boolean closed;
 
     @Override
     public BulkTransportClient maxActionsPerRequest(int maxActionsPerRequest) {

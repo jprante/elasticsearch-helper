@@ -53,7 +53,7 @@ public class BulkNodeClient implements Ingest {
 
     private Throwable throwable;
 
-    private boolean closed = false;
+    private boolean closed;
 
     @Override
     public BulkNodeClient maxActionsPerRequest(int maxActionsPerRequest) {
@@ -159,13 +159,7 @@ public class BulkNodeClient implements Ingest {
             builder.setBulkSize(maxVolume);
         }
         this.bulkProcessor = builder.build();
-        try {
-            waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
-            closed = false;
-        } catch (IOException e) {
-            logger.error(e.getMessage(), e);
-            closed = true;
-        }
+        this.closed = false;
         return this;
     }
 

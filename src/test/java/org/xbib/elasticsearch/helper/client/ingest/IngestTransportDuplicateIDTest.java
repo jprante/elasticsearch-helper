@@ -1,5 +1,6 @@
 package org.xbib.elasticsearch.helper.client.ingest;
 
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
@@ -27,9 +28,10 @@ public class IngestTransportDuplicateIDTest extends NodeTestUtils {
     public void testDuplicateDocIDs() throws Exception {
         final IngestTransportClient client = new IngestTransportClient()
                 .maxActionsPerRequest(MAX_ACTIONS)
-                .init(getSettings(), new LongAdderIngestMetric())
-                .newIndex("test");
+                .init(getSettings(), new LongAdderIngestMetric());
         try {
+            client.newIndex("test");
+            client.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }
