@@ -119,6 +119,9 @@ task integrationTest(type: Test, dependsOn: ['unpackPlugin']) {
     testLogging.showStandardStreams = false
 }
 
+integrationTest.mustRunAfter test
+check.dependsOn integrationTest
+
 clean {
     delete "plugins"
 }
