@@ -13,15 +13,25 @@ import java.util.Set;
 public class LongAdderIngestMetric implements IngestMetric {
 
     private final Set<String> indexNames = new HashSet<String>();
+
     private final Map<String, Long> startBulkRefreshIntervals = new HashMap<String, Long>();
+
     private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<String, Long>();
+
     private final MeanMetric totalIngest = new LongAdderMeanMetric();
+
     private final CounterMetric totalIngestSizeInBytes = new LongAdderCounterMetric();
+
     private final CounterMetric currentIngest = new LongAdderCounterMetric();
+
     private final CounterMetric currentIngestNumDocs = new LongAdderCounterMetric();
+
     private final CounterMetric submitted = new LongAdderCounterMetric();
+
     private final CounterMetric succeeded = new LongAdderCounterMetric();
+
     private final CounterMetric failed = new LongAdderCounterMetric();
+
     private long started;
 
     public MeanMetric getTotalIngest() {

@@ -1,9 +1,9 @@
 package org.xbib.elasticsearch.helper.client;
 
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.ElasticsearchClient;
-import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
@@ -14,11 +14,10 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xbib.elasticsearch.common.GcMonitor;
 import org.xbib.elasticsearch.plugin.helper.HelperPlugin;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class BaseTransportClient extends BaseClient {
+abstract class BaseTransportClient extends BaseClient {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseTransportClient.class.getName());
 
@@ -30,7 +29,8 @@ public abstract class BaseTransportClient extends BaseClient {
 
     private boolean isShutdown;
 
-    protected void createClient(Settings settings) throws IOException {
+    @Override
+    protected void createClient(Settings settings) {
         if (client != null) {
             logger.warn("client is open, closing...");
             client.close();
@@ -50,16 +50,12 @@ public abstract class BaseTransportClient extends BaseClient {
                     .addPlugin(HelperPlugin.class)
                     .settings(settings)
                     .build();
-            Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
-            if (!connect(addrs, settings.getAsBoolean("autodiscover", false))) {
-                throw new NoNodeAvailableException("no cluster nodes available, check settings "
-                        + settings.getAsMap());
-            }
             this.gcmon = new GcMonitor(settings);
             this.ignoreBulkErrors = settings.getAsBoolean("ignoreBulkErrors", true);
         }
     }
 
+    @Override
     public ElasticsearchClient client() {
         return client;
     }
@@ -90,7 +86,9 @@ public abstract class BaseTransportClient extends BaseClient {
                 logger.info("connected to {}", nodes);
                 if (autodiscover) {
                     logger.info("trying to auto-discover all cluster nodes...");
-                    ClusterStateResponse clusterStateResponse = client.admin().cluster().state(new ClusterStateRequest()).actionGet();
+                    ClusterStateRequestBuilder clusterStateRequestBuilder =
+                            new ClusterStateRequestBuilder(client, ClusterStateAction.INSTANCE);
+                    ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
                     DiscoveryNodes discoveryNodes = clusterStateResponse.getState().getNodes();
                     for (DiscoveryNode node : discoveryNodes) {
                         logger.info("connecting to auto-discovered node {}", node);
@@ -108,5 +106,4 @@ public abstract class BaseTransportClient extends BaseClient {
         }
         return false;
     }
-
 }

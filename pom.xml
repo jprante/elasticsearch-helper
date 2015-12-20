@@ -7,12 +7,12 @@
 
     <groupId>org.xbib.elasticsearch.plugin</groupId>
     <artifactId>elasticsearch-helper</artifactId>
-    <version>2.1.0.1</version>
+    <version>2.1.1.0</version>
 
     <packaging>jar</packaging>
 
     <name>elasticsearch-helper</name>
-    <description>Helper classes for Elasticsearch</description>
+    <description>Helper plugin for Elasticsearch</description>
 
     <url>http://github.com/jprante/elasticsearch-helper</url>
 
@@ -78,8 +78,18 @@
     <properties>
         <github.global.server>github</github.global.server>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.compiler.version>1.7</java.compiler.version>
-        <elasticsearch.version>2.1.0</elasticsearch.version>
+        <java.version>1.7</java.version>
+        <elasticsearch.version>2.1.1</elasticsearch.version>
+        <descriptor.javaVersion>${java.version}</descriptor.javaVersion>
+        <descriptor.elasticsearchVersion>${elasticsearch.version}</descriptor.elasticsearchVersion>
+        <descriptor.classname>org.xbib.elasticsearch.plugin.helper.HelperPlugin</descriptor.classname>
+        <descriptor.name>helper</descriptor.name>
+        <descriptor.description>${project.description}</descriptor.description>
+        <descriptor.jvm>true</descriptor.jvm>
+        <descriptor.isolated>true</descriptor.isolated>
+        <descriptor.site>false</descriptor.site>
+        <descriptor.version>${project.version}</descriptor.version>
+
     </properties>
 
     <dependencies>
@@ -110,7 +120,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.4.1</version>
+            <version>2.5</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
@@ -118,7 +128,7 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.4.1</version>
+            <version>2.5</version>
             <type>jar</type>
             <scope>test</scope>
         </dependency>
@@ -130,19 +140,22 @@
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
                 <artifactId>wagon-ssh-external</artifactId>
-                <version>2.9</version>
+                <version>2.10</version>
             </extension>
         </extensions>
         <resources>
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/templates</directory>
                 <filtering>true</filtering>
                 <includes>
                     <include>plugin-descriptor.properties</include>
                 </includes>
             </resource>
             <resource>
-                <directory>${basedir}/src/main/resources</directory>
+                <directory>${basedir}/src/main/templates</directory>
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>plugin-descriptor.properties</exclude>
@@ -154,8 +167,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.3</version>
                 <configuration>
-                    <source>${java.compiler.version}</source>
-                    <target>${java.compiler.version}</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
                     <showDeprecation>true</showDeprecation>
                     <compilerArgument>-Xlint:all,-rawtypes</compilerArgument>
@@ -174,12 +187,12 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
+                <version>2.19</version>
                 <configuration>
                     <skip>false</skip>
                     <useSystemClassLoader>false</useSystemClassLoader>
                     <includes>
-                        <include>**/AllTestSuite*</include>
+                        <include>**/*TestSuite*</include>
                     </includes>
                     <systemProperties>
                         <property>
@@ -225,27 +238,6 @@
                 <configuration>
                     <encoding>UTF-8</encoding>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>buildnumber-maven-plugin</artifactId>
-                <version>1.2</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doCheck>false</doCheck>
-                    <doUpdate>false</doUpdate>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <version>2.7</version>
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -307,7 +299,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>2.18.1</version>
+                <version>2.19</version>
             </plugin>
         </plugins>
     </reporting>

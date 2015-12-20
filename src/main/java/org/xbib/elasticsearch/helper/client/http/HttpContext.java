@@ -4,8 +4,11 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.jboss.netty.channel.Channel;
+import org.jboss.netty.handler.codec.http.HttpChunk;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
+
+import java.util.List;
 
 public class HttpContext<Request extends ActionRequest, Response extends ActionResponse> {
 
@@ -14,6 +17,8 @@ public class HttpContext<Request extends ActionRequest, Response extends ActionR
     Request request;
 
     Response response;
+
+    List<HttpChunk> chunks;
 
     ActionListener<Response> listener;
 
@@ -35,6 +40,10 @@ public class HttpContext<Request extends ActionRequest, Response extends ActionR
 
     public HttpResponse getHttpResponse() {
         return httpResponse;
+    }
+
+    public List<HttpChunk> getChunks() {
+        return chunks;
     }
 
 }

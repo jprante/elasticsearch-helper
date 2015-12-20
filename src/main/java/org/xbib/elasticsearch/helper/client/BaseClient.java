@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class BaseClient {
+abstract class BaseClient {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseClient.class.getName());
 
@@ -24,13 +24,11 @@ public abstract class BaseClient {
 
     protected abstract void createClient(Settings settings) throws IOException;
 
-    protected abstract boolean connect(Collection<InetSocketTransportAddress> addresses, boolean autodiscover);
+    public abstract void shutdown();
 
     protected void createClient(Map<String, String> settings) throws IOException {
         createClient(Settings.builder().put(settings).build());
     }
-
-    public abstract void shutdown();
 
     protected Settings findSettings() {
         Settings.Builder settingsBuilder = Settings.settingsBuilder();

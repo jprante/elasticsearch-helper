@@ -7,7 +7,16 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.GenericAction;
+import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsAction;
+import org.elasticsearch.action.admin.cluster.settings.HttpClusterUpdateSettingsAction;
+import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
+import org.elasticsearch.action.admin.indices.refresh.HttpRefreshIndexAction;
+import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
+import org.elasticsearch.action.admin.indices.settings.put.HttpUpdateSettingsAction;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsAction;
 import org.elasticsearch.action.bulk.BulkAction;
+import org.elasticsearch.action.search.HttpSearchAction;
+import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.client.support.AbstractClient;
 import org.elasticsearch.client.support.Headers;
 import org.elasticsearch.common.settings.Settings;
@@ -23,15 +32,19 @@ import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.http.HttpChunkAggregator;
 import org.jboss.netty.handler.codec.http.HttpClientCodec;
 import org.jboss.netty.handler.codec.http.HttpContentDecompressor;
 import org.jboss.netty.handler.codec.http.HttpResponse;
-import org.xbib.elasticsearch.helper.client.http.bulk.HttpBulkAction;
+import org.elasticsearch.action.admin.indices.create.HttpCreateIndexAction;
+import org.elasticsearch.action.bulk.HttpBulkAction;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -39,7 +52,7 @@ public class HttpElasticsearchClient extends AbstractClient {
 
     final Map<String, ActionEntry> actionMap = Maps.newHashMap();
 
-    final Map<Channel, HttpContext> contextMap = Maps.newHashMap();
+    final Map<Channel, HttpContext> contextMap;
 
     static class ActionEntry<Request extends ActionRequest, Response extends ActionResponse> {
         public final GenericAction<Request, Response> action;
@@ -55,22 +68,33 @@ public class HttpElasticsearchClient extends AbstractClient {
 
     URL url;
 
-    class Builder {
+    public static class Builder {
 
         HttpElasticsearchClient client;
+
+        Settings settings;
+
+        URL url;
 
         String host;
 
         Integer port;
 
         Builder(Settings settings) {
-            ThreadPool threadpool = new ThreadPool("http_client_pool");
-            client = new HttpElasticsearchClient(settings, threadpool, null);
-            client.registerAction(BulkAction.INSTANCE, HttpBulkAction.class);
+            this.settings = settings;
+            try {
+                this.url = settings.get("url") != null ? new URL(settings.get("url")) : null;
+            } catch (MalformedURLException e) {
+                // ignore
+            }
+            if (url == null) {
+                this.host = settings.get("host", "127.0.0.1");
+                this.port = settings.getAsInt("port", 9200);
+            }
         }
 
         public Builder url(URL base) {
-            url = base;
+            this.url = base;
             return this;
         }
 
@@ -87,29 +111,41 @@ public class HttpElasticsearchClient extends AbstractClient {
         public HttpElasticsearchClient build() {
             if (url == null && host != null && port != null) {
                 try {
-                    url = new URL(host + ":" + port);
+                    url = new URL("http://" + host + ":" + port);
                 } catch (MalformedURLException e) {
-                    logger.error(e.getMessage(), e);
+                    throw new IllegalArgumentException("malformed url: " + host + ":" + port);
                 }
             }
             if (url == null) {
                 throw new IllegalArgumentException("no base URL given");
             }
-            client.bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
-                            Executors.newCachedThreadPool(),
-                            Executors.newCachedThreadPool()));
-            bootstrap.setPipelineFactory(new HttpClientPipelineFactory());
-            bootstrap.setOption("tcpNoDelay", true);
+            ThreadPool threadpool = new ThreadPool("http_client_pool");
+            client = new HttpElasticsearchClient(settings, threadpool, Headers.EMPTY, url);
+
+            client.registerAction(BulkAction.INSTANCE, HttpBulkAction.class);
+            client.registerAction(CreateIndexAction.INSTANCE, HttpCreateIndexAction.class);
+            client.registerAction(RefreshAction.INSTANCE, HttpRefreshIndexAction.class);
+            client.registerAction(ClusterUpdateSettingsAction.INSTANCE, HttpClusterUpdateSettingsAction.class);
+            client.registerAction(UpdateSettingsAction.INSTANCE, HttpUpdateSettingsAction.class);
+            client.registerAction(SearchAction.INSTANCE, HttpSearchAction.class);
+
             return client;
         }
     }
 
-    public Builder builder(Settings settings) {
+    public static Builder builder(Settings settings) {
         return new Builder(settings);
     }
 
-    public HttpElasticsearchClient(Settings settings, ThreadPool threadPool, Headers headers) {
+    private HttpElasticsearchClient(Settings settings, ThreadPool threadPool, Headers headers, URL url) {
         super(settings, threadPool, headers);
+        this.contextMap = Maps.newHashMap();
+        this.bootstrap = new ClientBootstrap(new NioClientSocketChannelFactory(
+                Executors.newCachedThreadPool(),
+                Executors.newCachedThreadPool()));
+        bootstrap.setPipelineFactory(new HttpClientPipelineFactory());
+        bootstrap.setOption("tcpNoDelay", true);
+        this.url = url;
     }
 
     @Override
@@ -121,14 +157,25 @@ public class HttpElasticsearchClient extends AbstractClient {
     @Override
     public <Request extends ActionRequest, Response extends ActionResponse, RequestBuilder extends ActionRequestBuilder<Request, Response, RequestBuilder>> void doExecute(Action<Request, Response, RequestBuilder> action, Request request, ActionListener<Response> listener) {
         ActionEntry entry = actionMap.get(action.name());
+        if (entry == null) {
+            throw new IllegalStateException("no action entry for " + action.name());
+        }
         HttpAction<Request, Response> httpAction = entry.httpAction;
         if (httpAction == null) {
             throw new IllegalStateException("failed to find action [" + action + "] to execute");
         }
         HttpContext<Request, Response> httpContext = new HttpContext();
+        httpContext.httpAction = httpAction;
+        httpContext.listener = listener;
+        httpContext.chunks = new LinkedList<>();
         httpContext.request = request;
-        httpContext.httpRequest = httpAction.createHttpRequest(this.url, request);
+        try {
+            httpContext.httpRequest = httpAction.createHttpRequest(this.url, request);
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
         ChannelFuture future = bootstrap.connect(new InetSocketAddress(url.getHost(), url.getPort()));
+        future.awaitUninterruptibly();
         if (!future.isSuccess()) {
             bootstrap.releaseExternalResources();
             logger.error("can't connect to {}", url);
@@ -136,7 +183,7 @@ public class HttpElasticsearchClient extends AbstractClient {
             Channel channel = future.getChannel();
             httpContext.channel = channel;
             contextMap.put(channel, httpContext);
-            channel.getConfig().setConnectTimeoutMillis(5000);
+            channel.getConfig().setConnectTimeoutMillis(settings.getAsInt("http.client.timeout", 5000));
             httpAction.execute(httpContext, listener);
         }
     }
@@ -154,12 +201,10 @@ public class HttpElasticsearchClient extends AbstractClient {
 
     class HttpClientPipelineFactory implements ChannelPipelineFactory {
 
-        HttpClientPipelineFactory() {
-        }
-
         public ChannelPipeline getPipeline() throws Exception {
             ChannelPipeline pipeline = Channels.pipeline();
             pipeline.addLast("codec", new HttpClientCodec());
+            pipeline.addLast("aggregator", new HttpChunkAggregator(settings.getAsInt("http.client.maxchunksize", 10 * 1024 * 1024)));
             pipeline.addLast("inflater", new HttpContentDecompressor());
             pipeline.addLast("handler", new HttpResponseHandler());
             return pipeline;
@@ -171,34 +216,38 @@ public class HttpElasticsearchClient extends AbstractClient {
         @SuppressWarnings("unchecked")
         @Override
         public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-            HttpContext<Request, Response> httpContext = contextMap.remove(ctx.getChannel());
+            HttpContext<Request, Response> httpContext = contextMap.get(ctx.getChannel());
             if (httpContext == null) {
                 throw new IllegalStateException("no context for channel?");
             }
             try {
-                HttpAction<Request, Response> action = httpContext.httpAction;
-                ActionListener<Response> listener = httpContext.listener;
-                HttpResponse httpResponse = (HttpResponse) e.getMessage();
-                httpContext.httpResponse = httpResponse;
-                if (httpResponse.getContent().readable()) {
-                    listener.onResponse(action.createResponse(httpContext));
+                if (e.getMessage() instanceof HttpResponse) {
+                    HttpResponse httpResponse = (HttpResponse) e.getMessage();
+                    HttpAction<Request, Response> action = httpContext.httpAction;
+                    ActionListener<Response> listener = httpContext.listener;
+                    httpContext.httpResponse = httpResponse;
+                    if (httpResponse.getContent().readable() && listener != null && action != null) {
+                        listener.onResponse(action.createResponse(httpContext));
+                    }
                 }
             } finally {
-                // do we need to close connection?
                 ctx.getChannel().close();
+                contextMap.remove(ctx.getChannel());
             }
         }
 
         @SuppressWarnings("unchecked")
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-            HttpContext<Request, Response> httpContext = contextMap.remove(ctx.getChannel());
-            if (httpContext == null) {
-                throw new IllegalStateException("no context for channel?");
-            }
+            HttpContext<Request, Response> httpContext = contextMap.get(ctx.getChannel());
             try {
-                httpContext.listener.onFailure(e.getCause());
+                if (httpContext != null && httpContext.listener != null) {
+                    httpContext.listener.onFailure(e.getCause());
+                } else {
+                    logger.error(e.getCause().getMessage(), e.getCause());
+                }
             } finally {
                 ctx.getChannel().close();
+                contextMap.remove(ctx.getChannel());
             }
         }
     }

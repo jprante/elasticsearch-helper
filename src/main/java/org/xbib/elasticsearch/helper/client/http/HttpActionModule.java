@@ -7,14 +7,21 @@ import com.google.common.collect.Maps;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.GenericAction;
+import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsAction;
+import org.elasticsearch.action.admin.cluster.settings.HttpClusterUpdateSettingsAction;
+import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
+import org.elasticsearch.action.admin.indices.refresh.HttpRefreshIndexAction;
+import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
+import org.elasticsearch.action.admin.indices.settings.put.HttpUpdateSettingsAction;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsAction;
 import org.elasticsearch.action.bulk.BulkAction;
+import org.elasticsearch.action.search.HttpSearchAction;
+import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.support.ActionFilter;
-import org.elasticsearch.action.support.ActionFilters;
-import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.inject.multibindings.MapBinder;
-import org.elasticsearch.common.inject.multibindings.Multibinder;
-import org.xbib.elasticsearch.helper.client.http.bulk.HttpBulkAction;
+import org.elasticsearch.action.admin.indices.create.HttpCreateIndexAction;
+import org.elasticsearch.action.bulk.HttpBulkAction;
 
 import java.util.List;
 import java.util.Map;
@@ -73,8 +80,9 @@ public class HttpActionModule extends AbstractModule {
 
         registerAction(ClusterStatsAction.INSTANCE, TransportClusterStatsAction.class);
         registerAction(ClusterStateAction.INSTANCE, TransportClusterStateAction.class);
-        registerAction(ClusterHealthAction.INSTANCE, TransportClusterHealthAction.class);
-        registerAction(ClusterUpdateSettingsAction.INSTANCE, TransportClusterUpdateSettingsAction.class);
+        registerAction(ClusterHealthAction.INSTANCE, TransportClusterHealthAction.class);*/
+        registerAction(ClusterUpdateSettingsAction.INSTANCE, HttpClusterUpdateSettingsAction.class);
+        /*
         registerAction(ClusterRerouteAction.INSTANCE, TransportClusterRerouteAction.class);
         registerAction(ClusterSearchShardsAction.INSTANCE, TransportClusterSearchShardsAction.class);
         registerAction(PendingClusterTasksAction.INSTANCE, TransportPendingClusterTasksAction.class);
@@ -90,9 +98,9 @@ public class HttpActionModule extends AbstractModule {
 
         registerAction(IndicesStatsAction.INSTANCE, TransportIndicesStatsAction.class);
         registerAction(IndicesSegmentsAction.INSTANCE, TransportIndicesSegmentsAction.class);
-        registerAction(IndicesShardStoresAction.INSTANCE, TransportIndicesShardStoresAction.class);
-        registerAction(CreateIndexAction.INSTANCE, TransportCreateIndexAction.class);
-        registerAction(DeleteIndexAction.INSTANCE, TransportDeleteIndexAction.class);
+        registerAction(IndicesShardStoresAction.INSTANCE, TransportIndicesShardStoresAction.class);*/
+        registerAction(CreateIndexAction.INSTANCE, HttpCreateIndexAction.class);
+        /*registerAction(DeleteIndexAction.INSTANCE, TransportDeleteIndexAction.class);
         registerAction(GetIndexAction.INSTANCE, TransportGetIndexAction.class);
         registerAction(OpenIndexAction.INSTANCE, TransportOpenIndexAction.class);
         registerAction(CloseIndexAction.INSTANCE, TransportCloseIndexAction.class);
@@ -101,15 +109,15 @@ public class HttpActionModule extends AbstractModule {
         registerAction(GetMappingsAction.INSTANCE, TransportGetMappingsAction.class);
         registerAction(GetFieldMappingsAction.INSTANCE, TransportGetFieldMappingsAction.class, TransportGetFieldMappingsIndexAction.class);
         registerAction(PutMappingAction.INSTANCE, TransportPutMappingAction.class);
-        registerAction(IndicesAliasesAction.INSTANCE, TransportIndicesAliasesAction.class);
-        registerAction(UpdateSettingsAction.INSTANCE, TransportUpdateSettingsAction.class);
-        registerAction(AnalyzeAction.INSTANCE, TransportAnalyzeAction.class);
+        registerAction(IndicesAliasesAction.INSTANCE, TransportIndicesAliasesAction.class);*/
+        registerAction(UpdateSettingsAction.INSTANCE, HttpUpdateSettingsAction.class);
+        /*registerAction(AnalyzeAction.INSTANCE, TransportAnalyzeAction.class);
         registerAction(PutIndexTemplateAction.INSTANCE, TransportPutIndexTemplateAction.class);
         registerAction(GetIndexTemplatesAction.INSTANCE, TransportGetIndexTemplatesAction.class);
         registerAction(DeleteIndexTemplateAction.INSTANCE, TransportDeleteIndexTemplateAction.class);
-        registerAction(ValidateQueryAction.INSTANCE, TransportValidateQueryAction.class);
-        registerAction(RefreshAction.INSTANCE, TransportRefreshAction.class);
-        registerAction(FlushAction.INSTANCE, TransportFlushAction.class);
+        registerAction(ValidateQueryAction.INSTANCE, TransportValidateQueryAction.class);*/
+        registerAction(RefreshAction.INSTANCE, HttpRefreshIndexAction.class);
+        /*registerAction(FlushAction.INSTANCE, TransportFlushAction.class);
         registerAction(OptimizeAction.INSTANCE, TransportOptimizeAction.class);
         registerAction(UpgradeAction.INSTANCE, TransportUpgradeAction.class);
         registerAction(UpgradeStatusAction.INSTANCE, TransportUpgradeStatusAction.class);
@@ -135,8 +143,9 @@ public class HttpActionModule extends AbstractModule {
         registerAction(MultiGetAction.INSTANCE, TransportMultiGetAction.class,
                 TransportShardMultiGetAction.class);
         registerAction(BulkAction.INSTANCE, TransportBulkAction.class,
-                TransportShardBulkAction.class);
-        registerAction(SearchAction.INSTANCE, TransportSearchAction.class,
+                TransportShardBulkAction.class);*/
+        registerAction(SearchAction.INSTANCE, HttpSearchAction.class);
+        /*registerAction(SearchAction.INSTANCE, TransportSearchAction.class,
                 TransportSearchDfsQueryThenFetchAction.class,
                 TransportSearchQueryThenFetchAction.class,
                 TransportSearchDfsQueryAndFetchAction.class,

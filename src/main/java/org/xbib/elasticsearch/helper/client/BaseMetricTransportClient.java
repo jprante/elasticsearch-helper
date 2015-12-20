@@ -16,14 +16,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public abstract class BaseMetricTransportClient extends BaseTransportClient implements Ingest {
+abstract class BaseMetricTransportClient extends BaseTransportClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseMetricTransportClient.class.getName());
 
     protected IngestMetric metric;
 
     @Override
-    public Ingest init(Settings settings, IngestMetric metric) throws IOException {
+    public Ingest init(Settings settings, IngestMetric metric) {
         super.createClient(settings);
         this.metric = metric;
         if (metric != null) {
@@ -74,12 +74,11 @@ public abstract class BaseMetricTransportClient extends BaseTransportClient impl
 
     @Override
     public BaseMetricTransportClient newMapping(String index, String type, Map<String, Object> mapping) {
-        PutMappingRequestBuilder putMappingRequestBuilder =
-                new PutMappingRequestBuilder(client(), PutMappingAction.INSTANCE)
+        new PutMappingRequestBuilder(client(), PutMappingAction.INSTANCE)
                         .setIndices(index)
                         .setType(type)
-                        .setSource(mapping);
-        putMappingRequestBuilder.execute().actionGet();
+                        .setSource(mapping)
+                        .execute().actionGet();
         logger.info("mapping created for index {} and type {}", index, type);
         return this;
     }
@@ -94,9 +93,7 @@ public abstract class BaseMetricTransportClient extends BaseTransportClient impl
             logger.warn("no index name given to delete index");
             return this;
         }
-        DeleteIndexRequestBuilder deleteIndexRequestBuilder =
-                new DeleteIndexRequestBuilder(client(), DeleteIndexAction.INSTANCE, index);
-        deleteIndexRequestBuilder.execute().actionGet();
+        new DeleteIndexRequestBuilder(client(), DeleteIndexAction.INSTANCE, index).execute().actionGet();
         return this;
     }
 
