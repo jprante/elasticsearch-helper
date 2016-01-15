@@ -1,7 +1,6 @@
 
 package org.xbib.elasticsearch.helper.client.transport;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
@@ -14,7 +13,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.xbib.elasticsearch.helper.client.BulkTransportClient;
 import org.xbib.elasticsearch.helper.client.ClientBuilder;
-import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
 
 import java.io.IOException;
@@ -157,7 +155,6 @@ public class BulkTransportClientTest extends NodeTestUtils {
                 .setMetric(new LongAdderIngestMetric())
                 .toBulkTransportClient();
         try {
-            ClientHelper.waitForCluster(client.client(), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(10));
             client.newIndex("test", settingsForIndex, null)
                     .startBulk("test", -1, 1000);
             ThreadPoolExecutor pool =

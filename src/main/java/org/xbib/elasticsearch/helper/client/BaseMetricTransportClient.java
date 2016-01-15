@@ -1,6 +1,20 @@
+/*
+ * Copyright (C) 2015 Jörg Prante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.xbib.elasticsearch.helper.client;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -10,7 +24,6 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequestBuild
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,10 +52,10 @@ abstract class BaseMetricTransportClient extends BaseTransportClient implements 
 
     @Override
     public BaseMetricTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
-        configHelper.reset();
-        configHelper.setting(settings);
-        configHelper.mapping(type, mappings);
-        return newIndex(index, configHelper.settings(), configHelper.mappings());
+        reset();
+        setting(settings);
+        mapping(type, mappings);
+        return newIndex(index, settings(), mappings());
     }
 
     @Override
@@ -97,21 +110,6 @@ abstract class BaseMetricTransportClient extends BaseTransportClient implements 
         return this;
     }
 
-    public BaseMetricTransportClient putMapping(String index) {
-        if (client == null) {
-            logger.warn("no client for put mapping");
-            return this;
-        }
-        ClientHelper.putMapping(client, configHelper, index);
-        return this;
-    }
-
-    @Override
-    public BaseMetricTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
-        ClientHelper.waitForCluster(client, status, timeValue);
-        return this;
-    }
-
     @Override
     public BaseMetricTransportClient startBulk(String index, long startRefreshIntervalSeconds, long stopRefreshIntervalSeconds) throws IOException {
         if (metric == null) {
@@ -119,7 +117,7 @@ abstract class BaseMetricTransportClient extends BaseTransportClient implements 
         }
         if (!metric.isBulk(index)) {
             metric.setupBulk(index, startRefreshIntervalSeconds, stopRefreshIntervalSeconds);
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshIntervalSeconds + "s");
+            updateIndexSetting(index, "refresh_interval", startRefreshIntervalSeconds + "s");
         }
         return this;
     }
@@ -130,7 +128,7 @@ abstract class BaseMetricTransportClient extends BaseTransportClient implements 
             return this;
         }
         if (metric.isBulk(index)) {
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "s");
+            updateIndexSetting(index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "s");
             metric.removeBulk(index);
         }
         return this;

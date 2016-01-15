@@ -1,8 +1,22 @@
+/*
+ * Copyright (C) 2015 Jörg Prante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.xbib.elasticsearch.helper.client;
 
 import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -74,11 +88,6 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
     @Override
     public IngestTransportClient init(ElasticsearchClient client, IngestMetric metric) {
         return this.init(findSettings(), metric);
-    }
-
-    @Override
-    public IngestTransportClient init(Map<String, String> settings, IngestMetric metric) {
-        return this.init(Settings.settingsBuilder().put(settings).build(), metric);
     }
 
     @Override
@@ -188,16 +197,6 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
         return this;
     }
 
-
-    @Override
-    public IngestTransportClient putMapping(String index) {
-        if (closed) {
-            throw new ElasticsearchException("client is closed");
-        }
-        super.putMapping(index);
-        return this;
-    }
-
     @Override
     public IngestTransportClient startBulk(String index, long startRefreshIntervalMillis, long stopRefreshItervalMillis) throws IOException {
         super.startBulk(index, startRefreshIntervalMillis, stopRefreshItervalMillis);
@@ -207,18 +206,6 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
     @Override
     public IngestTransportClient stopBulk(String index) throws IOException {
         super.stopBulk(index);
-        return this;
-    }
-
-    @Override
-    public IngestTransportClient flushIndex(String index) {
-        ClientHelper.flushIndex(client(), index);
-        return this;
-    }
-
-    @Override
-    public IngestTransportClient refreshIndex(String index) {
-        ClientHelper.refreshIndex(client(), index);
         return this;
     }
 
@@ -358,22 +345,6 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
             ingestProcessor.waitForResponses(maxWaitTime);
         }
         return this;
-    }
-
-    @Override
-    public IngestTransportClient waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
-        ClientHelper.waitForCluster(client, status, timeValue);
-        return this;
-    }
-
-    @Override
-    public int waitForRecovery(String index) throws IOException {
-        return ClientHelper.waitForRecovery(client, index);
-    }
-
-    @Override
-    public int updateReplicaLevel(String index, int level) throws IOException {
-        return ClientHelper.updateReplicaLevel(client, index, level);
     }
 
     @Override

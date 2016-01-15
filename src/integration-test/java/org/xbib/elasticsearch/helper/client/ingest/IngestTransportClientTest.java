@@ -1,7 +1,5 @@
-
 package org.xbib.elasticsearch.helper.client.ingest;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.settings.Settings;
@@ -9,7 +7,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
 import org.xbib.elasticsearch.helper.client.ClientBuilder;
-import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.client.IngestTransportClient;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
@@ -175,7 +172,6 @@ public class IngestTransportClientTest extends NodeTestUtils {
                 .setMetric(new LongAdderIngestMetric())
                 .toIngestTransportClient();
         try {
-            ClientHelper.waitForCluster(ingest.client(), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(10));
             ingest.newIndex("test", settings, null)
                     .startBulk("test", -1, 1000);
             ThreadPoolExecutor pool =

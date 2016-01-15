@@ -1,23 +1,23 @@
+/*
+ * Copyright (C) 2015 Jörg Prante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.xbib.elasticsearch.helper.client;
 
-import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
-import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesAction;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequestBuilder;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesResponse;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
-import org.elasticsearch.action.admin.indices.get.GetIndexAction;
-import org.elasticsearch.action.admin.indices.get.GetIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.get.GetIndexResponse;
-import org.elasticsearch.action.search.SearchAction;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -26,20 +26,16 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.xbib.elasticsearch.common.GcMonitor;
+import org.xbib.elasticsearch.helper.network.NetworkUtils;
 import org.xbib.elasticsearch.plugin.helper.HelperPlugin;
 
-import java.text.SimpleDateFormat;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 abstract class BaseTransportClient extends BaseClient {
 
@@ -131,123 +127,48 @@ abstract class BaseTransportClient extends BaseClient {
         return false;
     }
 
-    public String resolveAlias(String alias) {
-        if (client() == null) {
-            return alias;
-        }
-        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
-        GetAliasesResponse getAliasesResponse = getAliasesRequestBuilder.setAliases(alias).execute().actionGet();
-        if (!getAliasesResponse.getAliases().isEmpty()) {
-            return getAliasesResponse.getAliases().keys().iterator().next().value;
-        }
-        return alias;
+    protected void createClient(Map<String, String> settings) throws IOException {
+        createClient(Settings.builder().put(settings).build());
     }
 
-    public void switchAliases(String index, String concreteIndex, List<String> extraAliases) {
-        if (client() == null) {
-            return;
+    protected Settings findSettings() {
+        Settings.Builder settingsBuilder = Settings.settingsBuilder();
+        settingsBuilder.put("host", "localhost");
+        try {
+            String hostname = NetworkUtils.getLocalAddress().getHostName();
+            logger.debug("the hostname is {}", hostname);
+            settingsBuilder.put("host", hostname)
+                    .put("port", 9300);
+        } catch (Exception e) {
+            logger.warn(e.getMessage(), e);
         }
-        if (index.equals(concreteIndex)) {
-            return;
-        }
-        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
-        GetAliasesResponse getAliasesResponse = getAliasesRequestBuilder.setAliases(index).execute().actionGet();
-        IndicesAliasesRequestBuilder requestBuilder = new IndicesAliasesRequestBuilder(client(), IndicesAliasesAction.INSTANCE);
-        if (getAliasesResponse.getAliases().isEmpty()) {
-            logger.info("adding alias {} to index {}", index, concreteIndex);
-            requestBuilder.addAlias(concreteIndex, index);
-            if (extraAliases != null) {
-                for (String extraAlias : extraAliases) {
-                    requestBuilder.addAlias(concreteIndex, extraAlias);
-                }
-            }
-        } else {
-            for (ObjectCursor<String> indexName : getAliasesResponse.getAliases().keys()) {
-                if (indexName.value.startsWith(index)) {
-                    logger.info("switching alias {} from index {} to index {}", index, indexName.value, concreteIndex);
-                    requestBuilder.removeAlias(indexName.value, index)
-                            .addAlias(concreteIndex, index);
-                    if (extraAliases != null) {
-                        for (String extraAlias : extraAliases) {
-                            requestBuilder.removeAlias(indexName.value, extraAlias)
-                                    .addAlias(concreteIndex, extraAlias);
-                        }
-                    }
-                }
-            }
-        }
-        requestBuilder.execute().actionGet();
+        return settingsBuilder.build();
     }
 
-    public void performRetentionPolicy(String index, String concreteIndex, int timestampdiff, int mintokeep) {
-        if (client() == null) {
-            return;
-        }
-        if (index.equals(concreteIndex)) {
-            return;
-        }
-        GetIndexRequestBuilder getIndexRequestBuilder = new GetIndexRequestBuilder(client(), GetIndexAction.INSTANCE);
-        GetIndexResponse getIndexResponse = getIndexRequestBuilder.execute().actionGet();
-        Pattern pattern = Pattern.compile("^(.*?)(\\d+)$");
-        List<String> indices = new ArrayList<>();
-        logger.info("{} indices", getIndexResponse.getIndices().length);
-        for (String s : getIndexResponse.getIndices()) {
-            Matcher m = pattern.matcher(s);
-            if (m.matches()) {
-                if (index.equals(m.group(1)) && !s.equals(concreteIndex)) {
-                    indices.add(s);
+    protected Collection<InetSocketTransportAddress> findAddresses(Settings settings) throws IOException {
+        String[] hostnames = settings.getAsArray("host", new String[]{"localhost"});
+        int port = settings.getAsInt("port", 9300);
+        Collection<InetSocketTransportAddress> addresses = new ArrayList<>();
+        for (String hostname : hostnames) {
+            String[] splitHost = hostname.split(":", 2);
+            if (splitHost.length == 2) {
+                String host = splitHost[0];
+                InetAddress inetAddress = NetworkUtils.resolveInetAddress(host, null);
+                try {
+                    port = Integer.parseInt(splitHost[1]);
+                } catch (Exception e) {
+                    // ignore
                 }
+                addresses.add(new InetSocketTransportAddress(inetAddress, port));
+            }
+            if (splitHost.length == 1) {
+                String host = splitHost[0];
+                InetAddress inetAddress = NetworkUtils.resolveInetAddress(host, null);
+                addresses.add(new InetSocketTransportAddress(inetAddress, port));
             }
         }
-        if (indices.isEmpty()) {
-            logger.info("no indices found, retention policy skipped");
-            return;
-        }
-        if (mintokeep > 0 && indices.size() < mintokeep) {
-            logger.info("{} indices found, not enough for retention policy ({}),  skipped",
-                    indices.size(), mintokeep);
-            return;
-        } else {
-            logger.info("candidates for deletion = {}", indices);
-        }
-        List<String> indicesToDelete = new ArrayList<String>();
-        // our index
-        Matcher m1 = pattern.matcher(concreteIndex);
-        if (m1.matches()) {
-            Integer i1 = Integer.parseInt(m1.group(2));
-            for (String s : indices) {
-                Matcher m2 = pattern.matcher(s);
-                if (m2.matches()) {
-                    Integer i2 = Integer.parseInt(m2.group(2));
-                    int kept = 1 + indices.size() - indicesToDelete.size();
-                    if (timestampdiff > 0 && i1 - i2 > timestampdiff && mintokeep <= kept) {
-                        indicesToDelete.add(s);
-                    }
-                }
-            }
-        }
-        logger.info("indices to delete = {}", indicesToDelete);
-        if (indicesToDelete.isEmpty()) {
-            logger.info("not enough indices found to delete, retention policy complete");
-            return;
-        }
-        String[] s = indicesToDelete.toArray(new String[indicesToDelete.size()]);
-        DeleteIndexRequestBuilder requestBuilder = new DeleteIndexRequestBuilder(client(), DeleteIndexAction.INSTANCE, s);
-        DeleteIndexResponse response = requestBuilder.execute().actionGet();
-        if (!response.isAcknowledged()) {
-            logger.warn("retention delete index operation was not acknowledged");
-        }
+        return addresses;
     }
 
-    public void findMostRecentDocument(String index) {
-        SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client(), SearchAction.INSTANCE);
-        SortBuilder sort = SortBuilders.fieldSort("_timestamp").order(SortOrder.DESC);
-        SearchResponse searchResponse = searchRequestBuilder.setIndices(index).addField("_timestamp").setSize(1).addSort(sort).execute().actionGet();
-        if (searchResponse.getHits().getHits().length == 1) {
-            SearchHit hit = searchResponse.getHits().getHits()[0];
-            Long timestamp = hit.getFields().get("_timestamp").getValue();
-            SimpleDateFormat sdf = new SimpleDateFormat();
-            logger.info("most recent document timestamp is {}",sdf.format(new Date(timestamp)));
-        }
-    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Jörg Prante
+ * Copyright (C) 2015 Jörg Prante
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@
  */
 package org.xbib.elasticsearch.helper.client;
 
-import java.io.IOException;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequestBuilder;
 
-/**
- * A factory for creating ingest objects
- */
-public interface IngestFactory {
+public interface IndexAliasAdder {
 
-    Ingest create() throws IOException;
+    void addIndexAlias(IndicesAliasesRequestBuilder builder, String index, String alias);
 }

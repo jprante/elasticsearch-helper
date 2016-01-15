@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2015 Jörg Prante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.xbib.elasticsearch.helper.client;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
@@ -12,6 +27,7 @@ import org.elasticsearch.common.unit.TimeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -29,7 +45,7 @@ public interface Ingest {
     TimeValue DEFAULT_FLUSH_INTERVAL = TimeValue.timeValueSeconds(30);
 
     /**
-     * Initialize new ingest client, and set up metrics.
+     * Initialize new ingest client, wrap an existing Elasticsearch client, and set up metrics.
      *
      * @param client the Elasticsearch client
      * @param metric a metric or null
@@ -39,7 +55,7 @@ public interface Ingest {
     Ingest init(ElasticsearchClient client, IngestMetric metric) throws IOException;
 
     /**
-     * Initialize, create new ingest client.
+     * Initialize, create new ingest client, and set up metrics.
      *
      * @param settings settings
      * @param metric a metric or null
@@ -49,17 +65,7 @@ public interface Ingest {
     Ingest init(Settings settings, IngestMetric metric) throws IOException;
 
     /**
-     * Initialize, create new ingest client.
-     *
-     * @param settings settings
-     * @param metric a metric or null
-     * @return this ingest
-     * @throws IOException if client could not get created
-     */
-    Ingest init(Map<String, String> settings, IngestMetric metric) throws IOException;
-
-    /**
-     * Return Elasticsearch client to execute actions
+     * Return Elasticsearch client
      *
      * @return Elasticsearch client
      */
@@ -87,7 +93,7 @@ public interface Ingest {
     Ingest delete(String index, String type, String id);
 
     /**
-     * Update document
+     * Update document. Use with precaution! Does not work in all cases.
      *
      * @param index  the index
      * @param type   the type
@@ -130,45 +136,6 @@ public interface Ingest {
     Ingest flushIngestInterval(TimeValue flushInterval);
 
     /**
-     * Get settings builder
-     *
-     * @return settings builder
-     */
-    Settings.Builder getSettingsBuilder();
-
-    /**
-     * Create settings
-     *
-     * @param in the input stream with settings
-     * @throws IOException if setting definition could not be retrieved
-     */
-    void setting(InputStream in) throws IOException;
-
-    /**
-     * Create a key/value in the settings
-     *
-     * @param key   the key
-     * @param value the value
-     */
-    void addSetting(String key, String value);
-
-    /**
-     * Create a key/value in the settings
-     *
-     * @param key   the key
-     * @param value the value
-     */
-    void addSetting(String key, Boolean value);
-
-    /**
-     * Create a key/value in the settings
-     *
-     * @param key   the key
-     * @param value the value
-     */
-    void addSetting(String key, Integer value);
-
-    /**
      * Set mapping
      *
      * @param type mapping type
@@ -190,9 +157,8 @@ public interface Ingest {
      * Put mapping
      *
      * @param index index
-     * @return this ingest
      */
-    Ingest putMapping(String index);
+    void putMapping(String index);
 
     /**
      * Create a new index
@@ -310,20 +276,18 @@ public interface Ingest {
      * Refresh the index.
      *
      * @param index index
-     * @return this ingest
      */
-    Ingest refreshIndex(String index);
+    void refreshIndex(String index);
 
     /**
      * Flush the index.
      *
      * @param index index
-     * @return this ingest
      */
-    Ingest flushIndex(String index);
+    void flushIndex(String index);
 
     /**
-     * Add replica level.
+     * Update replica level.
      *
      * @param index index
      * @param level the replica level
@@ -337,10 +301,9 @@ public interface Ingest {
      *
      * @param status    cluster health status to wait for
      * @param timeValue time value
-     * @return this ingest
      * @throws IOException if wait failed
      */
-    Ingest waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
+    void waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
 
     /**
      * Wait for index recovery (after replica change)
@@ -350,6 +313,47 @@ public interface Ingest {
      * @throws IOException if wait failed
      */
     int waitForRecovery(String index) throws IOException;
+
+    /**
+     * Resolve alias
+     * @param alias the alias
+     * @return the index name behind the alias or the alias if there is no index
+     */
+    String resolveAlias(String alias);
+
+    /**
+     * Switch aliases from one index to another.
+     * @param index the index name
+     * @param concreteIndex the index name with timestamp
+     * @param extraAliases a list of names that should be set as index aliases
+     */
+    void switchAliases(String index, String concreteIndex, List<String> extraAliases);
+
+    /**
+     * Switch aliases from one index to another.
+     * @param index the index name
+     * @param concreteIndex the index name with timestamp
+     * @param extraAliases a list of names that should be set as index aliases
+     * @param adder an adder method to create alias term queries
+     */
+    void switchAliases(String index, String concreteIndex, List<String> extraAliases, IndexAliasAdder adder);
+
+    /**
+     * Retention policy for an index. All indices before timestampdiff should be deleted,
+     * but mintokeep indices must be kept.
+     * @param index index name
+     * @param concreteIndex index name with timestamp
+     * @param timestampdiff timestamp delta (for index timestamps)
+     * @param mintokeep minimum number of indices to keep
+     */
+    void performRetentionPolicy(String index, String concreteIndex, int timestampdiff, int mintokeep);
+
+    /**
+     * Log the timestamp of the most recently indexed document in the index.
+     * @param index the index name
+     * @throws IOException if most rcent document can not be found
+     */
+    void mostRecentDocument(String index) throws IOException;
 
     /**
      * Get metric

@@ -1,8 +1,23 @@
+/*
+ * Copyright (C) 2015 Jörg Prante
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.xbib.elasticsearch.helper.client;
 
 import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -23,18 +38,22 @@ import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.env.Environment;
+import org.elasticsearch.node.Node;
+import org.elasticsearch.plugins.Plugin;
+import org.xbib.elasticsearch.plugin.helper.HelperPlugin;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class BulkNodeClient implements Ingest {
+public class BulkNodeClient extends BaseClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClient.class.getName());
-
-    private final ConfigHelper configHelper = new ConfigHelper();
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
@@ -166,13 +185,10 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public BulkNodeClient init(Settings settings, IngestMetric metric) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public BulkNodeClient init(Map<String, String> settings, IngestMetric metric) {
-        throw new UnsupportedOperationException();
+    public BulkNodeClient init(Settings settings, IngestMetric metric) throws IOException {
+        createClient(settings);
+        this.metric = metric;
+        return this;
     }
 
     @Override
@@ -181,18 +197,42 @@ public class BulkNodeClient implements Ingest {
     }
 
     @Override
-    public IngestMetric getMetric() {
-        return metric;
+    protected void createClient(Settings settings) throws IOException {
+        if (client != null) {
+            logger.warn("client is open, closing...");
+            client.threadPool().shutdown();
+            logger.warn("client is closed");
+            client = null;
+        }
+        if (settings != null) {
+            String version = System.getProperty("os.name")
+                    + " " + System.getProperty("java.vm.name")
+                    + " " + System.getProperty("java.vm.vendor")
+                    + " " + System.getProperty("java.runtime.version")
+                    + " " + System.getProperty("java.vm.version");
+            Settings effectiveSettings = Settings.builder().put(settings)
+                    .put("node.client", true)
+                    .put("node.master", false)
+                    .put("node.data", false).build();
+            logger.info("creating node client on {} with effective settings {}",
+                    version, effectiveSettings.getAsMap());
+            Collection<Class<? extends Plugin>> plugins = Collections.<Class<? extends Plugin>>singletonList(HelperPlugin.class);
+            Node node = new BulkNode(new Environment(effectiveSettings), plugins);
+            node.start();
+            this.client = node.client();
+        }
+    }
+
+    class BulkNode extends Node {
+
+        protected BulkNode(Environment env, Collection<Class<? extends Plugin>> classpathPlugins) {
+            super(env, Version.CURRENT, classpathPlugins);
+        }
     }
 
     @Override
-    public BulkNodeClient putMapping(String index) {
-        if (client == null) {
-            logger.warn("no client for put mapping");
-            return this;
-        }
-        ClientHelper.putMapping(client, configHelper, index);
-        return this;
+    public IngestMetric getMetric() {
+        return metric;
     }
 
     @Override
@@ -347,7 +387,7 @@ public class BulkNodeClient implements Ingest {
         }
         if (!metric.isBulk(index)) {
             metric.setupBulk(index, startRefreshIntervalMillis, stopRefreshItervalMillis);
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshIntervalMillis + "ms");
+            updateIndexSetting(index, "refresh_interval", startRefreshIntervalMillis + "ms");
         }
         return this;
     }
@@ -358,39 +398,10 @@ public class BulkNodeClient implements Ingest {
             return this;
         }
         if (metric.isBulk(index)) {
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "ms");
+            updateIndexSetting(index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "ms");
             metric.removeBulk(index);
         }
         return this;
-    }
-
-    @Override
-    public BulkNodeClient flushIndex(String index) {
-        ClientHelper.flushIndex(client, index);
-        return this;
-    }
-
-    @Override
-    public BulkNodeClient refreshIndex(String index) {
-        ClientHelper.refreshIndex(client, index);
-        return this;
-    }
-
-    @Override
-    public int updateReplicaLevel(String index, int level) throws IOException {
-        return ClientHelper.updateReplicaLevel(client, index, level);
-    }
-
-
-    @Override
-    public BulkNodeClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        ClientHelper.waitForCluster(client, status, timeout);
-        return this;
-    }
-
-    @Override
-    public int waitForRecovery(String index) throws IOException {
-        return ClientHelper.waitForRecovery(client, index);
     }
 
     @Override
@@ -418,10 +429,10 @@ public class BulkNodeClient implements Ingest {
 
     @Override
     public BulkNodeClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
-        configHelper.reset();
-        configHelper.setting(settings);
-        configHelper.mapping(type, mappings);
-        return newIndex(index, configHelper.settings(), configHelper.mappings());
+        reset();
+        setting(settings);
+        mapping(type, mappings);
+        return newIndex(index, settings(), mappings());
     }
 
     @Override
@@ -497,39 +508,26 @@ public class BulkNodeClient implements Ingest {
     }
 
     public Settings getSettings() {
-        return configHelper.settings();
+        return settings();
     }
 
     public void setSettings(Settings settings) {
-        configHelper.settings(settings);
+        settings(settings);
     }
 
     public Settings.Builder getSettingsBuilder() {
-        return configHelper.settingsBuilder();
-    }
-
-    public void setting(InputStream in) throws IOException {
-        configHelper.setting(in);
+        return settingsBuilder();
     }
 
     public void addSetting(String key, String value) {
-        configHelper.setting(key, value);
+        setting(key, value);
     }
 
     public void addSetting(String key, Boolean value) {
-        configHelper.setting(key, value);
+        setting(key, value);
     }
 
     public void addSetting(String key, Integer value) {
-        configHelper.setting(key, value);
+        setting(key, value);
     }
-
-    public void mapping(String type, InputStream in) throws IOException {
-        configHelper.mapping(type, in);
-    }
-
-    public void mapping(String type, String mapping) throws IOException {
-        configHelper.mapping(type, mapping);
-    }
-
 }

@@ -17,7 +17,6 @@ package org.xbib.elasticsearch.helper.client;
 
 import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.indices.create.CreateIndexAction;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexAction;
@@ -46,11 +45,9 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class HttpBulkNodeClient implements Ingest {
+public class HttpBulkNodeClient extends BaseClient implements Ingest {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(HttpBulkNodeClient.class.getName());
-
-    private final ConfigHelper configHelper = new ConfigHelper();
 
     private int maxActionsPerRequest = DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
@@ -95,16 +92,6 @@ public class HttpBulkNodeClient implements Ingest {
     public HttpBulkNodeClient flushIngestInterval(TimeValue flushInterval) {
         this.flushInterval = flushInterval;
         return this;
-    }
-
-    @Override
-    public HttpBulkNodeClient init(Map<String, String> settings, IngestMetric metric) {
-        return init(Settings.builder().put(settings).build(), metric);
-    }
-
-    @Override
-    public HttpBulkNodeClient init(Settings settings, final IngestMetric metric) {
-        return init(HttpElasticsearchClient.builder(settings).build(), metric);
     }
 
     @Override
@@ -192,23 +179,42 @@ public class HttpBulkNodeClient implements Ingest {
     }
 
     @Override
+    public HttpBulkNodeClient init(Settings settings, final IngestMetric metric) {
+        return init(HttpElasticsearchClient.builder(settings).build(), metric);
+    }
+
+    @Override
     public ElasticsearchClient client() {
         return client;
     }
 
     @Override
-    public IngestMetric getMetric() {
-        return metric;
+    protected void createClient(Settings settings) throws IOException {
+        if (client != null) {
+            logger.warn("client is open, closing...");
+            client.threadPool().shutdown();
+            logger.warn("client is closed");
+            client = null;
+        }
+        if (settings != null) {
+            String version = System.getProperty("os.name")
+                    + " " + System.getProperty("java.vm.name")
+                    + " " + System.getProperty("java.vm.vendor")
+                    + " " + System.getProperty("java.runtime.version")
+                    + " " + System.getProperty("java.vm.version");
+            Settings effectiveSettings = Settings.builder().put(settings)
+                    .put("node.client", true)
+                    .put("node.master", false)
+                    .put("node.data", false).build();
+            logger.info("creating http client on {} with effective settings {}",
+                    version, effectiveSettings.getAsMap());
+            init(HttpElasticsearchClient.builder(settings).build(), metric);
+        }
     }
 
     @Override
-    public HttpBulkNodeClient putMapping(String index) {
-        if (client == null) {
-            logger.warn("no client for put mapping");
-            return this;
-        }
-        ClientHelper.putMapping(client, configHelper, index);
-        return this;
+    public IngestMetric getMetric() {
+        return metric;
     }
 
     @Override
@@ -363,7 +369,7 @@ public class HttpBulkNodeClient implements Ingest {
         }
         if (!metric.isBulk(index)) {
             metric.setupBulk(index, startRefreshIntervalMillis, stopRefreshItervalMillis);
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", startRefreshIntervalMillis + "ms");
+            updateIndexSetting(index, "refresh_interval", startRefreshIntervalMillis + "ms");
         }
         return this;
     }
@@ -374,39 +380,10 @@ public class HttpBulkNodeClient implements Ingest {
             return this;
         }
         if (metric.isBulk(index)) {
-            ClientHelper.updateIndexSetting(client, index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "ms");
+            updateIndexSetting(index, "refresh_interval", metric.getStopBulkRefreshIntervals().get(index) + "ms");
             metric.removeBulk(index);
         }
         return this;
-    }
-
-    @Override
-    public HttpBulkNodeClient flushIndex(String index) {
-        ClientHelper.flushIndex(client, index);
-        return this;
-    }
-
-    @Override
-    public HttpBulkNodeClient refreshIndex(String index) {
-        ClientHelper.refreshIndex(client, index);
-        return this;
-    }
-
-    @Override
-    public int updateReplicaLevel(String index, int level) throws IOException {
-        return ClientHelper.updateReplicaLevel(client, index, level);
-    }
-
-
-    @Override
-    public HttpBulkNodeClient waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
-        ClientHelper.waitForCluster(client, status, timeout);
-        return this;
-    }
-
-    @Override
-    public int waitForRecovery(String index) throws IOException {
-        return ClientHelper.waitForRecovery(client, index);
     }
 
     @Override
@@ -434,10 +411,10 @@ public class HttpBulkNodeClient implements Ingest {
 
     @Override
     public HttpBulkNodeClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
-        configHelper.reset();
-        configHelper.setting(settings);
-        configHelper.mapping(type, mappings);
-        return newIndex(index, configHelper.settings(), configHelper.mappings());
+        reset();
+        setting(settings);
+        mapping(type, mappings);
+        return newIndex(index, settings(), mappings());
     }
 
     @Override
@@ -513,39 +490,27 @@ public class HttpBulkNodeClient implements Ingest {
     }
 
     public Settings getSettings() {
-        return configHelper.settings();
+        return settings();
     }
 
     public void setSettings(Settings settings) {
-        configHelper.settings(settings);
+        settings(settings);
     }
 
     public Settings.Builder getSettingsBuilder() {
-        return configHelper.settingsBuilder();
-    }
-
-    public void setting(InputStream in) throws IOException {
-        configHelper.setting(in);
+        return settingsBuilder();
     }
 
     public void addSetting(String key, String value) {
-        configHelper.setting(key, value);
+        setting(key, value);
     }
 
     public void addSetting(String key, Boolean value) {
-        configHelper.setting(key, value);
+        setting(key, value);
     }
 
     public void addSetting(String key, Integer value) {
-        configHelper.setting(key, value);
-    }
-
-    public void mapping(String type, InputStream in) throws IOException {
-        configHelper.mapping(type, in);
-    }
-
-    public void mapping(String type, String mapping) throws IOException {
-        configHelper.mapping(type, mapping);
+        setting(key, value);
     }
 
 }

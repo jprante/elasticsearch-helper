@@ -1,5 +1,9 @@
 package org.xbib.elasticsearch;
 
+import org.elasticsearch.ElasticsearchTimeoutException;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
 import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
@@ -13,7 +17,6 @@ import org.elasticsearch.node.MockNode;
 import org.elasticsearch.node.Node;
 import org.junit.After;
 import org.junit.Before;
-import org.xbib.elasticsearch.helper.client.ClientHelper;
 import org.xbib.elasticsearch.helper.network.NetworkUtils;
 import org.xbib.elasticsearch.plugin.helper.HelperPlugin;
 
@@ -53,7 +56,16 @@ public class NodeTestUtils {
             setClusterName();
             startNode("1");
             findNodeAddress();
-            ClientHelper.waitForCluster(client("1"), ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+            try {
+                ClusterHealthResponse healthResponse = client("1").execute(ClusterHealthAction.INSTANCE,
+                                new ClusterHealthRequest().waitForStatus(ClusterHealthStatus.GREEN).timeout(TimeValue.timeValueSeconds(30))).actionGet();
+                if (healthResponse != null && healthResponse.isTimedOut()) {
+                    throw new IOException("cluster state is " + healthResponse.getStatus().name()
+                            + ", from here on, everything will fail!");
+                }
+            } catch (ElasticsearchTimeoutException e) {
+                throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
+            }
             logger.info("ready");
         } catch (Throwable t) {
             logger.error("startNodes failed", t);
