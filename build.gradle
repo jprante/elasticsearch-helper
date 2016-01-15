@@ -57,6 +57,7 @@ configurations {
 
 dependencies {
     compile "org.elasticsearch:elasticsearch:${versions.elasticsearch}"
+    testCompile "net.java.dev.jna:jna:${versions.jna}"
     testCompile "junit:junit:${versions.junit}"
     testCompile "org.apache.logging.log4j:log4j-slf4j-impl:${versions.log4j}"
     testCompile "org.apache.logging.log4j:log4j-core:${versions.log4j}"

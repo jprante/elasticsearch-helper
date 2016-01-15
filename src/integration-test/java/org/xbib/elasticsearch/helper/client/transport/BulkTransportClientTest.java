@@ -31,9 +31,9 @@ public class BulkTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
-    private final static Integer MAX_ACTIONS = 10000;
+    private final static Integer MAX_ACTIONS = 1000;
 
-    private final static Integer NUM_ACTIONS = 12345;
+    private final static Integer NUM_ACTIONS = 1234;
 
 
     @Before
@@ -41,18 +41,16 @@ public class BulkTransportClientTest extends NodeTestUtils {
         try {
             super.startNodes();
             startNode("2");
-            startNode("3");
-            logger.info("started 3 nodes");
         } catch (Throwable t) {
             logger.error("startNodes failed", t);
         }
     }
 
-    // disabled because of https://github.com/elastic/elasticsearch/issues/15225
+    @Test
     public void testBulkClient() throws IOException {
         final BulkTransportClient client = ClientBuilder.builder()
                 .put(getSettings())
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(30))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toBulkTransportClient();
         client.newIndex("test");
@@ -80,7 +78,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
         final BulkTransportClient client = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(30))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toBulkTransportClient();
         try {
@@ -110,7 +108,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
         final BulkTransportClient client = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(30))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toBulkTransportClient();
         try {
@@ -151,7 +149,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
         final BulkTransportClient client = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, maxactions)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(600)) // = disable autoflush for this test
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60)) // = disable autoflush for this test
                 .setMetric(new LongAdderIngestMetric())
                 .toBulkTransportClient();
         try {
@@ -170,11 +168,11 @@ public class BulkTransportClientTest extends NodeTestUtils {
                     }
                 });
             }
-            logger.info("waiting for max 60 seconds...");
-            latch.await(60, TimeUnit.SECONDS);
+            logger.info("waiting for max 30 seconds...");
+            latch.await(30, TimeUnit.SECONDS);
             logger.info("client flush ...");
             client.flushIngest();
-            client.waitForResponses(TimeValue.timeValueSeconds(60));
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
             logger.info("thread pool to be shut down ...");
             pool.shutdown();
             logger.info("poot shut down");

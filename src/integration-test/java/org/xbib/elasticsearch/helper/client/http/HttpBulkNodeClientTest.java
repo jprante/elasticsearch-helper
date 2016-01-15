@@ -27,9 +27,9 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(HttpBulkNodeClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 10000;
+    private final static Integer MAX_ACTIONS = 1000;
 
-    private final static Integer NUM_ACTIONS = 12345;
+    private final static Integer NUM_ACTIONS = 1234;
 
     @Before
     public void startNodes() {
@@ -94,7 +94,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
                 .put("host", "127.0.0.1")
                 .put("port", 9200)
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(10))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .toHttpBulkNodeClient();
         try {
             client.newIndex("test");
@@ -125,7 +125,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
                 .put("host", "127.0.0.1")
                 .put("port", 9200)
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, maxactions)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(600))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toHttpBulkNodeClient();
         try {
@@ -144,11 +144,11 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
                     }
                 });
             }
-            logger.info("waiting for max 60 seconds...");
-            latch.await(60, TimeUnit.SECONDS);
+            logger.info("waiting for max 30 seconds...");
+            latch.await(30, TimeUnit.SECONDS);
             logger.info("flush...");
             client.flushIngest();
-            client.waitForResponses(TimeValue.timeValueSeconds(60));
+            client.waitForResponses(TimeValue.timeValueSeconds(30));
             logger.info("got all responses, thread pool shutdown...");
             pool.shutdown();
             logger.info("pool is shut down");

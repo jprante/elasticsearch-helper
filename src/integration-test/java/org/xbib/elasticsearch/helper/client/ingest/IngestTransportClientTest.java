@@ -29,65 +29,20 @@ public class IngestTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 1000;
+    private final static Integer MAX_ACTIONS = 100;
 
-    private final static Integer NUM_ACTIONS = 12345;
+    private final static Integer NUM_ACTIONS = 1234;
 
     @Before
     public void startNodes() {
         try {
             super.startNodes();
             startNode("2");
-            startNode("3");
-            logger.info("started 3 nodes");
         } catch (Throwable t) {
             logger.error("startNodes failed", t);
         }
     }
 
-    // disabled
-    public void testNewIndexIngest() throws IOException {
-        Settings settingsForIndex = Settings.settingsBuilder()
-                .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 1)
-                .build();
-        final IngestTransportClient ingest = ClientBuilder.builder()
-                .put(getSettings())
-                .setMetric(new LongAdderIngestMetric())
-                .toIngestTransportClient();
-        ingest.newIndex("test", settingsForIndex, null);
-        ingest.shutdown();
-        if (ingest.hasThrowable()) {
-            logger.error("error", ingest.getThrowable());
-        }
-        assertFalse(ingest.hasThrowable());
-    }
-
-    // disabled
-    public void testDeleteIndexIngestClient() throws IOException {
-        Settings settings = Settings.settingsBuilder()
-                .put("index.number_of_shards", 2)
-                .put("index.number_of_replicas", 1)
-                .build();
-        final IngestTransportClient ingest = ClientBuilder.builder()
-                .put(getSettings())
-                .setMetric(new LongAdderIngestMetric())
-                .toIngestTransportClient();
-        try {
-            ingest.newIndex("test", settings, null);
-            ingest.deleteIndex("test")
-              .newIndex("test")
-              .deleteIndex("test");
-        } catch (NoNodeAvailableException e) {
-            logger.error("no node available");
-        } finally {
-            ingest.shutdown();
-            if (ingest.hasThrowable()) {
-                logger.error("error", ingest.getThrowable());
-            }
-            assertFalse(ingest.hasThrowable());
-        }
-    }
 
     @Test
     public void testSingleDocIngestClient() throws IOException {
@@ -97,7 +52,7 @@ public class IngestTransportClientTest extends NodeTestUtils {
                 .build();
         final IngestTransportClient ingest = ClientBuilder.builder()
                 .put(getSettings())
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(600))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toIngestTransportClient();
         try {
@@ -129,7 +84,7 @@ public class IngestTransportClientTest extends NodeTestUtils {
         final IngestTransportClient ingest = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(600))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toIngestTransportClient();
         try {
@@ -168,7 +123,7 @@ public class IngestTransportClientTest extends NodeTestUtils {
         final IngestTransportClient ingest = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, maxactions)
-                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(600))
+                .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
                 .setMetric(new LongAdderIngestMetric())
                 .toIngestTransportClient();
         try {
@@ -187,8 +142,8 @@ public class IngestTransportClientTest extends NodeTestUtils {
                     }
                 });
             }
-            logger.info("waiting for max 60 seconds...");
-            latch.await(60, TimeUnit.SECONDS);
+            logger.info("waiting for max 30 seconds...");
+            latch.await(30, TimeUnit.SECONDS);
             logger.info("client flush ...");
             ingest.flushIngest();
             ingest.waitForResponses(TimeValue.timeValueSeconds(30));

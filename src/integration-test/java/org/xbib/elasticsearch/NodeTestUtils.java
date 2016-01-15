@@ -53,6 +53,7 @@ public class NodeTestUtils {
     @Before
     public void startNodes() {
         try {
+            logger.info("starting");
             setClusterName();
             startNode("1");
             findNodeAddress();
@@ -66,7 +67,6 @@ public class NodeTestUtils {
             } catch (ElasticsearchTimeoutException e) {
                 throw new IOException("timeout, cluster does not respond to health request, cowardly refusing to continue with operations");
             }
-            logger.info("ready");
         } catch (Throwable t) {
             logger.error("startNodes failed", t);
         }
