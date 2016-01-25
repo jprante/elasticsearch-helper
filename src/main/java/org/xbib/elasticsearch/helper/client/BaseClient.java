@@ -65,13 +65,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -180,7 +181,6 @@ abstract class BaseClient {
     public Map<String, String> mappings() {
         return mappings.isEmpty() ? null : mappings;
     }
-
 
 
     public void updateIndexSetting(String index, String key, Object value) throws IOException {
@@ -326,6 +326,28 @@ abstract class BaseClient {
         return alias;
     }
 
+    public String resolveMostRecentIndex(String alias) {
+        if (client() == null) {
+            return alias;
+        }
+        if (alias == null) {
+            return null;
+        }
+        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
+        GetAliasesResponse getAliasesResponse = getAliasesRequestBuilder.setAliases(alias).execute().actionGet();
+        Pattern pattern = Pattern.compile("^(.*?)(\\d+)$");
+        Set<String> indices = new TreeSet<>(Collections.reverseOrder());
+        for (ObjectCursor<String> indexName : getAliasesResponse.getAliases().keys()) {
+            Matcher m = pattern.matcher(indexName.value);
+            if (m.matches()) {
+                if (alias.equals(m.group(1))) {
+                    indices.add(indexName.value);
+                }
+            }
+        }
+        return indices.iterator().next();
+    }
+
     public void switchAliases(String index, String concreteIndex, List<String> extraAliases) {
         switchAliases(index, concreteIndex, extraAliases, null);
     }
@@ -400,7 +422,7 @@ abstract class BaseClient {
         GetIndexRequestBuilder getIndexRequestBuilder = new GetIndexRequestBuilder(client(), GetIndexAction.INSTANCE);
         GetIndexResponse getIndexResponse = getIndexRequestBuilder.execute().actionGet();
         Pattern pattern = Pattern.compile("^(.*?)(\\d+)$");
-        List<String> indices = new ArrayList<>();
+        Set<String> indices = new TreeSet<>();
         logger.info("{} indices", getIndexResponse.getIndices().length);
         for (String s : getIndexResponse.getIndices()) {
             Matcher m = pattern.matcher(s);
@@ -431,7 +453,7 @@ abstract class BaseClient {
                 if (m2.matches()) {
                     Integer i2 = Integer.parseInt(m2.group(2));
                     int kept = 1 + indices.size() - indicesToDelete.size();
-                    if (timestampdiff > 0 && i1 - i2 > timestampdiff && mintokeep <= kept) {
+                    if ((timestampdiff == 0 || (timestampdiff > 0 && i1 - i2 > timestampdiff)) && mintokeep <= kept) {
                         indicesToDelete.add(s);
                     }
                 }
@@ -450,19 +472,18 @@ abstract class BaseClient {
         }
     }
 
-    public void mostRecentDocument(String index) {
+    public Long mostRecentDocument(String index) {
         if (client() == null) {
-            return;
+            return null;
         }
         SearchRequestBuilder searchRequestBuilder = new SearchRequestBuilder(client(), SearchAction.INSTANCE);
         SortBuilder sort = SortBuilders.fieldSort("_timestamp").order(SortOrder.DESC);
         SearchResponse searchResponse = searchRequestBuilder.setIndices(index).addField("_timestamp").setSize(1).addSort(sort).execute().actionGet();
         if (searchResponse.getHits().getHits().length == 1) {
             SearchHit hit = searchResponse.getHits().getHits()[0];
-            Long timestamp = hit.getFields().get("_timestamp").getValue();
-            SimpleDateFormat sdf = new SimpleDateFormat();
-            logger.info("most recent document timestamp is {}",sdf.format(new Date(timestamp)));
+            return hit.getFields().get("_timestamp").getValue();
         }
+        return null;
     }
 
 }

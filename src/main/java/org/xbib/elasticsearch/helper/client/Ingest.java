@@ -317,9 +317,16 @@ public interface Ingest {
     /**
      * Resolve alias
      * @param alias the alias
-     * @return the index name behind the alias or the alias if there is no index
+     * @return one index name behind the alias or the alias if there is no index
      */
     String resolveAlias(String alias);
+
+    /**
+     * Resolve alias to all connected indices, sort index names with most recent timestamp on top, return this index name
+     * @param alias the alias
+     * @return the most recent index name pointing to the alias
+     */
+    String resolveMostRecentIndex(String alias);
 
     /**
      * Switch aliases from one index to another.
@@ -353,7 +360,7 @@ public interface Ingest {
      * @param index the index name
      * @throws IOException if most rcent document can not be found
      */
-    void mostRecentDocument(String index) throws IOException;
+    Long mostRecentDocument(String index) throws IOException;
 
     /**
      * Get metric

@@ -1,6 +1,6 @@
 
 def xbibGroup = 'org.xbib.elasticsearch.plugin'
-def xbibVersion = '2.1.1.2'
+def xbibVersion = '2.1.1.3'
 
 group = xbibGroup
 version = xbibVersion
@@ -116,6 +116,12 @@ task unpackPlugin(type: Copy, dependsOn: [':buildPluginZip']) {
 }
 
 task integrationTest(type: Test, dependsOn: ['unpackPlugin']) {
+    include '**/MiscTestSuite.class'
+    include '**/BulkNodeTestSuite.class'
+    include '**/BulkTransportTestSuite.class'
+    include '**/HttpBulkNodeTestSuite.class'
+    // disabled for now, needs hefty rework
+    // include '**/IngestTransportTestSuite.class'
     testClassesDir = sourceSets.integrationTest.output.classesDir
     classpath = configurations.integrationTestCompile
     classpath += fileTree("plugins/${pluginName}").include('*.jar')
