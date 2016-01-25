@@ -345,7 +345,7 @@ abstract class BaseClient {
                 }
             }
         }
-        return indices.iterator().next();
+        return indices.isEmpty() ? alias : indices.iterator().next();
     }
 
     public void switchAliases(String index, String concreteIndex, List<String> extraAliases) {
