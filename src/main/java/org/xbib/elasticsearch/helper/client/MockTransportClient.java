@@ -15,7 +15,6 @@
  */
 package org.xbib.elasticsearch.helper.client;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -149,7 +148,7 @@ public class MockTransportClient extends BulkTransportClient {
     }
 
     @Override
-    public void waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException {
+    public void waitForCluster(String healthColor, TimeValue timeValue) throws IOException {
     }
 
     @Override

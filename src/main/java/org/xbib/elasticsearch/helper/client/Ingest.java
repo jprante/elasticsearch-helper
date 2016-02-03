@@ -15,7 +15,6 @@
  */
 package org.xbib.elasticsearch.helper.client;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -299,11 +298,17 @@ public interface Ingest {
     /**
      * Wait for cluster being healthy.
      *
-     * @param status    cluster health status to wait for
+     * @param healthColor    cluster health color to wait for
      * @param timeValue time value
      * @throws IOException if wait failed
      */
-    void waitForCluster(ClusterHealthStatus status, TimeValue timeValue) throws IOException;
+    void waitForCluster(String healthColor, TimeValue timeValue) throws IOException;
+
+    /**
+     * Get current health color
+     * @return the cluster health color
+     */
+    String healthColor();
 
     /**
      * Wait for index recovery (after replica change)

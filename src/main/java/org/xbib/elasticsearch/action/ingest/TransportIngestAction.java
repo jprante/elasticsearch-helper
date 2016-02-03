@@ -126,14 +126,6 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                         }
                         list.add(deleteRequest);
                     }
-                } else {
-                    ShardId shardId = clusterService.operationRouting().deleteShards(clusterState, deleteRequest.index(), deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
-                    List<ActionRequest<?>> list = requestsByShard.get(shardId);
-                    if (list == null) {
-                        list = new LinkedList<ActionRequest<?>>();
-                        requestsByShard.put(shardId, list);
-                    }
-                    list.add(request);
                 }
             }
         }

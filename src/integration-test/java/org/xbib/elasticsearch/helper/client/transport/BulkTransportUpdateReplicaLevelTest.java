@@ -1,7 +1,6 @@
 
 package org.xbib.elasticsearch.helper.client.transport;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -44,7 +43,7 @@ public class BulkTransportUpdateReplicaLevelTest extends NodeTestUtils {
 
         try {
             client.newIndex("replicatest", settings, null);
-            client.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+            client.waitForCluster("GREEN", TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 12345; i++) {
                 client.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }

@@ -51,7 +51,8 @@ public class HttpBulkAction extends HttpAction<BulkRequest, BulkResponse> {
                 if (indexRequest.timestamp() != null) {
                     bulkContent.append(",\"_timestamp\":\"").append(indexRequest.timestamp()).append("\"");
                 }
-                if (indexRequest.ttl() > 0) {
+                // avoid _ttl <= 0 at all cost!
+                if (indexRequest.ttl() != null && indexRequest.ttl().seconds() > 0) {
                     bulkContent.append(",\"_ttl\":\"").append(indexRequest.ttl()).append("\"");
                 }
                 if (indexRequest.version() > 0) {

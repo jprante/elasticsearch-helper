@@ -20,7 +20,6 @@ import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -51,6 +50,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -94,22 +94,6 @@ abstract class BaseClient {
 
     public void resetSettings() {
         reset();
-    }
-
-    public void addSetting(String key, String value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Boolean value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Integer value) {
-        setting(key, value);
-    }
-
-    public Map<String, String> getMappings() {
-        return mappings();
     }
 
     private Settings settings;
@@ -223,11 +207,12 @@ abstract class BaseClient {
         return shards;
     }
 
-    public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+    public void waitForCluster(String statusString, TimeValue timeout) throws IOException {
         if (client() == null) {
             return;
         }
         try {
+            ClusterHealthStatus status = ClusterHealthStatus.fromString(statusString);
             ClusterHealthResponse healthResponse =
                     client().execute(ClusterHealthAction.INSTANCE, new ClusterHealthRequest().waitForStatus(status).timeout(timeout)).actionGet();
             if (healthResponse != null && healthResponse.isTimedOut()) {
@@ -279,7 +264,7 @@ abstract class BaseClient {
     }
 
     public int updateReplicaLevel(String index, int level) throws IOException {
-        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+        waitForCluster("YELLOW", TimeValue.timeValueSeconds(30));
         updateIndexSetting(index, "number_of_replicas", level);
         return waitForRecovery(index);
     }

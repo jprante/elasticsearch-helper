@@ -9,6 +9,7 @@ import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.internal.InternalSearchHit;
 import org.elasticsearch.search.internal.InternalSearchHits;
 import org.elasticsearch.search.internal.InternalSearchResponse;
+import org.elasticsearch.search.profile.InternalProfileShardResults;
 import org.elasticsearch.search.suggest.Suggest;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
@@ -66,9 +67,15 @@ public class HttpSearchAction extends HttpAction<SearchRequest, SearchResponse> 
         InternalSearchHits internalSearchHits = parseInternalSearchHits(map);
         InternalAggregations internalAggregations = parseInternalAggregations(map);
         Suggest suggest = parseSuggest(map);
+        InternalProfileShardResults internalProfileShardResults = null;
         Boolean timeout = false;
         Boolean terminatedEarly = false;
-        return new InternalSearchResponse(internalSearchHits, internalAggregations, suggest, timeout, terminatedEarly);
+        return new InternalSearchResponse(internalSearchHits,
+                internalAggregations,
+                suggest,
+                internalProfileShardResults,
+                timeout,
+                terminatedEarly);
     }
 
     @SuppressWarnings("unchecked")

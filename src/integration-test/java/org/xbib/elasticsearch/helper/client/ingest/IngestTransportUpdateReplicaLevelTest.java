@@ -1,7 +1,6 @@
 
 package org.xbib.elasticsearch.helper.client.ingest;
 
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -43,7 +42,7 @@ public class IngestTransportUpdateReplicaLevelTest extends NodeTestUtils {
                 .toIngestTransportClient();
         try {
             ingest.newIndex("replicatest", settings, null);
-            ingest.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
+            ingest.waitForCluster("GREEN", TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 12345; i++) {
                 ingest.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }
