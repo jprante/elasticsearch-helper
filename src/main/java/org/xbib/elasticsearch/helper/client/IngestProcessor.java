@@ -1,4 +1,4 @@
-package org.xbib.elasticsearch.action.ingest;
+package org.xbib.elasticsearch.helper.client;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -10,7 +10,9 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.xbib.elasticsearch.helper.client.Ingest;
+import org.xbib.elasticsearch.action.ingest.IngestAction;
+import org.xbib.elasticsearch.action.ingest.IngestRequest;
+import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;

@@ -28,7 +28,7 @@ import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestActionFailure;
-import org.xbib.elasticsearch.action.ingest.IngestProcessor;
+import org.xbib.elasticsearch.helper.client.IngestProcessor;
 import org.xbib.elasticsearch.action.ingest.IngestRequest;
 import org.xbib.elasticsearch.action.ingest.IngestResponse;
 
