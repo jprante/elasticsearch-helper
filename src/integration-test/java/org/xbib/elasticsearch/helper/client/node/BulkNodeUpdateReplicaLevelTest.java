@@ -42,7 +42,6 @@ public class BulkNodeUpdateReplicaLevelTest extends NodeTestUtils {
 
         try {
             client.newIndex("replicatest", settings, null);
-            client.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 12345; i++) {
                 client.index("replicatest", "replicatest", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }

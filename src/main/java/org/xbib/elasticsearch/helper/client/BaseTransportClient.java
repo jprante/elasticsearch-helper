@@ -26,6 +26,7 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.xbib.elasticsearch.common.GcMonitor;
 import org.xbib.elasticsearch.helper.network.NetworkUtils;
 import org.xbib.elasticsearch.plugin.helper.HelperPlugin;
@@ -64,11 +65,16 @@ abstract class BaseTransportClient extends BaseClient {
                     + " " + System.getProperty("java.vm.vendor")
                     + " " + System.getProperty("java.runtime.version")
                     + " " + System.getProperty("java.vm.version");
+            Settings effectiveSettings = Settings.builder().put(settings)
+                    .put("client.transport.ignore_cluster_name", settings.getAsBoolean("client.transport.ignore_cluster_name", false))
+                    .put("client.transport.ping_timeout", settings.getAsTime("client.transport.ping_timeout", TimeValue.timeValueSeconds(15)))
+                    .put("client.transport.nodes_sampler_interval", settings.getAsTime("client.transport.nodes_sampler_interval", TimeValue.timeValueSeconds(15)))
+                    .build();
             logger.info("creating transport client on {} with effective settings {}",
-                    version, settings.getAsMap());
+                    version, effectiveSettings.getAsMap());
             this.client = TransportClient.builder()
                     .addPlugin(HelperPlugin.class)
-                    .settings(settings)
+                    .settings(effectiveSettings)
                     .build();
             this.gcmon = new GcMonitor(settings);
             this.ignoreBulkErrors = settings.getAsBoolean("ignoreBulkErrors", true);
@@ -95,34 +101,41 @@ abstract class BaseTransportClient extends BaseClient {
         return isShutdown;
     }
 
-    protected boolean connect(Collection<InetSocketTransportAddress> addresses, boolean autodiscover) {
+    protected boolean connect(Settings settings, Collection<InetSocketTransportAddress> addresses, boolean autodiscover) {
         logger.info("trying to connect to {}", addresses);
-        for (InetSocketTransportAddress address : addresses) {
-            client.addTransportAddress(address);
-        }
-        if (client.connectedNodes() != null) {
-            List<DiscoveryNode> nodes = client.connectedNodes();
-            if (!nodes.isEmpty()) {
-                logger.info("connected to {}", nodes);
-                if (autodiscover) {
-                    logger.info("trying to auto-discover all cluster nodes...");
-                    ClusterStateRequestBuilder clusterStateRequestBuilder =
-                            new ClusterStateRequestBuilder(client, ClusterStateAction.INSTANCE);
-                    ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
-                    DiscoveryNodes discoveryNodes = clusterStateResponse.getState().getNodes();
-                    for (DiscoveryNode node : discoveryNodes) {
-                        logger.info("connecting to auto-discovered node {}", node);
-                        try {
-                            client.addTransportAddress(node.address());
-                        } catch (Exception e) {
-                            logger.warn("can't connect to node " + node, e);
-                        }
-                    }
-                    logger.info("after auto-discovery connected to {}", client.connectedNodes());
+        int retries = settings.getAsInt("client.connect.retries", 3);
+        try {
+            do {
+                for (InetSocketTransportAddress address : addresses) {
+                    client.addTransportAddress(address);
                 }
-                return true;
-            }
-            return false;
+                List<DiscoveryNode> nodes = client.connectedNodes();
+                if (nodes != null && !nodes.isEmpty()) {
+                    logger.info("connected to {}", nodes);
+                    if (autodiscover) {
+                        logger.info("trying to auto-discover all cluster nodes...");
+                        ClusterStateRequestBuilder clusterStateRequestBuilder =
+                                new ClusterStateRequestBuilder(client, ClusterStateAction.INSTANCE);
+                        ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
+                        DiscoveryNodes discoveryNodes = clusterStateResponse.getState().getNodes();
+                        for (DiscoveryNode node : discoveryNodes) {
+                            logger.info("connecting to auto-discovered node {}", node);
+                            try {
+                                client.addTransportAddress(node.address());
+                            } catch (Exception e) {
+                                logger.warn("can't connect to node " + node, e);
+                            }
+                        }
+                        logger.info("after auto-discovery connected to {}", client.connectedNodes());
+                    }
+                    return true;
+                }
+                logger.info("no nodes found, waiting to try again ...");
+                Thread.sleep(5000L);
+            } while (--retries > 0);
+        } catch (InterruptedException e) {
+            logger.warn("interrupted");
+            Thread.currentThread().interrupt();
         }
         return false;
     }

@@ -96,22 +96,6 @@ abstract class BaseClient {
         reset();
     }
 
-    public void addSetting(String key, String value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Boolean value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Integer value) {
-        setting(key, value);
-    }
-
-    public Map<String, String> getMappings() {
-        return mappings();
-    }
-
     private Settings settings;
 
     private Map<String, String> mappings = new HashMap<>();
@@ -203,36 +187,31 @@ abstract class BaseClient {
         client().execute(UpdateSettingsAction.INSTANCE, updateSettingsRequest).actionGet();
     }
 
-    public void waitForRecovery() throws IOException {
-        if (client() == null) {
-            return;
-        }
-        client().execute(RecoveryAction.INSTANCE, new RecoveryRequest()).actionGet();
-    }
-
-    public int waitForRecovery(String index) throws IOException {
+    public int waitForRecovery(String index, TimeValue timeValue) throws IOException {
         if (client() == null) {
             return -1;
         }
         if (index == null) {
-            throw new IOException("unable to waitfor recovery, index not set");
+            throw new IOException("unable to wait for recovery, index not set");
         }
-        RecoveryResponse response = client().execute(RecoveryAction.INSTANCE, new RecoveryRequest(index)).actionGet();
+        RecoveryResponse response = client().execute(RecoveryAction.INSTANCE, new RecoveryRequest(index))
+                .actionGet(timeValue);
         int shards = response.getTotalShards();
         client().execute(ClusterHealthAction.INSTANCE, new ClusterHealthRequest(index).waitForActiveShards(shards)).actionGet();
         return shards;
     }
 
-    public void waitForCluster(ClusterHealthStatus status, TimeValue timeout) throws IOException {
+    public void waitForCluster(String status, TimeValue timeout) throws IOException {
         if (client() == null) {
             return;
         }
         try {
+            ClusterHealthStatus healthStatus = ClusterHealthStatus.fromString(status.toUpperCase());
             ClusterHealthResponse healthResponse =
-                    client().execute(ClusterHealthAction.INSTANCE, new ClusterHealthRequest().waitForStatus(status).timeout(timeout)).actionGet();
+                    client().execute(ClusterHealthAction.INSTANCE, new ClusterHealthRequest().waitForStatus(healthStatus).timeout(timeout)).actionGet();
             if (healthResponse != null && healthResponse.isTimedOut()) {
                 throw new IOException("cluster state is " + healthResponse.getStatus().name()
-                        + " and not " + status.name()
+                        + " and not " + healthStatus.name()
                         + ", from here on, everything will fail!");
             }
         } catch (ElasticsearchTimeoutException e) {
@@ -279,9 +258,9 @@ abstract class BaseClient {
     }
 
     public int updateReplicaLevel(String index, int level) throws IOException {
-        waitForCluster(ClusterHealthStatus.YELLOW, TimeValue.timeValueSeconds(30));
+        waitForCluster("YELLOW", TimeValue.timeValueSeconds(30));
         updateIndexSetting(index, "number_of_replicas", level);
-        return waitForRecovery(index);
+        return waitForRecovery(index, TimeValue.timeValueMinutes(1));
     }
 
     public void flushIndex(String index) {

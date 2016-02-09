@@ -35,7 +35,6 @@ public class IngestTransportDuplicateIDTest extends NodeTestUtils {
                 .toIngestTransportClient();
         try {
             client.newIndex("test");
-            client.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < NUM_ACTIONS; i++) {
                 client.index("test", "test", randomString(1), "{ \"name\" : \"" + randomString(32) + "\"}");
             }

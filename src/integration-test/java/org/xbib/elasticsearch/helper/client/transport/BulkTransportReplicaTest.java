@@ -56,7 +56,6 @@ public class BulkTransportReplicaTest extends NodeTestUtils {
         try {
             client.newIndex("test1", settingsTest1, null)
                     .newIndex("test2", settingsTest2, null);
-            client.waitForCluster(ClusterHealthStatus.GREEN, TimeValue.timeValueSeconds(30));
             for (int i = 0; i < 1234; i++) {
                 client.index("test1", "test", null, "{ \"name\" : \"" + randomString(32) + "\"}");
             }

@@ -160,7 +160,7 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
         this.bulkProcessor = builder.build();
         try {
             Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
-            if (!connect(addrs, settings.getAsBoolean("autodiscover", false))) {
+            if (!connect(settings, addrs, settings.getAsBoolean("autodiscover", false))) {
                 throw new NoNodeAvailableException("no cluster nodes available, check settings "
                         + settings.getAsMap());
             }
