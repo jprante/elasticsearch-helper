@@ -16,11 +16,14 @@
 package org.xbib.elasticsearch.helper.client;
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.xbib.elasticsearch.action.search.helper.BasicGetRequest;
 import org.xbib.elasticsearch.action.search.helper.BasicSearchRequest;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -51,14 +54,19 @@ public class SearchTransportClient extends BaseTransportClient implements Search
     }
 
     @Override
-    public SearchTransportClient init(Settings settings) throws IOException {
-        super.createClient(settings);
+    public SearchTransportClient init(Map<String, String> settings) throws IOException {
+        init(Settings.builder().put(settings).build());
         return this;
     }
 
     @Override
-    public SearchTransportClient init(Map<String, String> settings) throws IOException {
+    public SearchTransportClient init(Settings settings) throws IOException {
         super.createClient(settings);
+        Collection<InetSocketTransportAddress> addrs = findAddresses(settings);
+        if (!connect(addrs, settings.getAsBoolean("autodiscover", false))) {
+            throw new NoNodeAvailableException("no cluster nodes available, check settings "
+                    + settings.getAsMap());
+        }
         return this;
     }
 

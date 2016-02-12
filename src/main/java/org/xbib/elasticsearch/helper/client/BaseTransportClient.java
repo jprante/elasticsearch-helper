@@ -35,7 +35,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 abstract class BaseTransportClient extends BaseClient {
 
@@ -127,10 +126,6 @@ abstract class BaseTransportClient extends BaseClient {
         return false;
     }
 
-    protected void createClient(Map<String, String> settings) throws IOException {
-        createClient(Settings.builder().put(settings).build());
-    }
-
     protected Settings findSettings() {
         Settings.Builder settingsBuilder = Settings.settingsBuilder();
         settingsBuilder.put("host", "localhost");
@@ -169,6 +164,5 @@ abstract class BaseTransportClient extends BaseClient {
         }
         return addresses;
     }
-
 
 }

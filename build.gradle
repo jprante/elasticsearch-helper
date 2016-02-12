@@ -1,6 +1,6 @@
 
 def xbibGroup = 'org.xbib.elasticsearch.plugin'
-def xbibVersion = '2.2.0.1'
+def xbibVersion = '2.2.0.2'
 
 group = xbibGroup
 version = xbibVersion
@@ -44,6 +44,9 @@ sourceSets {
 
 configurations {
     provided
+    wagon
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
     releaseJars {
         extendsFrom runtime
         exclude group: 'org.elasticsearch'
@@ -51,9 +54,6 @@ configurations {
         exclude group: 'org.slf4j'
         exclude group: 'log4j'
     }
-    wagon
-    integrationTestCompile.extendsFrom testCompile
-    integrationTestRuntime.extendsFrom testRuntime
 }
 
 dependencies {
