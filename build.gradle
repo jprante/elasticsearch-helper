@@ -1,6 +1,6 @@
 
 def xbibGroup = 'org.xbib.elasticsearch.plugin'
-def xbibVersion = '2.2.0.2'
+def xbibVersion = '2.2.0.3'
 
 group = xbibGroup
 version = xbibVersion
@@ -42,6 +42,9 @@ sourceSets {
     }
 }
 
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
 configurations {
     provided
     wagon
@@ -65,10 +68,6 @@ dependencies {
     wagon 'org.apache.maven.wagon:wagon-ssh-external:2.10'
 }
 
-compileJava {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-}
 
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"

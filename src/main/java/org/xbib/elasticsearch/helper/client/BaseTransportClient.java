@@ -19,7 +19,6 @@ import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequestBuilder;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.client.ElasticsearchClient;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.logging.ESLogger;
@@ -96,9 +95,7 @@ abstract class BaseTransportClient extends BaseClient {
 
     protected boolean connect(Collection<InetSocketTransportAddress> addresses, boolean autodiscover) {
         logger.info("trying to connect to {}", addresses);
-        for (InetSocketTransportAddress address : addresses) {
-            client.addTransportAddress(address);
-        }
+        client.addTransportAddresses(addresses);
         if (client.connectedNodes() != null) {
             List<DiscoveryNode> nodes = client.connectedNodes();
             if (!nodes.isEmpty()) {
@@ -109,14 +106,7 @@ abstract class BaseTransportClient extends BaseClient {
                             new ClusterStateRequestBuilder(client, ClusterStateAction.INSTANCE);
                     ClusterStateResponse clusterStateResponse = clusterStateRequestBuilder.execute().actionGet();
                     DiscoveryNodes discoveryNodes = clusterStateResponse.getState().getNodes();
-                    for (DiscoveryNode node : discoveryNodes) {
-                        logger.info("connecting to auto-discovered node {}", node);
-                        try {
-                            client.addTransportAddress(node.address());
-                        } catch (Exception e) {
-                            logger.warn("can't connect to node " + node, e);
-                        }
-                    }
+                    client.addDiscoveryNodes(discoveryNodes);
                     logger.info("after auto-discovery connected to {}", client.connectedNodes());
                 }
                 return true;
