@@ -99,7 +99,7 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             @Override
             public void beforeBulk(long executionId, BulkRequest request) {
                 metric.getCurrentIngest().inc();
-                long l = metric.getCurrentIngest().count();
+                long l = metric.getCurrentIngest().getCount();
                 int n = request.numberOfActions();
                 metric.getSubmitted().inc(n);
                 metric.getCurrentIngestNumDocs().inc(n);
@@ -114,9 +114,8 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             @Override
             public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
                 metric.getCurrentIngest().dec();
-                long l = metric.getCurrentIngest().count();
+                long l = metric.getCurrentIngest().getCount();
                 metric.getSucceeded().inc(response.getItems().length);
-                metric.getTotalIngest().inc(response.getTookInMillis());
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
                     if (itemResponse.isFailed()) {
@@ -127,8 +126,8 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
                 }
                 logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms] [concurrent requests={}]",
                         executionId,
-                        metric.getSucceeded().count(),
-                        metric.getFailed().count(),
+                        metric.getSucceeded().getCount(),
+                        metric.getFailed().getCount(),
                         response.getTook().millis(),
                         l);
                 if (n > 0) {
@@ -374,6 +373,7 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
                 for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
                 }
+                metric.stop();
             }
             logger.debug("shutting down...");
             super.shutdown();

@@ -15,29 +15,31 @@
  */
 package org.xbib.elasticsearch.helper.client;
 
-import org.xbib.metrics.CounterMetric;
-import org.xbib.metrics.MeanMetric;
+import org.xbib.metrics.Count;
+import org.xbib.metrics.Metered;
 
 import java.util.Map;
 import java.util.Set;
 
 public interface IngestMetric {
 
-    MeanMetric getTotalIngest();
+    Metered getTotalIngest();
 
-    CounterMetric getTotalIngestSizeInBytes();
+    Count getTotalIngestSizeInBytes();
 
-    CounterMetric getCurrentIngest();
+    Count getCurrentIngest();
 
-    CounterMetric getCurrentIngestNumDocs();
+    Count getCurrentIngestNumDocs();
 
-    CounterMetric getSubmitted();
+    Count getSubmitted();
 
-    CounterMetric getSucceeded();
+    Count getSucceeded();
 
-    CounterMetric getFailed();
+    Count getFailed();
 
-    IngestMetric start() ;
+    IngestMetric start();
+
+    IngestMetric stop();
 
     long elapsed();
 

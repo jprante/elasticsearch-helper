@@ -27,9 +27,9 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(HttpBulkNodeClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 1000;
+    private final static Long MAX_ACTIONS = 1000L;
 
-    private final static Integer NUM_ACTIONS = 1234;
+    private final static Long NUM_ACTIONS = 1234L;
 
     @Before
     public void startNodes() {
@@ -77,8 +77,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
         } catch (ExecutionException e) {
             logger.error(e.getMessage(), e);
         } finally {
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(1, client.getMetric().getTotalIngest().count());
+            assertEquals(1, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -89,6 +88,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
 
     @Test
     public void testRandomDocs() throws Exception {
+        long numactions = NUM_ACTIONS;
         final HttpBulkNodeClient client = ClientBuilder.builder()
                 .setMetric(new LongAdderIngestMetric())
                 .put("host", "127.0.0.1")
@@ -106,7 +106,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(numactions, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -118,8 +118,8 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
     @Test
     public void testThreadedRandomDocs() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = MAX_ACTIONS;
-        final int maxloop = NUM_ACTIONS;
+        long maxactions = MAX_ACTIONS;
+        final long maxloop = NUM_ACTIONS;
         logger.info("HttpBulkNodeClient max={} maxactions={} maxloop={}", maxthreads, maxactions, maxloop);
         final HttpBulkNodeClient client = ClientBuilder.builder()
                 .put("host", "127.0.0.1")
@@ -156,8 +156,7 @@ public class HttpBulkNodeClientTest extends NodeTestUtils {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("total bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

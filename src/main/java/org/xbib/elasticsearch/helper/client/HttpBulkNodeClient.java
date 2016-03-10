@@ -107,7 +107,7 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
                 long l = -1;
                 if (metric != null) {
                     metric.getCurrentIngest().inc();
-                    l = metric.getCurrentIngest().count();
+                    l = metric.getCurrentIngest().getCount();
                     int n = request.numberOfActions();
                     metric.getSubmitted().inc(n);
                     metric.getCurrentIngestNumDocs().inc(n);
@@ -125,10 +125,8 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
                 long l = -1;
                 if (metric != null) {
                     metric.getCurrentIngest().dec();
-                    l = metric.getCurrentIngest().count();
+                    l = metric.getCurrentIngest().getCount();
                     metric.getSucceeded().inc(response.getItems().length);
-                    metric.getFailed().inc(0);
-                    metric.getTotalIngest().inc(response.getTookInMillis());
                 }
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
@@ -142,8 +140,8 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
                 }
                 logger.debug("after bulk [{}] [succeeded={}] [failed={}] [{}ms] {} concurrent requests",
                         executionId,
-                        metric != null ? metric.getSucceeded().count() : -1,
-                        metric != null ? metric.getFailed().count() : -1,
+                        metric != null ? metric.getSucceeded().getCount() : -1,
+                        metric != null ? metric.getFailed().getCount() : -1,
                         response.getTook().millis(),
                         l);
                 if (n > 0) {
@@ -398,6 +396,7 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
                 for (String index : ImmutableSet.copyOf(metric.indices())) {
                     stopBulk(index);
                 }
+                metric.stop();
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);

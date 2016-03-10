@@ -17,7 +17,11 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
 
 import java.io.Closeable;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class HttpBulkProcessor implements Closeable {
@@ -25,20 +29,31 @@ public class HttpBulkProcessor implements Closeable {
     /**
      * A listener for the execution.
      */
-    public static interface Listener {
+    public interface Listener {
 
         /**
          * Callback before the bulk is executed.
+         * @param executionId execution ID
+         * @param request request
          */
         void beforeBulk(long executionId, BulkRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
+         * @param executionId execution ID
+         * @param request request
+         * @param response response
          */
         void afterBulk(long executionId, BulkRequest request, BulkResponse response);
 
         /**
          * Callback after a failed execution of bulk request.
+         *
+         * Note that in case an instance of <code>InterruptedException</code> is passed, which means that request processing has been
+         * cancelled externally, the thread's interruption status has been restored prior to calling this method.
+         * @param executionId execution ID
+         * @param request request
+         * @param failure failure
          */
         void afterBulk(long executionId, BulkRequest request, Throwable failure);
     }
@@ -60,6 +75,8 @@ public class HttpBulkProcessor implements Closeable {
         /**
          * Creates a builder of bulk processor with the client to use and the listener that will be used
          * to be notified on the completion of bulk requests.
+         * @param client the client
+         * @param listener the listener
          */
         public Builder(Client client, Listener listener) {
             this.client = client;
@@ -68,6 +85,8 @@ public class HttpBulkProcessor implements Closeable {
 
         /**
          * Sets an optional name to identify this bulk processor.
+         * @param name name
+         * @return this builder
          */
         public Builder setName(String name) {
             this.name = name;
@@ -78,6 +97,8 @@ public class HttpBulkProcessor implements Closeable {
          * Sets the number of concurrent requests allowed to be executed. A value of 0 means that only a single
          * request will be allowed to be executed. A value of 1 means 1 concurrent request is allowed to be executed
          * while accumulating new bulk requests. Defaults to <tt>1</tt>.
+         * @param concurrentRequests maximum number of concurrent requests
+         * @return this builder
          */
         public Builder setConcurrentRequests(int concurrentRequests) {
             this.concurrentRequests = concurrentRequests;
@@ -87,6 +108,8 @@ public class HttpBulkProcessor implements Closeable {
         /**
          * Sets when to flush a new bulk request based on the number of actions currently added. Defaults to
          * <tt>1000</tt>. Can be set to <tt>-1</tt> to disable it.
+         * @param bulkActions bulk actions
+         * @return this builder
          */
         public Builder setBulkActions(int bulkActions) {
             this.bulkActions = bulkActions;
@@ -96,6 +119,8 @@ public class HttpBulkProcessor implements Closeable {
         /**
          * Sets when to flush a new bulk request based on the size of actions currently added. Defaults to
          * <tt>5mb</tt>. Can be set to <tt>-1</tt> to disable it.
+         * @param bulkSize bulk size
+         * @return this builder
          */
         public Builder setBulkSize(ByteSizeValue bulkSize) {
             this.bulkSize = bulkSize;
@@ -104,9 +129,10 @@ public class HttpBulkProcessor implements Closeable {
 
         /**
          * Sets a flush interval flushing *any* bulk actions pending if the interval passes. Defaults to not set.
-         * <p/>
          * Note, both {@link #setBulkActions(int)} and {@link #setBulkSize(org.elasticsearch.common.unit.ByteSizeValue)}
          * can be set to <tt>-1</tt> with the flush interval set allowing for complete async processing of bulk actions.
+         * @param flushInterval flush interval
+         * @return this builder
          */
         public Builder setFlushInterval(TimeValue flushInterval) {
             this.flushInterval = flushInterval;
@@ -115,6 +141,7 @@ public class HttpBulkProcessor implements Closeable {
 
         /**
          * Builds a new bulk processor.
+         * @return a HTTP bulk processor
          */
         public HttpBulkProcessor build() {
             return new HttpBulkProcessor(client, listener, name, concurrentRequests, bulkActions, bulkSize, flushInterval);
@@ -216,6 +243,8 @@ public class HttpBulkProcessor implements Closeable {
     /**
      * Adds an {@link IndexRequest} to the list of actions to execute. Follows the same behavior of {@link IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
+     * @param request request
+     * @return this bulk processor
      */
     public HttpBulkProcessor add(IndexRequest request) {
         return add((ActionRequest) request);
@@ -223,6 +252,8 @@ public class HttpBulkProcessor implements Closeable {
 
     /**
      * Adds an {@link DeleteRequest} to the list of actions to execute.
+     * @param request request
+     * @return this bulk processor
      */
     public HttpBulkProcessor add(DeleteRequest request) {
         return add((ActionRequest) request);
@@ -230,6 +261,8 @@ public class HttpBulkProcessor implements Closeable {
 
     /**
      * Adds either a delete or an index request.
+     * @param request request
+     * @return this bulk processor
      */
     public HttpBulkProcessor add(ActionRequest request) {
         return add(request, null);
@@ -238,10 +271,6 @@ public class HttpBulkProcessor implements Closeable {
     public HttpBulkProcessor add(ActionRequest request, @Nullable Object payload) {
         internalAdd(request, payload);
         return this;
-    }
-
-    boolean isOpen() {
-        return !closed;
     }
 
     protected void ensureOpen() {
@@ -333,18 +362,9 @@ public class HttpBulkProcessor implements Closeable {
     }
 
     private boolean isOverTheLimit() {
-        if (bulkActions != -1 && bulkRequest.numberOfActions() >= bulkActions) {
-            return true;
-        }
-        if (bulkSize != -1 && bulkRequest.estimatedSizeInBytes() >= bulkSize) {
-            return true;
-        }
-        return false;
+        return bulkActions != -1 && bulkRequest.numberOfActions() >= bulkActions || bulkSize != -1 && bulkRequest.estimatedSizeInBytes() >= bulkSize;
     }
 
-    /**
-     * Flush pending delete or index requests.
-     */
     public synchronized void flush() {
         ensureOpen();
         if (bulkRequest.numberOfActions() > 0) {

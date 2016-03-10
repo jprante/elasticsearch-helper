@@ -31,9 +31,9 @@ public class BulkTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClientTest.class.getName());
 
-    private final static Integer MAX_ACTIONS = 1000;
+    private final static Long MAX_ACTIONS = 1000L;
 
-    private final static Integer NUM_ACTIONS = 1234;
+    private final static Long NUM_ACTIONS = 1234L;
 
 
     @Before
@@ -93,8 +93,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(1, client.getMetric().getTotalIngest().count());
+            assertEquals(1, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -105,6 +104,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
 
     @Test
     public void testRandomDocsBulkClient() throws IOException {
+        long numactions = NUM_ACTIONS;
         final BulkTransportClient client = ClientBuilder.builder()
                 .put(getSettings())
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
@@ -125,8 +125,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count(), 13);
+            assertEquals(numactions, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -138,8 +137,8 @@ public class BulkTransportClientTest extends NodeTestUtils {
     @Test
     public void testThreadedRandomDocsBulkClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = MAX_ACTIONS;
-        final int maxloop = NUM_ACTIONS;
+        long maxactions = MAX_ACTIONS;
+        final long maxloop = NUM_ACTIONS;
 
         Settings settingsForIndex = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
@@ -180,8 +179,7 @@ public class BulkTransportClientTest extends NodeTestUtils {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

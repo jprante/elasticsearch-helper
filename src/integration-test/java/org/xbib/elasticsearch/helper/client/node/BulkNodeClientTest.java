@@ -13,6 +13,7 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.junit.Before;
+import org.xbib.elasticsearch.common.metrics.ElasticsearchIngestMetric;
 import org.xbib.elasticsearch.helper.client.BulkNodeClient;
 import org.xbib.elasticsearch.helper.client.ClientBuilder;
 import org.xbib.elasticsearch.helper.client.LongAdderIngestMetric;
@@ -33,9 +34,9 @@ public class BulkNodeClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 1000;
+    private final static Long MAX_ACTIONS = 1000L;
 
-    private final static Integer NUM_ACTIONS = 1234;
+    private final static Long NUM_ACTIONS = 1234L;
 
     @Before
     public void startNodes() {
@@ -109,8 +110,7 @@ public class BulkNodeClientTest extends NodeTestUtils {
         } catch (ExecutionException e) {
             logger.error(e.getMessage(), e);
         } finally {
-            logger.info("bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(1, client.getMetric().getTotalIngest().count());
+            assertEquals(1, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -121,10 +121,11 @@ public class BulkNodeClientTest extends NodeTestUtils {
 
     @Test
     public void testRandomDocsNodeClient() throws Exception {
+        long numactions = NUM_ACTIONS;
         final BulkNodeClient client = ClientBuilder.builder()
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
                 .put(ClientBuilder.FLUSH_INTERVAL, TimeValue.timeValueSeconds(60))
-                .setMetric(new LongAdderIngestMetric())
+                .setMetric(new ElasticsearchIngestMetric())
                 .toBulkNodeClient(client("1"));
         try {
             client.newIndex("test");
@@ -136,7 +137,7 @@ public class BulkNodeClientTest extends NodeTestUtils {
         } catch (NoNodeAvailableException e) {
             logger.warn("skipping, no node available");
         } finally {
-            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(numactions, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }
@@ -148,8 +149,8 @@ public class BulkNodeClientTest extends NodeTestUtils {
     @Test
     public void testThreadedRandomDocsNodeClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = MAX_ACTIONS;
-        final int maxloop = NUM_ACTIONS;
+        Long maxactions = MAX_ACTIONS;
+        final Long maxloop = NUM_ACTIONS;
         logger.info("NodeClient max={} maxactions={} maxloop={}", maxthreads, maxactions, maxloop);
         final BulkNodeClient client = ClientBuilder.builder()
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, maxactions)
@@ -184,8 +185,7 @@ public class BulkNodeClientTest extends NodeTestUtils {
             logger.warn("skipping, no node available");
         } finally {
             client.stopBulk("test");
-            logger.info("total bulk requests = {}", client.getMetric().getTotalIngest().count());
-            assertEquals(maxthreads * maxloop / maxactions + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

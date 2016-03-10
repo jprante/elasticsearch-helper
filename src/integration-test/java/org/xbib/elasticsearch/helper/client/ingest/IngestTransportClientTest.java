@@ -29,9 +29,9 @@ public class IngestTransportClientTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClientTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 100;
+    private final static Long MAX_ACTIONS = 100L;
 
-    private final static Integer NUM_ACTIONS = 1234;
+    private final static Long NUM_ACTIONS = 1234L;
 
     @Before
     public void startNodes() {
@@ -65,8 +65,8 @@ public class IngestTransportClientTest extends NodeTestUtils {
         } catch (InterruptedException e) {
             // ignore
         } finally {
-            logger.info("total bulk requests = {}", ingest.getMetric().getTotalIngest().count());
-            assertEquals(1, ingest.getMetric().getTotalIngest().count());
+            logger.info("total bulk requests = {}", ingest.getMetric().getTotalIngest().getCount());
+            assertEquals(1, ingest.getMetric().getTotalIngest().getCount());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
@@ -77,6 +77,7 @@ public class IngestTransportClientTest extends NodeTestUtils {
 
     @Test
     public void testRandomDocsIngestClient() throws Exception {
+        long numactions = NUM_ACTIONS;
         Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
@@ -101,8 +102,8 @@ public class IngestTransportClientTest extends NodeTestUtils {
             // ignore
         } finally {
             ingest.stopBulk("test");
-            logger.info("total requests = {}", ingest.getMetric().getTotalIngest().count());
-            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, ingest.getMetric().getTotalIngest().count());
+            logger.info("total requests = {}", ingest.getMetric().getTotalIngest().getCount());
+            assertEquals(numactions, ingest.getMetric().getTotalIngest().getCount());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }
@@ -114,8 +115,8 @@ public class IngestTransportClientTest extends NodeTestUtils {
     @Test
     public void testThreadedRandomDocsIngestClient() throws Exception {
         int maxthreads = Runtime.getRuntime().availableProcessors();
-        int maxactions = MAX_ACTIONS;
-        final int maxloop = NUM_ACTIONS;
+        long maxactions = MAX_ACTIONS;
+        final long maxloop = NUM_ACTIONS;
         Settings settings = Settings.settingsBuilder()
                 .put("index.number_of_shards", 2)
                 .put("index.number_of_replicas", 1)
@@ -154,8 +155,7 @@ public class IngestTransportClientTest extends NodeTestUtils {
             logger.warn("skipping, no node available");
         } finally {
             ingest.stopBulk("test");
-            logger.info("total requests = {}", ingest.getMetric().getTotalIngest().count());
-            assertEquals(maxthreads * maxloop / maxactions + 1, ingest.getMetric().getTotalIngest().count());
+            assertEquals(maxthreads * maxloop, ingest.getMetric().getSucceeded().getCount());
             if (ingest.hasThrowable()) {
                 logger.error("error", ingest.getThrowable());
             }

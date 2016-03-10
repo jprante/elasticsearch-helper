@@ -39,11 +39,16 @@ public class BulkProcessor implements Closeable {
 
         /**
          * Callback before the bulk is executed.
+         * @param executionId execution ID
+         * @param request request
          */
         void beforeBulk(long executionId, BulkRequest request);
 
         /**
          * Callback after a successful execution of bulk request.
+         * @param executionId execution ID
+         * @param request request
+         * @param response response
          */
         void afterBulk(long executionId, BulkRequest request, BulkResponse response);
 
@@ -52,6 +57,9 @@ public class BulkProcessor implements Closeable {
          *
          * Note that in case an instance of <code>InterruptedException</code> is passed, which means that request processing has been
          * cancelled externally, the thread's interruption status has been restored prior to calling this method.
+         * @param executionId execution ID
+         * @param request request
+         * @param failure failure
          */
         void afterBulk(long executionId, BulkRequest request, Throwable failure);
     }
@@ -72,6 +80,8 @@ public class BulkProcessor implements Closeable {
         /**
          * Creates a builder of bulk processor with the client to use and the listener that will be used
          * to be notified on the completion of bulk requests.
+         * @param client the client
+         * @param listener the listener
          */
         public Builder(Client client, Listener listener) {
             this.client = client;
@@ -80,6 +90,8 @@ public class BulkProcessor implements Closeable {
 
         /**
          * Sets an optional name to identify this bulk processor.
+         * @param name name
+         * @return this builder
          */
         public Builder setName(String name) {
             this.name = name;
@@ -90,6 +102,8 @@ public class BulkProcessor implements Closeable {
          * Sets the number of concurrent requests allowed to be executed. A value of 0 means that only a single
          * request will be allowed to be executed. A value of 1 means 1 concurrent request is allowed to be executed
          * while accumulating new bulk requests. Defaults to <tt>1</tt>.
+         * @param concurrentRequests maximum number of concurrent requests
+         * @return this builder
          */
         public Builder setConcurrentRequests(int concurrentRequests) {
             this.concurrentRequests = concurrentRequests;
@@ -99,6 +113,8 @@ public class BulkProcessor implements Closeable {
         /**
          * Sets when to flush a new bulk request based on the number of actions currently added. Defaults to
          * <tt>1000</tt>. Can be set to <tt>-1</tt> to disable it.
+         * @param bulkActions mbulk actions
+         * @return this builder
          */
         public Builder setBulkActions(int bulkActions) {
             this.bulkActions = bulkActions;
@@ -108,6 +124,8 @@ public class BulkProcessor implements Closeable {
         /**
          * Sets when to flush a new bulk request based on the size of actions currently added. Defaults to
          * <tt>5mb</tt>. Can be set to <tt>-1</tt> to disable it.
+         * @param bulkSize bulk size
+         * @return this builder
          */
         public Builder setBulkSize(ByteSizeValue bulkSize) {
             this.bulkSize = bulkSize;
@@ -116,9 +134,10 @@ public class BulkProcessor implements Closeable {
 
         /**
          * Sets a flush interval flushing *any* bulk actions pending if the interval passes. Defaults to not set.
-         * <p/>
          * Note, both {@link #setBulkActions(int)} and {@link #setBulkSize(org.elasticsearch.common.unit.ByteSizeValue)}
          * can be set to <tt>-1</tt> with the flush interval set allowing for complete async processing of bulk actions.
+         * @param flushInterval flush interval
+         * @return this builder
          */
         public Builder setFlushInterval(TimeValue flushInterval) {
             this.flushInterval = flushInterval;
@@ -127,6 +146,7 @@ public class BulkProcessor implements Closeable {
 
         /**
          * Builds a new bulk processor.
+         * @return a bulk processor
          */
         public BulkProcessor build() {
             return new BulkProcessor(client, listener, name, concurrentRequests, bulkActions, bulkSize, flushInterval);
@@ -215,6 +235,8 @@ public class BulkProcessor implements Closeable {
     /**
      * Adds an {@link IndexRequest} to the list of actions to execute. Follows the same behavior of {@link IndexRequest}
      * (for example, if no id is provided, one will be generated, or usage of the create flag).
+     * @param request request
+     * @return his bulk processor
      */
     public BulkProcessor add(IndexRequest request) {
         return add((ActionRequest) request);
@@ -222,6 +244,8 @@ public class BulkProcessor implements Closeable {
 
     /**
      * Adds an {@link DeleteRequest} to the list of actions to execute.
+     * @param request request
+     * @return his bulk processor
      */
     public BulkProcessor add(DeleteRequest request) {
         return add((ActionRequest) request);
@@ -229,11 +253,19 @@ public class BulkProcessor implements Closeable {
 
     /**
      * Adds either a delete or an index request.
+     * @param request request
+     * @return his bulk processor
      */
     public BulkProcessor add(ActionRequest request) {
         return add(request, null);
     }
 
+    /**
+     * Adds either a delete or an index request with a payload.
+     * @param request request
+     * @param payload payload
+     * @return his bulk processor
+     */
     public BulkProcessor add(ActionRequest request, @Nullable Object payload) {
         internalAdd(request, payload);
         return this;
@@ -269,7 +301,6 @@ public class BulkProcessor implements Closeable {
         execute();
     }
 
-    // (currently) needs to be executed under a lock
     private void execute() {
         final BulkRequest bulkRequest = this.bulkRequest;
         final long executionId = executionIdGen.incrementAndGet();
@@ -343,7 +374,6 @@ public class BulkProcessor implements Closeable {
         }
 
         public boolean awaitClose(long timeout, TimeUnit unit) throws InterruptedException {
-            // we are "closed" immediately as there is no request in flight
             return true;
         }
     }

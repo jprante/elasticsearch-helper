@@ -2,7 +2,7 @@ package org.xbib.elasticsearch.common.metrics;
 
 import com.twitter.jsr166e.LongAdder;
 import org.xbib.metrics.ExpWeightedMovingAverage;
-import org.xbib.metrics.MeterMetric;
+import org.xbib.metrics.Metered;
 
 import java.util.Date;
 import java.util.concurrent.Executors;
@@ -16,37 +16,28 @@ import java.util.concurrent.TimeUnit;
  *
  * @see <a href="http://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average">EMA</a>
  */
-public class ElasticsearchMeterMetric implements MeterMetric {
+public class ElasticsearchMeterMetric implements Metered {
 
     private final static ScheduledExecutorService service = Executors.newScheduledThreadPool(3);
     private final ExpWeightedMovingAverage m1Rate = ExpWeightedMovingAverage.oneMinuteEWMA();
     private final ExpWeightedMovingAverage m5Rate = ExpWeightedMovingAverage.fiveMinuteEWMA();
     private final ExpWeightedMovingAverage m15Rate = ExpWeightedMovingAverage.fifteenMinuteEWMA();
     private final LongAdder count;
-    private final long startDate;
     private final long startTime;
-    private final TimeUnit rateUnit;
-    private final ScheduledFuture<?> future;
+    private ScheduledFuture<?> future;
 
-    private long stopDate;
-
-    private long stopTime;
-
-    public ElasticsearchMeterMetric(long intervalSeconds, TimeUnit rateUnit) {
-        this.rateUnit = rateUnit;
+    public ElasticsearchMeterMetric() {
         this.count = new LongAdder();
-        this.startDate = System.currentTimeMillis();
         this.startTime = System.nanoTime();
+    }
+
+    public void spawn(long intervalSeconds) {
         this.future = service.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 tick();
             }
         }, intervalSeconds, intervalSeconds, TimeUnit.SECONDS);
-    }
-
-    public TimeUnit rateUnit() {
-        return rateUnit;
     }
 
     /**
@@ -77,40 +68,24 @@ public class ElasticsearchMeterMetric implements MeterMetric {
         m15Rate.update(n);
     }
 
-    public long count() {
+    @Override
+    public long getCount() {
         return count.sum();
     }
 
-    public long started() {
-        return startTime;
+    @Override
+    public double getFifteenMinuteRate() {
+        return m15Rate.getRate(TimeUnit.SECONDS);
     }
 
-    public Date startedAt() {
-        return new Date(startDate);
+    @Override
+    public double getFiveMinuteRate() {
+        return m5Rate.getRate(TimeUnit.SECONDS);
     }
 
-    public long stopped() {
-        return stopTime;
-    }
-
-    public Date stoppedAt() {
-        return new Date(stopDate);
-    }
-
-    public long elapsed() {
-        return System.nanoTime() - startTime;
-    }
-
-    public double fifteenMinuteRate() {
-        return m15Rate.rate(rateUnit);
-    }
-
-    public double fiveMinuteRate() {
-        return m5Rate.rate(rateUnit);
-    }
-
-    public double meanRate() {
-        long count = count();
+    @Override
+    public double getMeanRate() {
+        long count = getCount();
         if (count == 0) {
             return 0.0;
         } else {
@@ -119,18 +94,17 @@ public class ElasticsearchMeterMetric implements MeterMetric {
         }
     }
 
-    public double oneMinuteRate() {
-        return m1Rate.rate(rateUnit);
+    @Override
+    public double getOneMinuteRate() {
+        return m1Rate.getRate(TimeUnit.SECONDS);
     }
 
     public void stop() {
-        this.stopTime = System.nanoTime();
-        this.stopDate = System.currentTimeMillis();
         future.cancel(false);
     }
 
     private double convertNsRate(double ratePerNs) {
-        return ratePerNs * (double) rateUnit.toNanos(1);
+        return ratePerNs * (double) TimeUnit.SECONDS.toNanos(1);
     }
 
 }

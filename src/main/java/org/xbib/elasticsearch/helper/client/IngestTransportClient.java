@@ -113,11 +113,10 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
                 metric.getCurrentIngest().dec();
                 metric.getSucceeded().inc(response.successSize());
                 metric.getFailed().inc(response.getFailures().size());
-                metric.getTotalIngest().inc(response.tookInMillis());
                 logger.debug("after ingest [{}] [succeeded={}] [failed={}] [{}ms] [leader={}] [replica={}] [concurrent requests={}]",
                         response.ingestId(),
-                        metric.getSucceeded().count(),
-                        metric.getFailed().count(),
+                        metric.getSucceeded().getCount(),
+                        metric.getFailed().getCount(),
                         response.tookInMillis(),
                         response.leaderShardResponse(),
                         response.replicaShardResponses(),

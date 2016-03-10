@@ -21,12 +21,13 @@ public class BulkNodeDuplicateIDTest extends NodeTestUtils {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkNodeDuplicateIDTest.class.getSimpleName());
 
-    private final static Integer MAX_ACTIONS = 1000;
+    private final static Long MAX_ACTIONS = 1000L;
 
-    private final static Integer NUM_ACTIONS = 12345;
+    private final static Long NUM_ACTIONS = 12345L;
 
     @Test
     public void testDuplicateDocIDs() throws Exception {
+        long numactions = NUM_ACTIONS;
         final BulkNodeClient client = ClientBuilder.builder()
                 .put(ClientBuilder.MAX_ACTIONS_PER_REQUEST, MAX_ACTIONS)
                 .setMetric(new LongAdderIngestMetric())
@@ -50,7 +51,7 @@ public class BulkNodeDuplicateIDTest extends NodeTestUtils {
             logger.warn("skipping, no node available");
         } finally {
             client.shutdown();
-            assertEquals(NUM_ACTIONS / MAX_ACTIONS + 1, client.getMetric().getTotalIngest().count());
+            assertEquals(numactions, client.getMetric().getSucceeded().getCount());
             if (client.hasThrowable()) {
                 logger.error("error", client.getThrowable());
             }

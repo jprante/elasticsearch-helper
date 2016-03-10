@@ -18,6 +18,8 @@ public class RetainRequestBuilder extends SingleShardOperationRequestBuilder<Ret
 
     /**
      * Sets the delta
+     * @param delta the delta
+     * @return this request builder
      */
     public RetainRequestBuilder setDelta(int delta) {
         request().delta(delta);
@@ -26,6 +28,8 @@ public class RetainRequestBuilder extends SingleShardOperationRequestBuilder<Ret
 
     /**
      * Set min to keep.
+     * @param minToKeep the minimum to keep
+     * @return this request builder
      */
     public RetainRequestBuilder setMinToKeep(int minToKeep) {
         request().minToKeep(minToKeep);

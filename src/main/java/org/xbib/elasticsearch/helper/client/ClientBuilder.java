@@ -62,6 +62,16 @@ public class ClientBuilder {
         return this;
     }
 
+    public ClientBuilder put(String key, Long value) {
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
+    public ClientBuilder put(String key, Double value) {
+        settingsBuilder.put(key, value);
+        return this;
+    }
+
     public ClientBuilder put(String key, ByteSizeValue value) {
         settingsBuilder.put(key, value);
         return this;

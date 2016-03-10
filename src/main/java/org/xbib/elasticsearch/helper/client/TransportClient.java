@@ -29,6 +29,8 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.common.inject.ModulesBuilder;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsModule;
@@ -187,6 +189,7 @@ public class TransportClient extends AbstractClient {
 
     /**
      * Returns the current registered transport addresses to use.
+     * @return list of transport addresess
      */
     public List<TransportAddress> transportAddresses() {
         List<TransportAddress> lstBuilder = new ArrayList<>();
@@ -200,6 +203,7 @@ public class TransportClient extends AbstractClient {
      * Returns the current connected transport nodes that this client will use.
      * The nodes include all the nodes that are currently alive based on the transport
      * addresses provided.
+     * @return list of nodes
      */
     public List<DiscoveryNode> connectedNodes() {
         return this.nodes;
@@ -208,6 +212,7 @@ public class TransportClient extends AbstractClient {
     /**
      * The list of filtered nodes that were not connected to, for example, due to
      * mismatch in cluster name.
+     * @return list of nodes
      */
     public List<DiscoveryNode> filteredNodes() {
         return this.filteredNodes;
@@ -216,6 +221,7 @@ public class TransportClient extends AbstractClient {
 
     /**
      * Returns the listed nodes in the transport client (ones added to it).
+     * @return list of nodes
      */
     public List<DiscoveryNode> listedNodes() {
         return this.listedNodes;
@@ -226,6 +232,8 @@ public class TransportClient extends AbstractClient {
      * The Node this transport address represents will be used if its possible to connect to it.
      * If it is unavailable, it will be automatically connected to once it is up.
      * In order to get the list of all the current connected nodes, please see {@link #connectedNodes()}.
+     * @param discoveryNodes nodes
+     * @return this transport client
      */
     public TransportClient addDiscoveryNodes(DiscoveryNodes discoveryNodes) {
         Collection<InetSocketTransportAddress> addresses = new ArrayList<>();
@@ -274,6 +282,8 @@ public class TransportClient extends AbstractClient {
 
     /**
      * Removes a transport address from the list of transport addresses that are used to connect to.
+     * @param transportAddress transport address to remove
+     * @return this transport client
      */
     public TransportClient removeTransportAddress(TransportAddress transportAddress) {
         synchronized (mutex) {
@@ -423,12 +433,13 @@ public class TransportClient extends AbstractClient {
     }
 
     static class RetryListener<Response> implements ActionListener<Response> {
+        private final ESLogger logger = ESLoggerFactory.getLogger(RetryListener.class.getName());
         private final NodeListenerCallback<Response> callback;
         private final ActionListener<Response> listener;
         private final List<DiscoveryNode> nodes;
         private final int index;
 
-        private volatile int i;
+        private volatile int n;
 
         public RetryListener(NodeListenerCallback<Response> callback, ActionListener<Response> listener,
                              List<DiscoveryNode> nodes, int index) {
@@ -446,13 +457,14 @@ public class TransportClient extends AbstractClient {
         @Override
         public void onFailure(Throwable e) {
             if (ExceptionsHelper.unwrapCause(e) instanceof ConnectTransportException) {
-                int i = ++this.i;
-                if (i >= nodes.size()) {
+                int n = ++this.n;
+                if (n >= nodes.size()) {
                     listener.onFailure(new NoNodeAvailableException("none of the configured nodes were available: "
                             + nodes, e));
                 } else {
                     try {
-                        callback.doWithNode(nodes.get((index + i) % nodes.size()), this);
+                        logger.warn("retrying on anoher node (n={}, nodes={})", n, nodes.size());
+                        callback.doWithNode(nodes.get((index + n) % nodes.size()), this);
                     } catch (final Throwable t) {
                         listener.onFailure(t);
                     }

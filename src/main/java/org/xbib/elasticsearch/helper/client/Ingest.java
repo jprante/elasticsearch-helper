@@ -268,6 +268,7 @@ public interface Ingest {
      * @param maxWait maximum wait time
      * @return this ingest
      * @throws InterruptedException if wait is interrupted
+     * @throws ExecutionException if execution failed
      */
     Ingest waitForResponses(TimeValue maxWait) throws InterruptedException, ExecutionException;
 
@@ -363,6 +364,7 @@ public interface Ingest {
     /**
      * Log the timestamp of the most recently indexed document in the index.
      * @param index the index name
+     * @return millis UTC millis of the most recent document
      * @throws IOException if most rcent document can not be found
      */
     Long mostRecentDocument(String index) throws IOException;

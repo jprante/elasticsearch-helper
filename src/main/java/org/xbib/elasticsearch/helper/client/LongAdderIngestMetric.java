@@ -15,10 +15,10 @@
  */
 package org.xbib.elasticsearch.helper.client;
 
-import org.xbib.metrics.CounterMetric;
-import org.xbib.metrics.LongAdderCounterMetric;
-import org.xbib.metrics.LongAdderMeanMetric;
-import org.xbib.metrics.MeanMetric;
+import org.xbib.metrics.Count;
+import org.xbib.metrics.CountMetric;
+import org.xbib.metrics.Meter;
+import org.xbib.metrics.Metered;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,59 +33,79 @@ public class LongAdderIngestMetric implements IngestMetric {
 
     private final Map<String, Long> stopBulkRefreshIntervals = new HashMap<>();
 
-    private final MeanMetric totalIngest = new LongAdderMeanMetric();
+    private final Meter totalIngest = new Meter();
 
-    private final CounterMetric totalIngestSizeInBytes = new LongAdderCounterMetric();
+    private final Count totalIngestSizeInBytes = new CountMetric();
 
-    private final CounterMetric currentIngest = new LongAdderCounterMetric();
+    private final Count currentIngest = new CountMetric();
 
-    private final CounterMetric currentIngestNumDocs = new LongAdderCounterMetric();
+    private final Count currentIngestNumDocs = new CountMetric();
 
-    private final CounterMetric submitted = new LongAdderCounterMetric();
+    private final Count submitted = new CountMetric();
 
-    private final CounterMetric succeeded = new LongAdderCounterMetric();
+    private final Count succeeded = new CountMetric();
 
-    private final CounterMetric failed = new LongAdderCounterMetric();
+    private final Count failed = new CountMetric();
 
-    private long started;
+    private Long started;
 
-    public MeanMetric getTotalIngest() {
+    private Long stopped;
+
+    @Override
+    public Metered getTotalIngest() {
         return totalIngest;
     }
 
-    public CounterMetric getTotalIngestSizeInBytes() {
+    @Override
+    public Count getTotalIngestSizeInBytes() {
         return totalIngestSizeInBytes;
     }
 
-    public CounterMetric getCurrentIngest() {
+    @Override
+    public Count getCurrentIngest() {
         return currentIngest;
     }
 
-    public CounterMetric getCurrentIngestNumDocs() {
+    @Override
+    public Count getCurrentIngestNumDocs() {
         return currentIngestNumDocs;
     }
 
-    public CounterMetric getSubmitted() {
+    @Override
+    public Count getSubmitted() {
         return submitted;
     }
 
-    public CounterMetric getSucceeded() {
+    @Override
+    public Count getSucceeded() {
         return succeeded;
     }
 
-    public CounterMetric getFailed() {
+    @Override
+    public Count getFailed() {
         return failed;
     }
 
+    @Override
     public LongAdderIngestMetric start() {
         this.started = System.nanoTime();
+        this.totalIngest.spawn(5L);
         return this;
     }
 
-    public long elapsed() {
-        return System.nanoTime() - started;
+    @Override
+    public LongAdderIngestMetric stop() {
+        this.stopped = System.nanoTime();
+        totalIngest.stop();
+        return this;
     }
 
+    @Override
+    public long elapsed() {
+        return (stopped != null ? stopped : System.nanoTime()) - started;
+    }
+
+    @Override
     public LongAdderIngestMetric setupBulk(String indexName, long startRefreshInterval, long stopRefreshInterval) {
         synchronized (indexNames) {
             indexNames.add(indexName);
@@ -95,10 +115,12 @@ public class LongAdderIngestMetric implements IngestMetric {
         return this;
     }
 
+    @Override
     public boolean isBulk(String indexName) {
         return indexNames.contains(indexName);
     }
 
+    @Override
     public LongAdderIngestMetric removeBulk(String indexName) {
         synchronized (indexNames) {
             indexNames.remove(indexName);
@@ -106,14 +128,17 @@ public class LongAdderIngestMetric implements IngestMetric {
         return this;
     }
 
+    @Override
     public Set<String> indices() {
         return indexNames;
     }
 
+    @Override
     public Map<String, Long> getStartBulkRefreshIntervals() {
         return startBulkRefreshIntervals;
     }
 
+    @Override
     public Map<String, Long> getStopBulkRefreshIntervals() {
         return stopBulkRefreshIntervals;
     }
