@@ -4,6 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.xbib.elasticsearch.helper.client.node.BulkNodeClientTest;
 import org.xbib.elasticsearch.helper.client.node.BulkNodeDuplicateIDTest;
+import org.xbib.elasticsearch.helper.client.node.BulkNodeIndexAliasTest;
 import org.xbib.elasticsearch.helper.client.node.BulkNodeReplicaTest;
 import org.xbib.elasticsearch.helper.client.node.BulkNodeUpdateReplicaLevelTest;
 
@@ -12,7 +13,8 @@ import org.xbib.elasticsearch.helper.client.node.BulkNodeUpdateReplicaLevelTest;
         BulkNodeClientTest.class,
         BulkNodeDuplicateIDTest.class,
         BulkNodeReplicaTest.class,
-        BulkNodeUpdateReplicaLevelTest.class
+        BulkNodeUpdateReplicaLevelTest.class,
+        BulkNodeIndexAliasTest.class
 })
 public class BulkNodeTestSuite {
 

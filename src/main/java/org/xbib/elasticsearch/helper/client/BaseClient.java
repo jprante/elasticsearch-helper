@@ -16,6 +16,7 @@
 package org.xbib.elasticsearch.helper.client;
 
 import com.carrotsearch.hppc.cursors.ObjectCursor;
+import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -51,6 +52,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.client.transport.NoNodeAvailableException;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.ESLoggerFactory;
@@ -333,6 +335,31 @@ abstract class BaseClient {
         return indices.isEmpty() ? alias : indices.iterator().next();
     }
 
+    public Map<String,String> getAliasFilters(String alias) {
+        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
+        return getFilters(getAliasesRequestBuilder.setIndices(resolveAlias(alias)).execute().actionGet());
+    }
+
+    public Map<String,String>  getIndexFilters(String index) {
+        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
+        return getFilters(getAliasesRequestBuilder.setIndices(index).execute().actionGet());
+    }
+
+   private Map<String,String> getFilters(GetAliasesResponse getAliasesResponse) {
+        Map<String,String> result = new HashMap<>();
+        for (ObjectObjectCursor<String, List<AliasMetaData>> object : getAliasesResponse.getAliases()) {
+            List<AliasMetaData> aliasMetaDataList = object.value;
+            for (AliasMetaData aliasMetaData : aliasMetaDataList) {
+                if (aliasMetaData.filteringRequired()) {
+                    result.put(aliasMetaData.alias(), new String(aliasMetaData.getFilter().uncompressed()));
+                } else {
+                    result.put(aliasMetaData.alias(), null);
+                }
+            }
+        }
+        return result;
+    }
+
     public void switchAliases(String index, String concreteIndex, List<String> extraAliases) {
         switchAliases(index, concreteIndex, extraAliases, null);
     }
@@ -345,55 +372,55 @@ abstract class BaseClient {
         if (index.equals(concreteIndex)) {
             return;
         }
+        // two situations: 1. there is a new alias 2. there is already an old index with the alias
+        String oldIndex = resolveAlias(index);
+        final Map<String,String> oldFilterMap = oldIndex.equals(index) ? new HashMap<String,String>() : getIndexFilters(oldIndex);
         final List<String> newAliases = new LinkedList<>();
-        final List<String> switchedAliases = new LinkedList<>();
-        GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
-        GetAliasesResponse getAliasesResponse = getAliasesRequestBuilder.setAliases(index).execute().actionGet();
+        final List<String> switchAliases = new LinkedList<>();
         IndicesAliasesRequestBuilder requestBuilder = new IndicesAliasesRequestBuilder(client(), IndicesAliasesAction.INSTANCE);
-        if (getAliasesResponse.getAliases().isEmpty()) {
-            //logger.info("adding alias {} to index {}", index, concreteIndex);
+        if (!oldFilterMap.containsKey(index)) {
+            // never apply a filter for trunk index name
             requestBuilder.addAlias(concreteIndex, index);
             newAliases.add(index);
-            if (extraAliases != null) {
-                for (String extraAlias : extraAliases) {
+        }
+        // switch existing aliases
+        for (Map.Entry<String,String> entry : oldFilterMap.entrySet()) {
+            String alias = entry.getKey();
+            String filter = entry.getValue();
+            requestBuilder.removeAlias(oldIndex, alias);
+            if (filter != null) {
+                requestBuilder.addAlias(concreteIndex, alias, filter);
+            } else {
+                requestBuilder.addAlias(concreteIndex, alias);
+            }
+            switchAliases.add(alias);
+        }
+        // a list of aliases that should be added, check if new or old
+        if (extraAliases != null) {
+            for (String extraAlias : extraAliases) {
+                if (!oldFilterMap.containsKey(extraAlias)) {
+                    // index alias adder only active on extra aliases, and if alias is new
                     if (adder != null) {
                         adder.addIndexAlias(requestBuilder, concreteIndex, extraAlias);
                     } else {
                         requestBuilder.addAlias(concreteIndex, extraAlias);
                     }
                     newAliases.add(extraAlias);
-                }
-            }
-        } else {
-            for (ObjectCursor<String> indexName : getAliasesResponse.getAliases().keys()) {
-                if (indexName.value.startsWith(index)) {
-                    //logger.info("switching alias {} from index {} to index {}", index, indexName.value, concreteIndex);
-                    requestBuilder.removeAlias(indexName.value, index);
-                    if (adder != null) {
-                        adder.addIndexAlias(requestBuilder, concreteIndex, index);
+                } else {
+                    String filter = oldFilterMap.get(extraAlias);
+                    requestBuilder.removeAlias(oldIndex, extraAlias);
+                    if (filter != null) {
+                        requestBuilder.addAlias(concreteIndex, extraAlias, filter);
                     } else {
-                        requestBuilder.addAlias(concreteIndex, index);
+                        requestBuilder.addAlias(concreteIndex, extraAlias);
                     }
-                    switchedAliases.add(index);
-                    if (extraAliases != null) {
-                        for (String extraAlias : extraAliases) {
-                            requestBuilder.removeAlias(indexName.value, extraAlias);
-                            if (adder != null) {
-                                adder.addIndexAlias(requestBuilder, concreteIndex, extraAlias);
-                            } else {
-                                requestBuilder.addAlias(concreteIndex, extraAlias);
-                            }
-                            switchedAliases.add(extraAlias);
-                        }
-                    }
+                    switchAliases.add(extraAlias);
                 }
             }
         }
-        if (!newAliases.isEmpty() || !switchedAliases.isEmpty()) {
+        if (!newAliases.isEmpty() || !switchAliases.isEmpty()) {
+            logger.info("new aliases = {}, switch aliases = {}", newAliases, switchAliases);
             requestBuilder.execute().actionGet();
-            logger.info("new aliases = {}, switched aliases = {}", newAliases, switchedAliases);
-        } else {
-            logger.info("");
         }
     }
 

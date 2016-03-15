@@ -1,5 +1,5 @@
 group ='org.xbib.elasticsearch.plugin'
-version = '2.2.0.4'
+version = '2.2.0.5'
 
 println "Host: " + java.net.InetAddress.getLocalHost()
 println "Gradle: " + gradle.gradleVersion + " JVM: " + org.gradle.internal.jvm.Jvm.current() + " Groovy: " + GroovySystem.getVersion()
@@ -94,14 +94,6 @@ dependencies {
 
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:unchecked,deprecation"
-}
-
-test {
-    systemProperties['path.home'] = System.getProperty("user.dir")
-    testLogging {
-        showStandardStreams = false
-        exceptionFormat = 'full'
-    }
 }
 
 task makePluginDescriptor(type: Copy) {

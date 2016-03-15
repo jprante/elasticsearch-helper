@@ -335,6 +335,13 @@ public interface Ingest {
     String resolveMostRecentIndex(String alias);
 
     /**
+     * Get all alias filters.
+     * @param index index
+     * @return map of alias filters
+     */
+    Map<String,String>  getAliasFilters(String index);
+
+    /**
      * Switch aliases from one index to another.
      * @param index the index name
      * @param concreteIndex the index name with timestamp
