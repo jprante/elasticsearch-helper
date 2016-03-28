@@ -340,7 +340,7 @@ abstract class BaseClient {
         return getFilters(getAliasesRequestBuilder.setIndices(resolveAlias(alias)).execute().actionGet());
     }
 
-    public Map<String,String>  getIndexFilters(String index) {
+    public Map<String,String> getIndexFilters(String index) {
         GetAliasesRequestBuilder getAliasesRequestBuilder = new GetAliasesRequestBuilder(client(), GetAliasesAction.INSTANCE);
         return getFilters(getAliasesRequestBuilder.setIndices(index).execute().actionGet());
     }
@@ -374,31 +374,33 @@ abstract class BaseClient {
         }
         // two situations: 1. there is a new alias 2. there is already an old index with the alias
         String oldIndex = resolveAlias(index);
-        final Map<String,String> oldFilterMap = oldIndex.equals(index) ? new HashMap<String,String>() : getIndexFilters(oldIndex);
+        final Map<String,String> oldFilterMap = oldIndex.equals(index) ? null : getIndexFilters(oldIndex);
         final List<String> newAliases = new LinkedList<>();
         final List<String> switchAliases = new LinkedList<>();
         IndicesAliasesRequestBuilder requestBuilder = new IndicesAliasesRequestBuilder(client(), IndicesAliasesAction.INSTANCE);
-        if (!oldFilterMap.containsKey(index)) {
+        if (oldFilterMap == null || !oldFilterMap.containsKey(index)) {
             // never apply a filter for trunk index name
             requestBuilder.addAlias(concreteIndex, index);
             newAliases.add(index);
         }
         // switch existing aliases
-        for (Map.Entry<String,String> entry : oldFilterMap.entrySet()) {
-            String alias = entry.getKey();
-            String filter = entry.getValue();
-            requestBuilder.removeAlias(oldIndex, alias);
-            if (filter != null) {
-                requestBuilder.addAlias(concreteIndex, alias, filter);
-            } else {
-                requestBuilder.addAlias(concreteIndex, alias);
+        if (oldFilterMap != null) {
+            for (Map.Entry<String, String> entry : oldFilterMap.entrySet()) {
+                String alias = entry.getKey();
+                String filter = entry.getValue();
+                requestBuilder.removeAlias(oldIndex, alias);
+                if (filter != null) {
+                    requestBuilder.addAlias(concreteIndex, alias, filter);
+                } else {
+                    requestBuilder.addAlias(concreteIndex, alias);
+                }
+                switchAliases.add(alias);
             }
-            switchAliases.add(alias);
         }
         // a list of aliases that should be added, check if new or old
         if (extraAliases != null) {
             for (String extraAlias : extraAliases) {
-                if (!oldFilterMap.containsKey(extraAlias)) {
+                if (oldFilterMap == null || !oldFilterMap.containsKey(extraAlias)) {
                     // index alias adder only active on extra aliases, and if alias is new
                     if (adder != null) {
                         adder.addIndexAlias(requestBuilder, concreteIndex, extraAlias);

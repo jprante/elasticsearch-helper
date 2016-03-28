@@ -16,8 +16,6 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
-import org.elasticsearch.cluster.routing.GroupShardsIterator;
-import org.elasticsearch.cluster.routing.ShardIterator;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.ShardId;
@@ -73,8 +71,7 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
         }
         final ConcreteIndices concreteIndices = new ConcreteIndices(clusterState, indexNameExpressionResolver);
         MetaData metaData = clusterState.metaData();
-        final List<ActionRequest<?>> requests = new LinkedList<ActionRequest<?>>();
-        // first, iterate over all requests and parse them for mapping, filter out erraneous requests
+        final List<ActionRequest<?>> requests = new LinkedList<>();
         for (ActionRequest<?> request : ingestRequest.requests()) {
             String concreteIndex = concreteIndices.resolveIfAbsent((DocumentRequest)request);
             if (request instanceof IndexRequest) {
@@ -102,31 +99,28 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
             }
         }
         // second, go over all the requests and create a shard request map
-        Map<ShardId, List<ActionRequest<?>>> requestsByShard = new HashMap<ShardId, List<ActionRequest<?>>>();
+        Map<ShardId, List<ActionRequest<?>>> requestsByShard = new HashMap<>();
         for (ActionRequest<?> request : requests) {
             if (request instanceof IndexRequest) {
                 IndexRequest indexRequest = (IndexRequest) request;
-                ShardId shardId = clusterService.operationRouting().indexShards(clusterState, indexRequest.index(), indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
+                String concreteIndex = concreteIndices.getConcreteIndex(indexRequest.index());
+                ShardId shardId = clusterService.operationRouting().indexShards(clusterState, concreteIndex, indexRequest.type(), indexRequest.id(), indexRequest.routing()).shardId();
                 List<ActionRequest<?>> list = requestsByShard.get(shardId);
                 if (list == null) {
-                    list = new LinkedList<ActionRequest<?>>();
+                    list = new LinkedList<>();
                     requestsByShard.put(shardId, list);
                 }
                 list.add(request);
             } else if (request instanceof DeleteRequest) {
                 DeleteRequest deleteRequest = (DeleteRequest) request;
-                MappingMetaData mappingMd = clusterState.metaData().index(deleteRequest.index()).mappingOrDefault(deleteRequest.type());
-                if (mappingMd != null && mappingMd.routing().required() && deleteRequest.routing() == null) {
-                    GroupShardsIterator groupShards = clusterService.operationRouting().broadcastDeleteShards(clusterState, deleteRequest.index());
-                    for (ShardIterator shardIt : groupShards) {
-                        List<ActionRequest<?>> list = requestsByShard.get(shardIt.shardId());
-                        if (list == null) {
-                            list = new LinkedList<ActionRequest<?>>();
-                            requestsByShard.put(shardIt.shardId(), list);
-                        }
-                        list.add(deleteRequest);
-                    }
+                String concreteIndex = concreteIndices.getConcreteIndex(deleteRequest.index());
+                ShardId shardId = clusterService.operationRouting().indexShards(clusterState, concreteIndex, deleteRequest.type(), deleteRequest.id(), deleteRequest.routing()).shardId();
+                List<ActionRequest<?>> list = requestsByShard.get(shardId);
+                if (list == null) {
+                    list = new LinkedList<>();
+                    requestsByShard.put(shardId, list);
                 }
+                list.add(deleteRequest);
             }
         }
         if (requestsByShard.isEmpty()) {
@@ -192,8 +186,7 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                         });
                     }
                     if (responseCounter.decrementAndGet() == 0) {
-                        ingestResponse.setSuccessSize(successCount.get())
-                                .setTookInMillis(millis);
+                        ingestResponse.setSuccessSize(successCount.get()).setTookInMillis(millis);
                         listener.onResponse(ingestResponse);
                     }
                 }
@@ -204,8 +197,7 @@ public class TransportIngestAction extends HandledTransportAction<IngestRequest,
                     logger.error(e.getMessage(), e);
                     ingestResponse.addFailure(new IngestActionFailure(-1L, shardId, ExceptionsHelper.detailedMessage(e)));
                     if (responseCounter.decrementAndGet() == 0) {
-                        ingestResponse.setSuccessSize(successCount.get())
-                                .setTookInMillis(millis);
+                        ingestResponse.setSuccessSize(successCount.get()).setTookInMillis(millis);
                         listener.onResponse(ingestResponse);
                     }
                 }
