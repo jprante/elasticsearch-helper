@@ -450,7 +450,7 @@ abstract class BaseClient {
             logger.info("no indices found, retention policy skipped");
             return;
         }
-        if (mintokeep > 0 && indices.size() < mintokeep) {
+        if (mintokeep > 0 && indices.size() <= mintokeep) {
             logger.info("{} indices found, not enough for retention policy ({}),  skipped",
                     indices.size(), mintokeep);
             return;
@@ -466,7 +466,7 @@ abstract class BaseClient {
                 Matcher m2 = pattern.matcher(s);
                 if (m2.matches()) {
                     Integer i2 = Integer.parseInt(m2.group(2));
-                    int kept = 1 + indices.size() - indicesToDelete.size();
+                    int kept = indices.size() - indicesToDelete.size();
                     if ((timestampdiff == 0 || (timestampdiff > 0 && i1 - i2 > timestampdiff)) && mintokeep <= kept) {
                         indicesToDelete.add(s);
                     }
@@ -495,7 +495,11 @@ abstract class BaseClient {
         SearchResponse searchResponse = searchRequestBuilder.setIndices(index).addField("_timestamp").setSize(1).addSort(sort).execute().actionGet();
         if (searchResponse.getHits().getHits().length == 1) {
             SearchHit hit = searchResponse.getHits().getHits()[0];
-            return hit.getFields().get("_timestamp").getValue();
+            if (hit.getFields().get("_timestamp") != null) {
+                return hit.getFields().get("_timestamp").getValue();
+            } else {
+                return 0L;
+            }
         }
         return null;
     }
