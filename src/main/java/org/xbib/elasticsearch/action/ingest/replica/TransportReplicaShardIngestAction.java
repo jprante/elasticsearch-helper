@@ -77,7 +77,7 @@ public class TransportReplicaShardIngestAction
                                              IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
                                              ActionFilters actionFilters,
                                              IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver);
+        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver, transportService.getTaskManager());
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -534,7 +534,7 @@ public class TransportReplicaShardIngestAction
         }
     }
 
-    class ReplicaOperationTransportHandler implements TransportRequestHandler<ReplicaOperationRequest> {
+    class ReplicaOperationTransportHandler extends TransportRequestHandler<ReplicaOperationRequest> {
 
         @Override
         public void messageReceived(final ReplicaOperationRequest request, final TransportChannel channel) throws Exception {

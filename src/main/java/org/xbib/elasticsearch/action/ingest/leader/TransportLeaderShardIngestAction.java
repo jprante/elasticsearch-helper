@@ -69,7 +69,7 @@ public class TransportLeaderShardIngestAction
                                             IndicesService indicesService, ThreadPool threadPool,
                                             ActionFilters actionFilters,
                                             IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver);
+        super(settings, IngestAction.NAME, threadPool, actionFilters, indexNameExpressionResolver, transportService.getTaskManager());
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.indicesService = indicesService;
@@ -544,7 +544,7 @@ public class TransportLeaderShardIngestAction
         }
     }
 
-    class LeaderOperationTransportHandler implements TransportRequestHandler<IngestLeaderShardRequest> {
+    class LeaderOperationTransportHandler extends TransportRequestHandler<IngestLeaderShardRequest> {
 
         @Override
         public void messageReceived(final IngestLeaderShardRequest request, final TransportChannel channel) throws Exception {
