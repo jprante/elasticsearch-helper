@@ -217,14 +217,12 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
             }
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(index, type, id);
             ingestProcessor.add(new IndexRequest(index).type(type).id(id).source(source));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -239,14 +237,12 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
             }
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(indexRequest.index(), indexRequest.type(), indexRequest.id());
             ingestProcessor.add(new IndexRequest(indexRequest));
         } catch (Exception e) {
             logger.error("add of index request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -261,14 +257,12 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
             }
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(index, type, id);
             ingestProcessor.add(new DeleteRequest(index).type(type).id(id));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -283,14 +277,12 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
             }
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(deleteRequest.index(), deleteRequest.type(), deleteRequest.id());
             ingestProcessor.add(new DeleteRequest(deleteRequest));
         } catch (Exception e) {
             logger.error("add of delete request failed: " + e.getMessage(), e);
             throwable = e;
             closed = true;
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }

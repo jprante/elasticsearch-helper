@@ -39,6 +39,11 @@ public class Histogram implements Metric, Sampling, Count {
     }
 
     @Override
+    public void inc(String index, String type, String id) {
+
+    }
+
+    @Override
     public void dec() {
         dec(1);
     }
@@ -46,6 +51,11 @@ public class Histogram implements Metric, Sampling, Count {
     @Override
     public void dec(long n) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void dec(String index, String type, String id) {
+
     }
 
     /**
@@ -56,6 +66,16 @@ public class Histogram implements Metric, Sampling, Count {
     @Override
     public long getCount() {
         return count.sum();
+    }
+
+    @Override
+    public String getIncChecksum(String index, String type) {
+        return null;
+    }
+
+    @Override
+    public String getDecChecksum(String index, String type) {
+        return null;
     }
 
     @Override

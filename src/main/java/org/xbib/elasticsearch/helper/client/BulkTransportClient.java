@@ -118,6 +118,7 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
                 metric.getSucceeded().inc(response.getItems().length);
                 int n = 0;
                 for (BulkItemResponse itemResponse : response.getItems()) {
+                    metric.getCurrentIngest().dec(itemResponse.getIndex(), itemResponse.getType(), itemResponse.getId());
                     if (itemResponse.isFailed()) {
                         n++;
                         metric.getSucceeded().dec(1);
@@ -224,14 +225,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(index, type, id);
             bulkProcessor.add(new IndexRequest().index(index).type(type).id(id).create(false).source(source));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -242,14 +241,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(indexRequest.index(), indexRequest.type(), indexRequest.id());
             bulkProcessor.add(indexRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of index request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -260,14 +257,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(index, type, id);
             bulkProcessor.add(new DeleteRequest().index(index).type(type).id(id));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -278,14 +273,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(deleteRequest.index(), deleteRequest.type(), deleteRequest.id());
             bulkProcessor.add(deleteRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of delete request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -296,14 +289,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(index, type, id);
             bulkProcessor.add(new UpdateRequest().index(index).type(type).id(id).upsert(source));
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of update request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }
@@ -314,14 +305,12 @@ public class BulkTransportClient extends BaseMetricTransportClient implements In
             throw new ElasticsearchException("client is closed");
         }
         try {
-            metric.getCurrentIngest().inc();
+            metric.getCurrentIngest().inc(updateRequest.index(), updateRequest.type(), updateRequest.id());
             bulkProcessor.add(updateRequest);
         } catch (Exception e) {
             throwable = e;
             closed = true;
             logger.error("bulk add of update request failed: " + e.getMessage(), e);
-        } finally {
-            metric.getCurrentIngest().dec();
         }
         return this;
     }

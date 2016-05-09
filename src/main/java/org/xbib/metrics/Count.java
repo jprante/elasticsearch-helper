@@ -9,9 +9,13 @@ public interface Count {
 
     void inc(long n);
 
+    void inc(String index, String type, String id);
+
     void dec();
 
     void dec(long n);
+
+    void dec(String index, String type, String id);
 
     /**
      * Returns the current count.
@@ -19,4 +23,8 @@ public interface Count {
      * @return the current count
      */
     long getCount();
+
+    String getIncChecksum(String index, String type);
+
+    String getDecChecksum(String index, String type);
 }
