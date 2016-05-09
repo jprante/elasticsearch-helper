@@ -20,7 +20,6 @@ public class ElasticsearchCounterMetric implements Count {
         this.count = new LongAdder();
         this.checksumIn = new HashMap<>();
         this.checksumOut = new HashMap<>();
-
     }
 
     @Override
@@ -40,7 +39,9 @@ public class ElasticsearchCounterMetric implements Count {
             crc32 = new CRC32();
             checksumIn.put(index + "/" + type, crc32);
         }
-        crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        if (id != null) {
+            crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     @Override
@@ -60,7 +61,9 @@ public class ElasticsearchCounterMetric implements Count {
             crc32 = new CRC32();
             checksumOut.put(index + "/" + type, crc32);
         }
-        crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        if (id != null) {
+            crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     @Override

@@ -48,7 +48,9 @@ public class CountMetric implements Metric, Count {
             crc32 = new CRC32();
             checksumIn.put(index + "/" + type, crc32);
         }
-        crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        if (id != null) {
+            crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     /**
@@ -76,7 +78,9 @@ public class CountMetric implements Metric, Count {
             crc32 = new CRC32();
             checksumOut.put(index + "/" + type, crc32);
         }
-        crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        if (id != null) {
+            crc32.update(id.getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     /**
