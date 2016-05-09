@@ -8,6 +8,7 @@ This plugin offers some Java helper classes for easier use of Elasticsearch API.
 
 | Elasticsearch     | Plugin         | Release date |
 | ----------------- | -------------- | -------------|
+| 2.3.2             | 2.3.2.0        | May  9, 2016 |
 | 2.3.1             | 2.3.1.1        | May  9, 2016 |
 | 2.3.1             | 2.3.1.0        | Apr  9, 2016 |
 | 2.3.0             | 2.3.0.0        | Apr  9, 2016 |
