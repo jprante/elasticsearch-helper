@@ -25,7 +25,7 @@ public class GcMonitor {
     private volatile ScheduledFuture<?> scheduledFuture;
 
     public GcMonitor(Settings settings) {
-        this.enabled = settings.getAsBoolean("monitor.gc.enabled", true);
+        this.enabled = settings.getAsBoolean("monitor.gc.enabled", false);
         TimeValue interval = settings.getAsTime("monitor.gc.interval", timeValueSeconds(1));
         this.gcThresholds = new HashMap<>();
         Map<String, Settings> gcThresholdGroups = settings.getGroups("monitor.gc.level");

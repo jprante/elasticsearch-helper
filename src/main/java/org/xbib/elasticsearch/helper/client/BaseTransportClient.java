@@ -56,6 +56,9 @@ abstract class BaseTransportClient extends BaseClient {
             logger.warn("client is closed");
             client = null;
         }
+        if (gcmon != null) {
+            gcmon.close();
+        }
         if (settings != null) {
             String version = System.getProperty("os.name")
                     + " " + System.getProperty("java.vm.name")

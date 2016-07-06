@@ -1,5 +1,5 @@
 group ='org.xbib.elasticsearch.plugin'
-version = '2.3.3.0'
+version = '2.3.3.1'
 
 println "Host: " + java.net.InetAddress.getLocalHost()
 println "Gradle: " + gradle.gradleVersion + " JVM: " + org.gradle.internal.jvm.Jvm.current() + " Groovy: " + GroovySystem.getVersion()
@@ -124,7 +124,7 @@ task unpackPlugin(type: Copy, dependsOn: [':buildPluginZip']) {
     delete "plugins"
     from configurations.releaseJars
     from 'build/tmp/plugin'
-    into 'plugins/helper'
+    into "plugins/${pluginName}"
 }
 
 task integrationTest(type: Test, dependsOn: ['unpackPlugin']) {
