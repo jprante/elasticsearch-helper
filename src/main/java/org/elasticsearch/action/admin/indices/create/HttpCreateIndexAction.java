@@ -8,7 +8,7 @@ import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.xbib.elasticsearch.helper.client.http.HttpAction;
-import org.xbib.elasticsearch.helper.client.http.HttpContext;
+import org.xbib.elasticsearch.helper.client.http.HttpInvocationContext;
 
 import java.io.IOException;
 import java.net.URL;
@@ -26,11 +26,11 @@ public class HttpCreateIndexAction extends HttpAction<CreateIndexRequest, Create
     }
 
     @Override
-    protected CreateIndexResponse createResponse(HttpContext<CreateIndexRequest,CreateIndexResponse> httpContext) {
-        if (httpContext == null) {
+    protected CreateIndexResponse createResponse(HttpInvocationContext<CreateIndexRequest,CreateIndexResponse> httpInvocationContext) {
+        if (httpInvocationContext == null) {
             throw new IllegalStateException("no http context");
         }
-        HttpResponse httpResponse = httpContext.getHttpResponse();
+        HttpResponse httpResponse = httpInvocationContext.getHttpResponse();
         try {
             BytesReference ref = new ChannelBufferBytesReference(httpResponse.getContent());
             Map<String,Object> map = JsonXContent.jsonXContent.createParser(ref).map();

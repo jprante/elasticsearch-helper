@@ -36,22 +36,22 @@ public abstract class HttpAction<Request extends ActionRequest, Response extends
         this.parseFieldMatcher = new ParseFieldMatcher(settings);
     }
 
-    public final ActionFuture<Response> execute(HttpContext<Request,Response> httpContext, Request request) {
+    public final ActionFuture<Response> execute(HttpInvocationContext<Request,Response> httpInvocationContext, Request request) {
         PlainActionFuture<Response> future = newFuture();
-        execute(httpContext, future);
+        execute(httpInvocationContext, future);
         return future;
     }
 
-    public final void execute(HttpContext<Request,Response> httpContext, ActionListener<Response> listener) {
-        ActionRequestValidationException validationException = httpContext.request.validate();
+    public final void execute(HttpInvocationContext<Request,Response> httpInvocationContext, ActionListener<Response> listener) {
+        ActionRequestValidationException validationException = httpInvocationContext.getRequest().validate();
         if (validationException != null) {
             listener.onFailure(validationException);
             return;
         }
-        httpContext.listener = listener;
-        httpContext.millis = System.currentTimeMillis();
+        httpInvocationContext.setListener(listener);
+        httpInvocationContext.setMillis(System.currentTimeMillis());
         try {
-            doExecute(httpContext);
+            doExecute(httpInvocationContext);
         } catch(Throwable t) {
             logger.error("exception during http action execution", t);
             listener.onFailure(t);
@@ -92,12 +92,12 @@ public abstract class HttpAction<Request extends ActionRequest, Response extends
         return request;
     }
 
-    protected void doExecute(final HttpContext<Request,Response> httpContext) {
-        httpContext.getChannel().write(httpContext.getHttpRequest());
+    protected void doExecute(final HttpInvocationContext<Request,Response> httpInvocationContext) {
+        httpInvocationContext.getChannel().write(httpInvocationContext.getHttpRequest());
     }
 
     protected abstract HttpRequest createHttpRequest(URL base, Request request) throws IOException;
 
-    protected abstract Response createResponse(HttpContext<Request,Response> httpContext) throws IOException;
+    protected abstract Response createResponse(HttpInvocationContext<Request,Response> httpInvocationContext) throws IOException;
 
 }

@@ -16,40 +16,29 @@
 package org.xbib.elasticsearch.helper.client;
 
 import org.elasticsearch.client.Client;
+import org.elasticsearch.client.support.Headers;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.threadpool.ThreadPool;
+import org.xbib.elasticsearch.helper.client.http.HttpInvoker;
 
-public class ClientBuilder {
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.net.URL;
 
-    public final static String MAX_ACTIONS_PER_REQUEST = "max_actions_per_request";
+public final class ClientBuilder implements ClientParameters {
 
-    public final static String MAX_CONCURRENT_REQUESTS = "max_concurrent_requests";
-
-    public final static String MAX_VOLUME_PER_REQUEST = "max_volume_per_request";
-
-    public final static String FLUSH_INTERVAL = "flush_interval";
-
-    public final static int DEFAULT_MAX_ACTIONS_PER_REQUEST = 1000;
-
-    public final static int DEFAULT_MAX_CONCURRENT_REQUESTS = Runtime.getRuntime().availableProcessors() * 4;
-
-    public final static ByteSizeValue DEFAULT_MAX_VOLUME_PER_REQUEST = new ByteSizeValue(10, ByteSizeUnit.MB);
-
-    public final static TimeValue DEFAULT_FLUSH_INTERVAL = TimeValue.timeValueSeconds(30);
-
-    private Settings.Builder settingsBuilder;
+    private final Settings.Builder settingsBuilder;
 
     private IngestMetric metric;
 
-    private ClientBuilder() {
+    public ClientBuilder() {
+        settingsBuilder = Settings.builder();
     }
 
     public static ClientBuilder builder() {
-        ClientBuilder clientBuilder = new ClientBuilder();
-        clientBuilder.settingsBuilder = Settings.builder();
-        return clientBuilder;
+        return new ClientBuilder();
     }
 
     public ClientBuilder put(String key, String value) {
@@ -90,6 +79,18 @@ public class ClientBuilder {
     public ClientBuilder setMetric(IngestMetric metric) {
         this.metric = metric;
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T build(URL url, Class<T> interfaceClass) {
+        Settings settings = settingsBuilder.build();
+        ThreadPool threadpool = new ThreadPool("http_client_pool");
+        Headers headers = Headers.EMPTY;
+        final RemoteInvoker remoteInvoker = new HttpInvoker(settings, threadpool, headers, url);
+        final InvocationHandler handler =
+                new ClientInvocationHandler(remoteInvoker, interfaceClass, settings);
+        return (T) Proxy.newProxyInstance(interfaceClass.getClassLoader(),
+                new Class[]{ interfaceClass }, handler);
     }
 
     public BulkNodeClient toBulkNodeClient(Client client) {

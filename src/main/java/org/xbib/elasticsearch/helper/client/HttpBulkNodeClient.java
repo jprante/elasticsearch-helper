@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-public class HttpBulkNodeClient extends BaseClient implements Ingest {
+public class HttpBulkNodeClient extends BaseClient implements ClientAPI {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(HttpBulkNodeClient.class.getName());
 
@@ -397,7 +397,7 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
 
     @Override
     public HttpBulkNodeClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
-        reset();
+        resetSettings();
         setting(settings);
         mapping(type, mappings);
         return newIndex(index, settings(), mappings());
@@ -479,24 +479,8 @@ public class HttpBulkNodeClient extends BaseClient implements Ingest {
         return settings();
     }
 
-    public void setSettings(Settings settings) {
-        settings(settings);
-    }
-
     public Settings.Builder getSettingsBuilder() {
         return settingsBuilder();
-    }
-
-    public void addSetting(String key, String value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Boolean value) {
-        setting(key, value);
-    }
-
-    public void addSetting(String key, Integer value) {
-        setting(key, value);
     }
 
 }

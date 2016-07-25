@@ -16,7 +16,7 @@ import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.jboss.netty.util.CharsetUtil;
 import org.xbib.elasticsearch.helper.client.http.HttpAction;
-import org.xbib.elasticsearch.helper.client.http.HttpContext;
+import org.xbib.elasticsearch.helper.client.http.HttpInvocationContext;
 
 import java.io.IOException;
 import java.net.URL;
@@ -38,11 +38,11 @@ public class HttpSearchAction extends HttpAction<SearchRequest, SearchResponse> 
 
     @Override
     @SuppressWarnings("unchecked")
-    protected SearchResponse createResponse(HttpContext<SearchRequest,SearchResponse> httpContext) throws IOException {
-        if (httpContext == null) {
+    protected SearchResponse createResponse(HttpInvocationContext<SearchRequest,SearchResponse> httpInvocationContext) throws IOException {
+        if (httpInvocationContext == null) {
             throw new IllegalStateException("no http context");
         }
-        HttpResponse httpResponse = httpContext.getHttpResponse();
+        HttpResponse httpResponse = httpInvocationContext.getHttpResponse();
         logger.info("{}", httpResponse.getContent().toString(CharsetUtil.UTF_8));
         BytesReference ref = new ChannelBufferBytesReference(httpResponse.getContent());
         Map<String,Object> map = JsonXContent.jsonXContent.createParser(ref).map();

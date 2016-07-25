@@ -29,14 +29,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-abstract class BaseMetricTransportClient extends BaseTransportClient implements Ingest {
+abstract class BaseMetricTransportClient extends BaseTransportClient implements ClientAPI {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BaseMetricTransportClient.class.getName());
 
     protected IngestMetric metric;
 
     @Override
-    public Ingest init(Settings settings, IngestMetric metric) {
+    public ClientAPI init(Settings settings, IngestMetric metric) {
         super.createClient(settings);
         this.metric = metric;
         if (metric != null) {
@@ -52,7 +52,7 @@ abstract class BaseMetricTransportClient extends BaseTransportClient implements 
 
     @Override
     public BaseMetricTransportClient newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException {
-        reset();
+        resetSettings();
         setting(settings);
         mapping(type, mappings);
         return newIndex(index, settings(), mappings());

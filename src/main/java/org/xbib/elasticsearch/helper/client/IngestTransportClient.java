@@ -39,7 +39,7 @@ import java.util.Map;
 /**
  * Ingest transport client
  */
-public class IngestTransportClient extends BaseMetricTransportClient implements Ingest {
+public class IngestTransportClient extends BaseMetricTransportClient implements ClientAPI {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(IngestTransportClient.class.getName());
 
@@ -288,13 +288,13 @@ public class IngestTransportClient extends BaseMetricTransportClient implements 
     }
 
     @Override
-    public Ingest update(String index, String type, String id, String source) {
+    public ClientAPI update(String index, String type, String id, String source) {
         // we will never implement this!
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Ingest bulkUpdate(UpdateRequest updateRequest) {
+    public ClientAPI bulkUpdate(UpdateRequest updateRequest) {
         // we will never implement this!
         throw new UnsupportedOperationException();
     }

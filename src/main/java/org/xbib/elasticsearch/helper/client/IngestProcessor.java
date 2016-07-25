@@ -25,11 +25,11 @@ public class IngestProcessor {
 
     private final Client client;
 
-    private int actions = Ingest.DEFAULT_MAX_ACTIONS_PER_REQUEST;
+    private int actions = ClientAPI.DEFAULT_MAX_ACTIONS_PER_REQUEST;
 
-    private int maxConcurrency = Ingest.DEFAULT_MAX_CONCURRENT_REQUESTS;
+    private int maxConcurrency = ClientAPI.DEFAULT_MAX_CONCURRENT_REQUESTS;
 
-    private ByteSizeValue maxVolume = Ingest.DEFAULT_MAX_VOLUME_PER_REQUEST;
+    private ByteSizeValue maxVolume = ClientAPI.DEFAULT_MAX_VOLUME_PER_REQUEST;
 
     private Semaphore semaphore = new Semaphore(maxConcurrency);
 

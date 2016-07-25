@@ -84,6 +84,10 @@ abstract class BaseClient {
 
     private Settings.Builder settingsBuilder;
 
+    private Settings settings;
+
+    private Map<String, String> mappings = new HashMap<>();
+
     public abstract ElasticsearchClient client();
 
     protected abstract void createClient(Settings settings) throws IOException;
@@ -95,20 +99,12 @@ abstract class BaseClient {
     }
 
     public void resetSettings() {
-        reset();
-    }
-
-    private Settings settings;
-
-    private Map<String, String> mappings = new HashMap<>();
-
-    public void reset() {
         settingsBuilder = Settings.settingsBuilder();
         settings = null;
         mappings = new HashMap<>();
     }
 
-    public void settings(Settings settings) {
+    public void setSettings(Settings settings) {
         this.settings = settings;
     }
 

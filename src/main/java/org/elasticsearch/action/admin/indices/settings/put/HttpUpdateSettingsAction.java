@@ -11,7 +11,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.http.HttpResponse;
 import org.xbib.elasticsearch.helper.client.http.HttpAction;
-import org.xbib.elasticsearch.helper.client.http.HttpContext;
+import org.xbib.elasticsearch.helper.client.http.HttpInvocationContext;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,11 +36,11 @@ public class HttpUpdateSettingsAction extends HttpAction<UpdateSettingsRequest, 
     }
 
     @Override
-    protected UpdateSettingsResponse createResponse(HttpContext<UpdateSettingsRequest,UpdateSettingsResponse> httpContext) throws IOException {
-        if (httpContext == null) {
+    protected UpdateSettingsResponse createResponse(HttpInvocationContext<UpdateSettingsRequest,UpdateSettingsResponse> httpInvocationContext) throws IOException {
+        if (httpInvocationContext == null) {
             throw new IllegalStateException("no http context");
         }
-        HttpResponse httpResponse = httpContext.getHttpResponse();
+        HttpResponse httpResponse = httpInvocationContext.getHttpResponse();
         BytesReference ref = new ChannelBufferBytesReference(httpResponse.getContent());
         Map<String,Object> map = JsonXContent.jsonXContent.createParser(ref).map();
         return new UpdateSettingsResponse();

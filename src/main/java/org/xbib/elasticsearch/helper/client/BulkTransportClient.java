@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Transport client using the BulkProcessor of Elasticsearch
  */
-public class BulkTransportClient extends BaseMetricTransportClient implements Ingest {
+public class BulkTransportClient extends BaseMetricTransportClient implements ClientAPI {
 
     private final static ESLogger logger = ESLoggerFactory.getLogger(BulkTransportClient.class.getName());
 

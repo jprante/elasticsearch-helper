@@ -20,7 +20,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 
@@ -33,15 +32,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Interface for providing convenient administrative methods for ingesting data into Elasticsearch.
  */
-public interface Ingest {
-
-    int DEFAULT_MAX_ACTIONS_PER_REQUEST = 1000;
-
-    int DEFAULT_MAX_CONCURRENT_REQUESTS = Runtime.getRuntime().availableProcessors() * 4;
-
-    ByteSizeValue DEFAULT_MAX_VOLUME_PER_REQUEST = new ByteSizeValue(10, ByteSizeUnit.MB);
-
-    TimeValue DEFAULT_FLUSH_INTERVAL = TimeValue.timeValueSeconds(30);
+public interface ClientAPI extends ClientParameters {
 
     /**
      * Initialize new ingest client, wrap an existing Elasticsearch client, and set up metrics.
@@ -51,7 +42,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(ElasticsearchClient client, IngestMetric metric) throws IOException;
+    ClientAPI init(ElasticsearchClient client, IngestMetric metric) throws IOException;
 
     /**
      * Initialize, create new ingest client, and set up metrics.
@@ -61,7 +52,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if client could not get created
      */
-    Ingest init(Settings settings, IngestMetric metric) throws IOException;
+    ClientAPI init(Settings settings, IngestMetric metric) throws IOException;
 
     /**
      * Return Elasticsearch client
@@ -79,7 +70,7 @@ public interface Ingest {
      * @param source the source
      * @return this
      */
-    Ingest index(String index, String type, String id, String source);
+    ClientAPI index(String index, String type, String id, String source);
 
     /**
      * Delete document
@@ -89,7 +80,7 @@ public interface Ingest {
      * @param id    the id
      * @return this ingest
      */
-    Ingest delete(String index, String type, String id);
+    ClientAPI delete(String index, String type, String id);
 
     /**
      * Update document. Use with precaution! Does not work in all cases.
@@ -100,7 +91,7 @@ public interface Ingest {
      * @param source the source
      * @return this
      */
-    Ingest update(String index, String type, String id, String source);
+    ClientAPI update(String index, String type, String id, String source);
 
     /**
      * Set the maximum number of actions per request
@@ -108,7 +99,7 @@ public interface Ingest {
      * @param maxActionsPerRequest maximum number of actions per request
      * @return this ingest
      */
-    Ingest maxActionsPerRequest(int maxActionsPerRequest);
+    ClientAPI maxActionsPerRequest(int maxActionsPerRequest);
 
     /**
      * Set the maximum concurent requests
@@ -116,7 +107,7 @@ public interface Ingest {
      * @param maxConcurentRequests maximum number of concurrent ingest requests
      * @return this Ingest
      */
-    Ingest maxConcurrentRequests(int maxConcurentRequests);
+    ClientAPI maxConcurrentRequests(int maxConcurentRequests);
 
     /**
      * Set the maximum volume for request before flush
@@ -124,7 +115,7 @@ public interface Ingest {
      * @param maxVolume maximum volume
      * @return this ingest
      */
-    Ingest maxVolumePerRequest(ByteSizeValue maxVolume);
+    ClientAPI maxVolumePerRequest(ByteSizeValue maxVolume);
 
     /**
      * Set the flush interval for automatic flushing outstanding ingest requests
@@ -132,7 +123,7 @@ public interface Ingest {
      * @param flushInterval the flush interval, default is 30 seconds
      * @return this ingest
      */
-    Ingest flushIngestInterval(TimeValue flushInterval);
+    ClientAPI flushIngestInterval(TimeValue flushInterval);
 
     /**
      * Set mapping
@@ -165,7 +156,7 @@ public interface Ingest {
      * @param index index
      * @return this ingest
      */
-    Ingest newIndex(String index);
+    ClientAPI newIndex(String index);
 
     /**
      * Create a new index
@@ -177,7 +168,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if new index creation fails
      */
-    Ingest newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException;
+    ClientAPI newIndex(String index, String type, InputStream settings, InputStream mappings) throws IOException;
 
     /**
      * Create a new index
@@ -187,7 +178,7 @@ public interface Ingest {
      * @param mappings mappings
      * @return this ingest
      */
-    Ingest newIndex(String index, Settings settings, Map<String, String> mappings);
+    ClientAPI newIndex(String index, Settings settings, Map<String, String> mappings);
 
     /**
      * Create new mapping
@@ -197,7 +188,7 @@ public interface Ingest {
      * @param mapping mapping
      * @return this ingest
      */
-    Ingest newMapping(String index, String type, Map<String, Object> mapping);
+    ClientAPI newMapping(String index, String type, Map<String, Object> mapping);
 
     /**
      * Delete index
@@ -205,7 +196,7 @@ public interface Ingest {
      * @param index index
      * @return this ingest
      */
-    Ingest deleteIndex(String index);
+    ClientAPI deleteIndex(String index);
 
     /**
      * Start bulk mode
@@ -216,7 +207,7 @@ public interface Ingest {
      * @return this ingest
      * @throws IOException if bulk could not be started
      */
-    Ingest startBulk(String index, long startRefreshIntervalSeconds, long stopRefreshIntervalSeconds) throws IOException;
+    ClientAPI startBulk(String index, long startRefreshIntervalSeconds, long stopRefreshIntervalSeconds) throws IOException;
 
     /**
      * Stops bulk mode
@@ -225,7 +216,7 @@ public interface Ingest {
      * @return this Ingest
      * @throws IOException if bulk could not be stopped
      */
-    Ingest stopBulk(String index) throws IOException;
+    ClientAPI stopBulk(String index) throws IOException;
 
     /**
      * Bulked index request. Each request will be added to a queue for bulking requests.
@@ -234,7 +225,7 @@ public interface Ingest {
      * @param indexRequest the index request to add
      * @return this ingest
      */
-    Ingest bulkIndex(IndexRequest indexRequest);
+    ClientAPI bulkIndex(IndexRequest indexRequest);
 
     /**
      * Bulked delete request. Each request will be added to a queue for bulking requests.
@@ -243,7 +234,7 @@ public interface Ingest {
      * @param deleteRequest the delete request to add
      * @return this ingest
      */
-    Ingest bulkDelete(DeleteRequest deleteRequest);
+    ClientAPI bulkDelete(DeleteRequest deleteRequest);
 
     /**
      * Bulked update request. Each request will be added to a queue for bulking requests.
@@ -253,14 +244,14 @@ public interface Ingest {
      * @param updateRequest the update request to add
      * @return this ingest
      */
-    Ingest bulkUpdate(UpdateRequest updateRequest);
+    ClientAPI bulkUpdate(UpdateRequest updateRequest);
 
     /**
      * Flush ingest, move all pending documents to the cluster.
      *
      * @return this
      */
-    Ingest flushIngest();
+    ClientAPI flushIngest();
 
     /**
      * Wait for all outstanding responses
@@ -270,7 +261,7 @@ public interface Ingest {
      * @throws InterruptedException if wait is interrupted
      * @throws ExecutionException if execution failed
      */
-    Ingest waitForResponses(TimeValue maxWait) throws InterruptedException, ExecutionException;
+    ClientAPI waitForResponses(TimeValue maxWait) throws InterruptedException, ExecutionException;
 
     /**
      * Refresh the index.
