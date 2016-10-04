@@ -102,20 +102,3 @@ task hbzUpload(type: Upload) {
         }
     }
 }
-
-if (project.hasProperty('githubToken')) {
-    github {
-        owner = user
-        token = githubToken
-        repo = project.name
-        name = project.version
-        tagName = project.version
-        targetCommitish = 'master'
-        assets = [
-                "build/libs/${project.name}-${project.version}-standalone.jar"
-        ]
-    }
-    githubRelease {
-        dependsOn gitRelease
-    }
-}
