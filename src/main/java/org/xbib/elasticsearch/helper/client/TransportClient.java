@@ -51,6 +51,7 @@ import org.elasticsearch.transport.FutureTransportResponseHandler;
 import org.elasticsearch.transport.TransportModule;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.client.transport.TransportClient.HostFailureListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -73,6 +74,7 @@ import static org.elasticsearch.common.unit.TimeValue.timeValueSeconds;
  */
 public class TransportClient extends AbstractClient {
 
+
     public static Builder builder() {
         return new Builder();
     }
@@ -81,6 +83,7 @@ public class TransportClient extends AbstractClient {
 
         private Settings settings = Settings.EMPTY;
         private List<Class<? extends Plugin>> pluginClasses = new ArrayList<>();
+        private HostFailureListener hostFailedListener;
 
         public Builder settings(Settings.Builder settings) {
             return settings(settings.build());
@@ -132,7 +135,7 @@ public class TransportClient extends AbstractClient {
                     }
                 });
                 modules.add(new ActionModule(true));
-                modules.add(new ClientTransportModule());
+                modules.add(new ClientTransportModule(hostFailedListener));
                 modules.add(new CircuitBreakerModule(this.settings));
                 pluginsService.processModules(modules);
                 Injector injector = modules.createInjector();
@@ -145,6 +148,11 @@ public class TransportClient extends AbstractClient {
                     ThreadPool.terminate(threadPool, 10, TimeUnit.SECONDS);
                 }
             }
+        }
+
+        public Builder setHostFailedListener(HostFailureListener hostFailedListener) {
+            this.hostFailedListener = hostFailedListener;
+            return this;
         }
     }
 
